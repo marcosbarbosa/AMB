@@ -1,0 +1,119 @@
+AMB PORTAL - ESTRUTURA DO PROJETO
+==================================
+
+Raiz do Projeto
+.
+├── client/                          # Frontend React Application
+│   ├── src/
+│   │   ├── components/              # Componentes React
+│   │   │   ├── ui/                  # Componentes Shadcn UI
+│   │   │   │   ├── button.tsx
+│   │   │   │   ├── card.tsx
+│   │   │   │   ├── form.tsx
+│   │   │   │   ├── input.tsx
+│   │   │   │   ├── label.tsx
+│   │   │   │   ├── separator.tsx
+│   │   │   │   ├── textarea.tsx
+│   │   │   │   └── toast.tsx
+│   │   │   ├── About.tsx            # Seção "Sobre Nós"
+│   │   │   ├── ContactForm.tsx      # Formulário de contato
+│   │   │   ├── ContactPreview.tsx   # Preview de contato
+│   │   │   ├── CTABanner.tsx        # Banner call-to-action
+│   │   │   ├── Footer.tsx           # Rodapé do site
+│   │   │   ├── Hero.tsx             # Hero section
+│   │   │   ├── Navigation.tsx       # Header/Navegação
+│   │   │   ├── Services.tsx         # Grid de serviços
+│   │   │   ├── Stats.tsx            # Estatísticas
+│   │   │   └── Testimonials.tsx     # Depoimentos
+│   │   ├── hooks/
+│   │   │   └── use-toast.ts         # Hook para toasts
+│   │   ├── lib/
+│   │   │   ├── queryClient.ts       # Configuração TanStack Query
+│   │   │   └── utils.ts             # Utilitários
+│   │   ├── pages/
+│   │   │   ├── Contact.tsx          # Página de contato
+│   │   │   ├── Home.tsx             # Página inicial
+│   │   │   └── not-found.tsx        # Página 404
+│   │   ├── App.tsx                  # Componente raiz
+│   │   ├── index.css                # Estilos globais + Design tokens
+│   │   └── main.tsx                 # Entry point
+│   └── index.html                   # HTML template
+│
+├── server/                          # Backend Express Application
+│   ├── routes.ts                    # API routes
+│   ├── storage.ts                   # Interface de storage
+│   ├── index.ts                     # Server entry point
+│   └── vite.ts                      # Configuração Vite
+│
+├── shared/                          # Código compartilhado
+│   └── schema.ts                    # Schemas Drizzle + Zod
+│
+├── attached_assets/                 # Assets do projeto
+│   ├── generated_images/            # Imagens geradas
+│   │   ├── hero-office-collaboration.png
+│   │   ├── about-modern-office.png
+│   │   ├── service-consultation.png
+│   │   ├── service-technology.png
+│   │   └── service-team-success.png
+│
+├── Arquivos de Configuração
+├── package.json                     # Dependências do projeto
+├── tsconfig.json                    # Configuração TypeScript
+├── tailwind.config.ts               # Configuração Tailwind CSS
+├── postcss.config.js                # Configuração PostCSS
+├── vite.config.ts                   # Configuração Vite
+├── components.json                  # Configuração Shadcn
+│
+├── Documentação
+├── replit.md                        # Documentação do projeto
+├── design_guidelines.md             # Guidelines de design
+└── project-structure.txt            # Este arquivo
+
+Tecnologias Principais
+----------------------
+Frontend:
+- React 18 + TypeScript
+- Vite (build tool)
+- Wouter (routing)
+- TanStack Query v5 (state management)
+- React Hook Form + Zod (forms & validation)
+- Tailwind CSS + Shadcn UI (styling)
+- Axios (HTTP client)
+
+Backend:
+- Express.js
+- Zod (validation)
+- In-memory storage (pronto para PostgreSQL)
+
+Tipografia:
+- Inter (fonte principal)
+- Space Grotesk (acentos/títulos)
+
+Páginas Implementadas
+---------------------
+/ (Home)
+  ├── Hero Section
+  ├── Sobre Nós (#sobre)
+  ├── Serviços (#servicos)
+  ├── Estatísticas
+  ├── Depoimentos
+  ├── CTA Banner
+  ├── Contact Preview
+  └── Footer
+
+/contato (Contact)
+  ├── Formulário de Contato
+  ├── Informações de Contato
+  └── Placeholder para Mapa
+
+API Endpoints
+-------------
+POST   /api/contact       # Enviar mensagem de contato
+GET    /api/contact       # Listar mensagens
+GET    /api/contact/:id   # Obter mensagem específica
+
+Status do Projeto
+-----------------
+✅ MVP Completo
+✅ Testes E2E Aprovados
+✅ Pronto para Produção
