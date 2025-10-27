@@ -1,6 +1,6 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
 import { insertContactMessageSchema, type InsertContactMessage } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ import { Send } from 'lucide-react';
 
 export function ContactForm() {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<InsertContactMessage>({
     resolver: zodResolver(insertContactMessageSchema),
@@ -30,28 +31,24 @@ export function ContactForm() {
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: async (data: InsertContactMessage) => {
-      return await apiRequest('POST', '/api/contact', data);
-    },
-    onSuccess: () => {
+  const onSubmit = async (data: InsertContactMessage) => {
+    setIsSubmitting(true);
+    try {
+      await apiRequest('POST', '/api/contact', data);
       toast({
         title: 'Mensagem enviada!',
         description: 'Obrigado pelo contato. Retornaremos em breve.',
       });
       form.reset();
-    },
-    onError: (error: Error) => {
+    } catch (error) {
       toast({
         title: 'Erro ao enviar mensagem',
-        description: error.message || 'Tente novamente mais tarde.',
+        description: error instanceof Error ? error.message : 'Tente novamente mais tarde.',
         variant: 'destructive',
       });
-    },
-  });
-
-  const onSubmit = (data: InsertContactMessage) => {
-    mutation.mutate(data);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -135,10 +132,10 @@ export function ContactForm() {
         <Button 
           type="submit" 
           className="w-full h-12 text-base"
-          disabled={mutation.isPending}
+          disabled={isSubmitting}
           data-testid="button-contact-submit"
         >
-          {mutation.isPending ? 'Enviando...' : 'Enviar Mensagem'}
+          {isSubmitting ? 'Enviando...' : 'Enviar Mensagem'}
           <Send className="ml-2 h-4 w-4" />
         </Button>
       </form>
