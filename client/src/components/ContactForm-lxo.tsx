@@ -1,14 +1,8 @@
-/*
- * ==========================================================
- * MÓDULO 9: ContactForm.tsx (MODIFICADO)
- * Conectado ao Backend PHP/Gmail na HostGator
- * ==========================================================
- */
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { insertContactMessageSchema, type InsertContactMessage } from '@shared/schema';
+import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,17 +16,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Send } from 'lucide-react';
-
-// 1. IMPORTAMOS O 'AXIOS' (O NOSSO "MENSAGEIRO" JÁ INSTALADO)
-import axios from 'axios';
-
-// 2. REMOVEMOS A IMPORTAÇÃO DO 'apiRequest' FALSO
-// import { apiRequest } from '@/lib/queryClient';
-
-// 3. ***** ATENÇÃO: DEFINE O URL DO TEU BACKEND REAL *****
-// Substitui [teu-dominio-amb.com.br] pelo teu domínio real
-const API_URL = 'https://www.ambamazonas.com.br/api/enviar_contato.php';
-
 
 export function ContactForm() {
   const { toast } = useToast();
@@ -48,35 +31,19 @@ export function ContactForm() {
     },
   });
 
-  // 4. A FUNÇÃO 'onSubmit' FOI MODIFICADA
   const onSubmit = async (data: InsertContactMessage) => {
     setIsSubmitting(true);
-
-    // 5. Mapeamos os dados do formulário (inglês) para o que o PHP espera (português)
-    // O backend (Módulo 7) espera { nome, email, mensagem }
-    const payload = {
-      nome: data.name,
-      email: data.email,
-      mensagem: data.message
-      // O telefone é ignorado pelo nosso backend PHP, o que não é problema
-    };
-
     try {
-      // 6. SUBSTITUÍMOS O 'apiRequest' FALSO PELO 'axios.post' REAL
-      // await apiRequest('POST', '/api/contact', data); <-- O CÓDIGO ANTIGO
-      await axios.post(API_URL, payload); // <-- O NOSSO NOVO CÓDIGO
-
-      // 7. O resto (toast de sucesso, reset) é mantido. É perfeito!
+      await apiRequest('POST', '/api/contact', data);
       toast({
         title: 'Mensagem enviada!',
         description: 'Obrigado pelo contato. Retornaremos em breve.',
       });
       form.reset();
     } catch (error) {
-      console.error("Erro ao enviar contato:", error); // Adicionei um log de erro
       toast({
         title: 'Erro ao enviar mensagem',
-        description: 'Não foi possível conectar ao servidor. Tente novamente mais tarde.',
+        description: error instanceof Error ? error.message : 'Tente novamente mais tarde.',
         variant: 'destructive',
       });
     } finally {
@@ -84,7 +51,6 @@ export function ContactForm() {
     }
   };
 
-  // O HTML/JSX abaixo não muda nada. A IA fez um trabalho perfeito.
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
