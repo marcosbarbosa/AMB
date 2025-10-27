@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [location] = useLocation();
+  const location = useLocation();
 
   const navItems = [
     { label: 'Início', href: '/' },
@@ -30,7 +30,7 @@ export function Navigation() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link href="/">
+          <Link to="/">
             <span className="flex items-center space-x-2 hover-elevate rounded-md px-3 py-2 -ml-3 cursor-pointer" data-testid="link-home">
               <span className="text-2xl font-bold font-accent bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 AMB Portal
@@ -40,12 +40,12 @@ export function Navigation() {
 
           <div className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} to={item.href}>
                 <span
                   onClick={(e: any) => scrollToSection(e, item.href)}
                   data-testid={`link-nav-${item.label.toLowerCase()}`}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors hover-elevate cursor-pointer inline-block ${
-                    location === item.href || (item.href.startsWith('/#') && location === '/')
+                    location.pathname === item.href || (item.href.startsWith('/#') && location.pathname === '/')
                       ? 'text-foreground'
                       : 'text-muted-foreground'
                   }`}
@@ -72,7 +72,7 @@ export function Navigation() {
         <div className="md:hidden bg-background border-t border-border" data-testid="mobile-menu">
           <div className="px-4 py-6 space-y-2">
             {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} to={item.href}>
                 <span
                   onClick={(e: any) => {
                     scrollToSection(e, item.href);
@@ -80,7 +80,7 @@ export function Navigation() {
                   }}
                   data-testid={`link-mobile-${item.label.toLowerCase()}`}
                   className={`block px-4 py-3 rounded-md text-base font-medium transition-colors hover-elevate cursor-pointer ${
-                    location === item.href || (item.href.startsWith('/#') && location === '/')
+                    location.pathname === item.href || (item.href.startsWith('/#') && location.pathname === '/')
                       ? 'text-foreground bg-accent'
                       : 'text-muted-foreground'
                   }`}

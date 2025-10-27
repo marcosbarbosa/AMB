@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 export function CTABanner() {
@@ -26,7 +26,7 @@ export function CTABanner() {
           data-testid="button-cta"
           asChild
         >
-          <Link href="/contato">
+          <Link to="/contato">
             Solicitar Consulta
             <ArrowRight className="ml-2 h-5 w-5" />
           </Link>

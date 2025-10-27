@@ -1,5 +1,5 @@
 import { ArrowRight, CheckCircle } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import heroImage from '@assets/generated_images/Hero_office_collaboration_scene_bd9bbe45.png';
 
@@ -45,7 +45,7 @@ export function Hero() {
             data-testid="button-hero-primary"
             asChild
           >
-            <Link href="/contato">
+            <Link to="/contato">
               Fale Conosco
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>

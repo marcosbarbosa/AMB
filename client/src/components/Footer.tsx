@@ -1,5 +1,5 @@
 import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -86,7 +86,7 @@ export function Footer() {
                       {link.label}
                     </a>
                   ) : (
-                    <Link href={link.href}>
+                    <Link to={link.href}>
                       <span
                         className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer inline-block"
                         data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
@@ -117,7 +117,7 @@ export function Footer() {
                       {link.label}
                     </a>
                   ) : (
-                    <Link href={link.href}>
+                    <Link to={link.href}>
                       <span
                         className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer inline-block"
                         data-testid={`link-footer-${link.label.toLowerCase()}`}

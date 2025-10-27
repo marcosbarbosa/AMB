@@ -1,5 +1,5 @@
 import { Mail, ArrowRight } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 export function ContactPreview() {
@@ -28,7 +28,7 @@ export function ContactPreview() {
           data-testid="button-contact-preview"
           asChild
         >
-          <Link href="/contato">
+          <Link to="/contato">
             Entre em Contato
             <ArrowRight className="ml-2 h-5 w-5" />
           </Link>
