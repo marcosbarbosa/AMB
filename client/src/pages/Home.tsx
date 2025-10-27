@@ -1,5 +1,24 @@
+/*
+ * ==========================================================
+ * PORTAL AMB DO AMAZONAS
+ * ==========================================================
+ *
+ * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
+ * Todos os direitos reservados.
+ *
+ * Data: 27 de outubro de 2025
+ * Hora: 18:55
+ * Versão: 1.1 (Atualizado com CarouselHero)
+ *
+ * Descrição: Página inicial (Home).
+ * ATUALIZADO para usar o novo CarouselHero em vez do Hero estático.
+ *
+ * ==========================================================
+ */
 import { Navigation } from '@/components/Navigation';
-import { Hero } from '@/components/Hero';
+// 1. IMPORTA O NOVO COMPONENTE DE CAROUSEL
+import { CarouselHero } from '@/components/CarouselHero'; 
+// import { Hero } from '@/components/Hero'; // Comenta ou remove a importação antiga
 import { About } from '@/components/About';
 import { Services } from '@/components/Services';
 import { Stats } from '@/components/Stats';
@@ -13,7 +32,11 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main>
-        <Hero />
+        {/* 2. USA O NOVO CAROUSEL HERO AQUI */}
+        <CarouselHero /> 
+        {/* <Hero /> */} {/* Comenta ou remove o Hero antigo */}
+
+        {/* 3. O resto da página continua igual */}
         <About />
         <Services />
         <Stats />
