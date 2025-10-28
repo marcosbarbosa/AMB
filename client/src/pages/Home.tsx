@@ -7,20 +7,18 @@
  * Todos os direitos reservados.
  *
  * Data: 27 de outubro de 2025
- * Hora: 18:55
- * Versão: 1.1 (Atualizado com CarouselHero)
+ * Hora: 19:24
+ * Versão: 1.2 (Remove Serviços)
  *
  * Descrição: Página inicial (Home).
- * ATUALIZADO para usar o novo CarouselHero em vez do Hero estático.
+ * ATUALIZADO para remover a secção genérica "Serviços".
  *
  * ==========================================================
  */
 import { Navigation } from '@/components/Navigation';
-// 1. IMPORTA O NOVO COMPONENTE DE CAROUSEL
 import { CarouselHero } from '@/components/CarouselHero'; 
-// import { Hero } from '@/components/Hero'; // Comenta ou remove a importação antiga
 import { About } from '@/components/About';
-import { Services } from '@/components/Services';
+// import { Services } from '@/components/Services'; // 1. REMOVE OU COMENTA A IMPORTAÇÃO
 import { Stats } from '@/components/Stats';
 import { CTABanner } from '@/components/CTABanner';
 import { Testimonials } from '@/components/Testimonials';
@@ -32,16 +30,13 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main>
-        {/* 2. USA O NOVO CAROUSEL HERO AQUI */}
         <CarouselHero /> 
-        {/* <Hero /> */} {/* Comenta ou remove o Hero antigo */}
-
-        {/* 3. O resto da página continua igual */}
         <About />
-        <Services />
+        {/* <Services /> */} {/* 2. REMOVE OU COMENTA O USO DO COMPONENTE */}
         <Stats />
         <CTABanner />
-        <Testimonials />
+        {/* TODO: Avaliar se a secção Testimonials faz sentido para a AMB */}
+        <Testimonials /> 
         <ContactPreview />
       </main>
       <Footer />

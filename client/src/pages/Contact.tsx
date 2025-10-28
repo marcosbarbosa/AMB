@@ -1,36 +1,60 @@
+/*
+ * ==========================================================
+ * PORTAL AMB DO AMAZONAS
+ * ==========================================================
+ *
+ * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
+ * Todos os direitos reservados.
+ *
+ * Data: 27 de outubro de 2025
+ * Hora: 21:34
+ * Versão: 1.1 (Atualizado com dados AMB)
+ *
+ * Descrição: Página de Contato (/contato).
+ * ATUALIZADO para exibir o endereço, telefone e email corretos da AMB
+ * e adicionar um link para o Google Maps.
+ *
+ * ==========================================================
+ */
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { ContactForm } from '@/components/ContactForm';
 import { Mail, Phone, MapPin, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom'; // 1. Importa o Link para o mapa
 
 export default function Contact() {
+  // 2. ATUALIZA O ARRAY COM AS INFORMAÇÕES REAIS DA AMB
   const contactInfo = [
     {
       icon: MapPin,
       title: 'Endereço',
-      content: 'Av. Paulista, 1000 - São Paulo, SP',
+      content: 'R. Washington Luís, 111 - Dom Pedro, Manaus - AM, 69040-210', //
     },
     {
       icon: Phone,
       title: 'Telefone',
-      content: '+55 (11) 1234-5678',
+      content: '+55 (92) 99252-1345', //
     },
     {
       icon: Mail,
       title: 'Email',
-      content: 'contato@ambportal.com.br',
+      content: 'contato.ambamazonas@gmail.com', //
     },
     {
       icon: Clock,
       title: 'Horário de Atendimento',
-      content: 'Seg - Sex: 9h às 18h',
+      content: 'Seg - Sex: 9h às 18h', // (Mantido - ajuste se necessário)
     },
   ];
+
+  // 3. DEFINE O LINK DO GOOGLE MAPS
+  const googleMapsUrl = 'https://maps.app.goo.gl/dgpghYqDmS9gbkHH9'; //
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="pt-16">
+        {/* Secção do Título */}
         <section className="py-16 lg:py-20 bg-card">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 
@@ -49,9 +73,11 @@ export default function Contact() {
           </div>
         </section>
 
+        {/* Secção Principal (Formulário e Infos) */}
         <section className="py-16 lg:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
+              {/* Coluna do Formulário */}
               <div>
                 <h2 className="text-2xl font-semibold text-foreground mb-6">
                   Envie sua Mensagem
@@ -59,10 +85,12 @@ export default function Contact() {
                 <ContactForm />
               </div>
 
+              {/* Coluna das Informações */}
               <div>
                 <h2 className="text-2xl font-semibold text-foreground mb-6">
                   Informações de Contato
                 </h2>
+                {/* Loop para exibir as infos atualizadas */}
                 <div className="space-y-6">
                   {contactInfo.map((info, index) => (
                     <div 
@@ -87,11 +115,21 @@ export default function Contact() {
                   ))}
                 </div>
 
-                <div className="mt-12 rounded-md bg-muted/30 p-8 text-center">
-                  <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    Visualização do mapa estará disponível em breve
-                  </p>
+                {/* 4. ATUALIZA A SECÇÃO DO MAPA */}
+                <div className="mt-12 rounded-md bg-muted/30 p-8 text-center border border-border hover:shadow-md transition-shadow">
+                  {/* Adiciona um Link à volta do ícone e do texto */}
+                  <a 
+                    href={googleMapsUrl} 
+                    target="_blank" // Abre em nova aba
+                    rel="noopener noreferrer" // Boas práticas de segurança
+                    className="group" // Para estilização hover no link inteiro
+                    data-testid="link-google-maps"
+                  >
+                    <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4 group-hover:text-primary transition-colors" />
+                    <p className="text-muted-foreground group-hover:text-primary transition-colors">
+                      Ver localização no Google Maps
+                    </p>
+                  </a>
                 </div>
               </div>
             </div>
