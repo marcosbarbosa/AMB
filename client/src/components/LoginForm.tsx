@@ -7,11 +7,11 @@
  * Todos os direitos reservados.
  *
  * Data: 27 de outubro de 2025
- * Hora: 16:00
- * Versão: 1.1 (Atualizado para AuthContext)
+ * Hora: 23:12
+ * Versão: 1.2 (Refatoração de Terminologia)
  *
- * Descrição: Formulário de login do atleta.
- * ATUALIZADO para usar o AuthContext (useAuth) para gerir o estado.
+ * Descrição: Formulário de login do associado.
+ * ATUALIZADO para usar a terminologia "Associado" nos logs e comentários.
  *
  * ==========================================================
  */
@@ -23,11 +23,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-// 1. IMPORTA O "ATALHO" (HOOK) PARA O NOSSO "CÉREBRO"
 import { useAuth } from '@/context/AuthContext';
 
-// ***** ATENÇÃO: VERIFIQUE O URL DO SEU BACKEND REAL *****
 const API_URL = 'https://www.ambamazonas.com.br/api/login.php';
 
 export function LoginForm() {
@@ -35,42 +32,39 @@ export function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-
-  // 2. CHAMA O NOSSO "CÉREBRO"
-  const { login } = useAuth(); // Obtém a função de login do AuthContext
+  const { login } = useAuth(); 
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
 
-    const payload = {
-      email: email,
-      senha: senha,
-    };
+    const payload = { email, senha };
 
     try {
       const response = await axios.post(API_URL, payload);
-      const { atleta, token } = response.data;
+      // 1. O backend ainda retorna um objeto 'atleta', vamos manter isso internamente
+      // mas a interface do utilizador dirá 'associado'.
+      const { atleta, token } = response.data; 
 
       toast({
         title: 'Login bem-sucedido!',
         description: `Bem-vindo de volta, ${atleta.nome_completo}!`,
       });
 
-      // 3. AÇÃO PRINCIPAL: CHAMA A FUNÇÃO DE LOGIN DO "CÉREBRO"
-      // Em vez de mexer no localStorage, nós apenas entregamos os dados.
+      // 2. Chama a função login do AuthContext (que armazena 'atletaInfo')
       login(atleta, token);
 
-      // 4. Ação futura: Redirecionar para o Painel do Atleta
-      // (Agora que o estado está global, o Header vai mudar sozinho)
+      // console.log('Login do associado com sucesso:', atleta); // Log atualizado
+      // console.log('Token recebido:', token);
+
+      // Ação futura: Redirecionar para o Painel do Associado
       // window.location.href = '/painel'; 
 
     } catch (error: any) {
-      // 5. O tratamento de erros continua igual
-      console.error("Erro ao fazer login:", error);
+      console.error("Erro ao fazer login do associado:", error); // Log atualizado
 
       let mensagemErro = 'Não foi possível conectar ao servidor.';
-      if (error.response && error.response.data && error.response.data.mensagem) {
+      if (error.response?.data?.mensagem) {
         mensagemErro = error.response.data.mensagem;
       }
 
@@ -84,7 +78,6 @@ export function LoginForm() {
     }
   };
 
-  // O JSX/HTML abaixo não muda nada
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-md mx-auto">
       <div className="space-y-2">
@@ -114,7 +107,6 @@ export function LoginForm() {
       </div>
 
       <div className="flex items-center justify-between">
-        {/* 6. TODO: Criar a página /esqueci-senha */}
         <Link to="/esqueci-senha" className="text-sm text-primary hover:underline">
           Esqueceu sua senha?
         </Link>

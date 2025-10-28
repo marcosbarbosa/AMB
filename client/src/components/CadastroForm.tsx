@@ -1,70 +1,62 @@
 /*
  * ==========================================================
- * MÓDULO 10: Componente CadastroForm.tsx (RF-CAD-001)
- * Este é o formulário de cadastro de atleta.
+ * PORTAL AMB DO AMAZONAS
+ * ==========================================================
+ *
+ * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
+ * Todos os direitos reservados.
+ *
+ * Data: 27 de outubro de 2025
+ * Hora: 23:05
+ * Versão: 1.2 (Refatoração de Terminologia)
+ *
+ * Descrição: Formulário de cadastro de associado.
+ * ATUALIZADO para usar a terminologia "Associado" em vez de "Atleta".
+ *
  * ==========================================================
  */
+// ... (importações mantidas - useState, axios, useToast, etc.)
 import { useState } from 'react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label'; // Usaremos Label simples
-import { Checkbox } from '@/components/ui/checkbox'; // Para a autorização de imagem
-import { Send, User, Mail, Lock, Calendar, Home, FileText } from 'lucide-react';
+import { Label } from '@/components/ui/label'; 
+import { Checkbox } from '@/components/ui/checkbox'; 
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'; 
+import { Send } from 'lucide-react'; // Removi ícones não usados aqui
 
-// ***** ATENÇÃO: DEFINE O URL DO TEU BACKEND REAL *****
-const API_URL = 'https://www.ambamazonas.com.br/api/cadastrar_atleta.php';
+const API_URL = 'https://www.ambamazonas.com.br/api/cadastrar_atleta.php'; // Backend ainda usa 'atleta' no nome do script
 
 export function CadastroForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Não vamos usar react-hook-form aqui por agora, pois 'FormData'
-  // (necessário para o upload de fotos) funciona melhor com um formulário controlado simples.
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); // Impede o recarregamento da página
+    event.preventDefault();
     setIsSubmitting(true);
-
-    // 1. Criar um objeto 'FormData'
-    // FormData é a forma correta de enviar ficheiros e texto juntos
     const formData = new FormData(event.currentTarget);
 
-    // 2. Debug: Verificar o que estamos a enviar (opcional)
-    // for (let [key, value] of formData.entries()) {
-    //   console.log(key, value);
-    // }
-
     try {
-      // 3. Enviar os dados usando AXIOS
-      // O backend PHP (Módulo 3) espera 'form-data' (que é o padrão do FormData)
       const response = await axios.post(API_URL, formData, {
-        headers: {
-          // O Axios define 'multipart/form-data' automaticamente com o FormData
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      // 4. Sucesso!
       toast({
         title: 'Cadastro enviado!',
-        description: response.data.mensagem, // Mensagem do nosso PHP!
+         // 1. ATUALIZA A MENSAGEM DE SUCESSO VINDA DO PHP (se necessário)
+         // O PHP já foi atualizado para dizer "Associado", então deve funcionar.
+        description: response.data.mensagem, 
       });
-      (event.target as HTMLFormElement).reset(); // Limpa o formulário
-
+      (event.target as HTMLFormElement).reset();
     } catch (error: any) {
-      // 5. Erro!
-      console.error("Erro ao cadastrar:", error);
-
-      // Tenta ler a mensagem de erro do nosso PHP (ex: "CPF já existe")
+      console.error("Erro ao cadastrar associado:", error); // Atualiza log
       let mensagemErro = 'Não foi possível conectar ao servidor.';
-      if (error.response && error.response.data && error.response.data.mensagem) {
+      if (error.response?.data?.mensagem) {
         mensagemErro = error.response.data.mensagem;
       }
-
       toast({
-        title: 'Erro ao cadastrar',
+        title: 'Erro ao cadastrar', // Mantém genérico
         description: mensagemErro,
         variant: 'destructive',
       });
@@ -73,16 +65,12 @@ export function CadastroForm() {
     }
   };
 
-  // 6. Este é o nosso formulário HTML/JSX
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
-      {/* Vamos agrupar os campos em secções.
-        Nota: 'data-testid' é para testes, 'name' é o que o PHP recebe.
-      */}
-
       {/* --- Secção 1: Login --- */}
       <h3 className="text-xl font-semibold text-foreground border-b pb-2">Informações de Acesso</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+       {/* ... (campos Email, Senha mantidos) ... */}
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input id="email" name="email" type="email" placeholder="seu@email.com" required data-testid="input-cadastro-email" />
@@ -93,9 +81,11 @@ export function CadastroForm() {
         </div>
       </div>
 
+
       {/* --- Secção 2: Dados Pessoais --- */}
-      <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Dados Pessoais</h3>
-      <div className="space-y-4">
+      <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Dados Pessoais do Associado</h3> 
+       {/* ... (campos Nome, Data Nasc, CPF, RG, etc. - Mantidos iguais) ... */}
+       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="nome_completo">Nome Completo</Label>
           <Input id="nome_completo" name="nome_completo" placeholder="Seu nome completo" required data-testid="input-cadastro-nome" />
@@ -134,35 +124,48 @@ export function CadastroForm() {
         </div>
       </div>
 
-      {/* --- Secção 3: Foto e Autorização --- */}
+      {/* --- Secção 3: Foto e Termos --- */}
       <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Foto e Termos</h3>
+      {/* ... (campo Foto de Perfil mantido) ... */}
       <div className="space-y-2">
         <Label htmlFor="foto_perfil">Foto de Perfil (Selfie)</Label>
-        <Input 
-          id="foto_perfil" 
-          name="foto_perfil" // Este 'name' DEVE bater com o do PHP: $_FILES['foto_perfil']
-          type="file" 
-          accept="image/png, image/jpeg" 
-          required 
-          data-testid="input-cadastro-foto" 
-        />
+        <Input id="foto_perfil" name="foto_perfil" type="file" accept="image/png, image/jpeg" required data-testid="input-cadastro-foto" />
         <p className="text-sm text-muted-foreground">Obrigatório para a ficha. Formatos JPG ou PNG.</p>
       </div>
-
+      {/* ... (Checkbox Autoriza Imagem mantido) ... */}
       <div className="flex items-center space-x-2 pt-4">
-        <Checkbox 
-          id="autoriza_imagem" 
-          name="autoriza_imagem" // Este 'name' DEVE bater com o do PHP: $_POST['autoriza_imagem']
-          value="true" // O valor que será enviado se marcado
-          required 
-          data-testid="checkbox-cadastro-autoriza"
-        />
+        <Checkbox id="autoriza_imagem" name="autoriza_imagem" value="true" required data-testid="checkbox-cadastro-autoriza"/>
         <Label htmlFor="autoriza_imagem" className="text-sm font-medium leading-none cursor-pointer">
           Autorizo o direito de imagem (RF-CAD-006)
         </Label>
       </div>
 
-      {/* --- Secção 4: Envio --- */}
+      {/* --- Secção 4: Newsletter --- */}
+      <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Comunicações</h3>
+      {/* ... (Opções de Newsletter mantidas) ... */}
+      <div className="space-y-3">
+         <Label>Deseja receber a Newsletter da AMB?</Label>
+         <RadioGroup name="preferencia_newsletter" defaultValue="nenhum" className="flex flex-col sm:flex-row gap-4 sm:gap-6 pt-2" data-testid="radio-group-newsletter">
+           <div className="flex items-center space-x-2">
+             <RadioGroupItem value="whatsapp" id="news-whatsapp" />
+             <Label htmlFor="news-whatsapp" className="cursor-pointer">Pelo WhatsApp</Label>
+           </div>
+           <div className="flex items-center space-x-2">
+             <RadioGroupItem value="email" id="news-email" />
+             <Label htmlFor="news-email" className="cursor-pointer">Por E-mail</Label>
+           </div>
+           <div className="flex items-center space-x-2">
+             <RadioGroupItem value="nenhum" id="news-nenhum" />
+             <Label htmlFor="news-nenhum" className="cursor-pointer">Não desejo receber</Label>
+           </div>
+         </RadioGroup>
+         <p className="text-sm text-muted-foreground pt-1">
+            Enviaremos novidades sobre eventos e competições. Você pode alterar esta preferência depois no seu painel.
+         </p>
+      </div>
+
+
+      {/* --- Secção Final: Envio --- */}
       <Button 
         type="submit" 
         className="w-full h-12 text-base mt-8"

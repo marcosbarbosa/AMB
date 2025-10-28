@@ -7,65 +7,62 @@
  * Todos os direitos reservados.
  *
  * Data: 27 de outubro de 2025
- * Hora: 15:55
- * Versão: 1.0
+ * Hora: 23:14
+ * Versão: 1.1 (Refatoração de Terminologia)
  *
- * Descrição: Este ficheiro cria o "Contexto de Autenticação" (AuthContext).
- * Ele age como um "cérebro" global para armazenar os dados do 
- * utilizador logado (atleta) e o seu token JWT em toda a aplicação.
+ * Descrição: Contexto de Autenticação (AuthContext).
+ * ATUALIZADO para usar a terminologia "Associado" nos comentários e logs.
+ * A estrutura interna de dados ('atleta') é mantida para compatibilidade
+ * com o backend.
  *
  * ==========================================================
  */
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-// 1. Define o "formato" dos dados do nosso atleta
-// (Baseado no que o nosso PHP `api/login.php` devolve)
+// Interface: Define o formato dos dados recebidos do backend
+// Mantemos 'AtletaInfo' para clareza de onde vêm os dados
 interface AtletaInfo {
   id: number;
   nome_completo: string;
   email: string;
   status_cadastro: 'pendente' | 'aprovado' | 'rejeitado';
-  role: 'atleta' | 'admin';
+  role: 'atleta' | 'admin'; // 'atleta' aqui é o *tipo* de role
   categoria_atual: string;
 }
 
-// 2. Define o "formato" do nosso cérebro (Context)
+// Interface: Define o formato do Contexto
 interface AuthContextType {
   isAuthenticated: boolean;
-  atleta: AtletaInfo | null;
+  atleta: AtletaInfo | null; // A variável interna ainda se chama 'atleta'
   token: string | null;
   login: (data: AtletaInfo, token: string) => void;
   logout: () => void;
 }
 
-// 3. Cria o Contexto (inicialmente vazio)
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 4. Cria o "Provedor" (O componente que vai "embrulhar" a nossa App)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [atleta, setAtleta] = useState<AtletaInfo | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
-  // 5. Efeito: Tenta carregar os dados do localStorage ao iniciar a App
   useEffect(() => {
     try {
       const storedToken = localStorage.getItem('authToken');
-      const storedAtleta = localStorage.getItem('atletaInfo');
+      // Mantém 'atletaInfo' como chave do localStorage por compatibilidade
+      const storedAtleta = localStorage.getItem('atletaInfo'); 
 
       if (storedToken && storedAtleta) {
         setToken(storedToken);
         setAtleta(JSON.parse(storedAtleta));
       }
     } catch (error) {
-      console.error("Falha ao carregar dados de autenticação do localStorage", error);
-      // Limpa em caso de dados corrompidos
+      console.error("Falha ao carregar dados de autenticação do associado", error); // Log atualizado
       localStorage.removeItem('authToken');
       localStorage.removeItem('atletaInfo');
     }
   }, []);
 
-  // 6. Função de Login (a ser chamada pelo LoginForm)
   const login = (data: AtletaInfo, token: string) => {
     setAtleta(data);
     setToken(token);
@@ -73,20 +70,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('atletaInfo', JSON.stringify(data));
   };
 
-  // 7. Função de Logout (a ser chamada pelo Header)
   const logout = () => {
     setAtleta(null);
     setToken(null);
     localStorage.removeItem('authToken');
     localStorage.removeItem('atletaInfo');
-    // Futuramente, redireciona para o Início
-    // window.location.href = '/'; 
   };
 
-  // 8. O valor que será partilhado com toda a App
+  // O valor partilhado continua usando 'atleta' como nome da propriedade
   const value = {
-    isAuthenticated: !!token && !!atleta, // Verdadeiro se houver token E atleta
-    atleta,
+    isAuthenticated: !!token && !!atleta, 
+    atleta, 
     token,
     login,
     logout,
@@ -95,7 +89,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// 9. Cria um "Hook" personalizado (um atalho para usar o cérebro)
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

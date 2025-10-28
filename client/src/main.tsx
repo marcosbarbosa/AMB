@@ -19,17 +19,10 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
-import "./index.css"; 
-
-// 1. Importa o nosso novo "Provedor" de Autenticação
-import { AuthProvider } from "./context/AuthContext";
+import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
-  // 2. "Embrulha" o BrowserRouter com o AuthProvider
-  // A ordem importa: AuthProvider > BrowserRouter > App
-  <AuthProvider>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </AuthProvider>
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
 );

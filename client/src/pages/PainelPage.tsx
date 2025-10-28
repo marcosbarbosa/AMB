@@ -7,57 +7,54 @@
  * Todos os direitos reservados.
  *
  * Data: 27 de outubro de 2025
- * Hora: 17:30
- * Versão: 1.0
+ * Hora: 23:14
+ * Versão: 1.1 (Refatoração de Terminologia)
  *
- * Descrição: Esqueleto da página do Painel do Atleta (/painel).
- * Esta página será o dashboard do utilizador logado.
- * Inclui uma verificação básica de autenticação.
+ * Descrição: Esqueleto da página do Painel do Associado (/painel).
+ * ATUALIZADO para usar a terminologia "Associado".
  *
  * ==========================================================
  */
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import { useAuth } from '@/context/AuthContext'; // Importa o nosso "cérebro"
+import { useAuth } from '@/context/AuthContext'; 
 import { useEffect } from 'react';
-// Importa o 'useNavigate' para redirecionamento
 import { useNavigate } from 'react-router-dom'; 
 
 export default function PainelPage() {
-  // 1. Lê o estado do "cérebro"
-  const { isAuthenticated, atleta } = useAuth();
-  const navigate = useNavigate(); // Hook para redirecionar
+  // 1. O AuthContext ainda usa 'atleta' internamente, mas a UI usará 'Associado'
+  const { isAuthenticated, atleta } = useAuth(); 
+  const navigate = useNavigate(); 
 
-  // 2. Efeito: Verifica se o utilizador está logado QUANDO a página carrega
   useEffect(() => {
-    // Se NÃO estiver autenticado, redireciona para a página de Login
     if (!isAuthenticated) {
-      console.log("Utilizador não autenticado. Redirecionando para /login...");
+      console.log("Associado não autenticado. Redirecionando para /login..."); // Log atualizado
       navigate('/login'); 
     }
-  }, [isAuthenticated, navigate]); // Dependências: re-executa se mudar
+  }, [isAuthenticated, navigate]); 
 
-  // 3. Se ainda não carregou os dados ou está a redirecionar, mostra "A carregar..."
+  // Mostra "A carregar..." se não autenticado ou dados não carregados
   if (!isAuthenticated || !atleta) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">A carregar dados do atleta...</p>
+        <p className="text-muted-foreground">A carregar dados do associado...</p> {/* Texto atualizado */}
       </div>
     );
   }
 
-  // 4. Se chegou aqui, o utilizador ESTÁ logado. Mostra o conteúdo.
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="pt-16"> {/* pt-16 é para dar espaço para o Header fixo */}
+      <main className="pt-16"> 
         <section className="py-16 lg:py-20 bg-card">
            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+             {/* 2. ATUALIZA O TÍTULO */}
              <h1 className="text-3xl font-semibold font-accent text-foreground mb-4">
-               Painel do Atleta
+               Painel do Associado 
              </h1>
+             {/* 3. ATUALIZA A SAUDAÇÃO */}
              <p className="text-xl text-muted-foreground mb-8">
-               Bem-vindo(a), {atleta.nome_completo}!
+               Bem-vindo(a), {atleta.nome_completo}! 
              </p>
            </div>
         </section>
@@ -67,6 +64,7 @@ export default function PainelPage() {
             <h2 className="text-2xl font-semibold text-foreground mb-6">
               Informações do Cadastro
             </h2>
+            {/* 4. Os dados ('atleta.') vêm do backend/AuthContext, mas os labels podem mudar se necessário */}
             <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
               <p><strong>Nome:</strong> {atleta.nome_completo}</p>
               <p><strong>Email:</strong> {atleta.email}</p>
@@ -74,15 +72,15 @@ export default function PainelPage() {
                 <span className={`font-medium ${
                   atleta.status_cadastro === 'aprovado' ? 'text-green-600' :
                   atleta.status_cadastro === 'rejeitado' ? 'text-red-600' :
-                  'text-yellow-600' // pendente
+                  'text-yellow-600' 
                 }`}>
                   {atleta.status_cadastro.toUpperCase()}
                 </span>
               </p>
               <p><strong>Categoria Atual (calculada):</strong> {atleta.categoria_atual || 'Não definida'}</p>
-              <p><strong>Permissão:</strong> {atleta.role}</p>
+              <p><strong>Permissão:</strong> {atleta.role}</p> {/* Mantém 'role' técnico */}
 
-              {/* TODO: Adicionar botão para Editar Perfil (RF-ATL-004) */}
+              {/* TODO: Adicionar botão para Editar Perfil */}
               {/* TODO: Listar Eventos Inscritos */}
             </div>
           </div>
