@@ -1,28 +1,10 @@
-/*
- * ==========================================================
- * PORTAL AMB DO AMAZONAS
- * ==========================================================
- *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 27 de outubro de 2025
- * Hora: 21:44 
- * Versão: 1.2 (Reconstruído completo)
- *
- * Descrição: Componente do Rodapé principal do site.
- * ATUALIZADO para usar a descrição temática da AMB.
- *
- * ==========================================================
- */
-import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Instagram } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
-  // Função de scroll para links internos da página
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
     const element = document.getElementById(sectionId);
@@ -31,7 +13,6 @@ export function Footer() {
     }
   };
 
-  // Links rápidos
   const quickLinks = {
     empresa: [
       { label: 'Sobre Nós', href: '#sobre', section: 'sobre' },
@@ -41,15 +22,11 @@ export function Footer() {
     ],
   };
 
-  // Links de Redes Sociais
   const socialLinks = [
     { icon: Facebook, href: '#', label: 'Facebook' },
-    { icon: Twitter, href: '#', label: 'Twitter' },
-    { icon: Linkedin, href: '#', label: 'LinkedIn' },
     { icon: Instagram, href: '#', label: 'Instagram' },
   ];
 
-  // Informações de contato
   const contactInfo = [
     { icon: Mail, text: 'contato@ambportal.com.br', testId: 'contact-email' },
     { icon: Phone, text: '(92) 99999-9999', testId: 'contact-phone' },
@@ -57,10 +34,9 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-card border-t border-card-border">
+    <footer className="bg-card border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* Coluna 1: Logo, Descrição, Sociais */}
           <div>
             <h3 className="text-2xl font-bold font-accent text-foreground mb-4">
               AMB Portal
@@ -84,7 +60,6 @@ export function Footer() {
                     target="_blank" 
                     rel="noopener noreferrer"
                     aria-label={social.label}
-                    className="text-muted-foreground hover:text-primary"
                   >
                     <social.icon className="h-4 w-4" />
                   </a>
@@ -93,7 +68,6 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Coluna 2: Links "A Associação" */}
           <div>
             <h4 className="text-lg font-semibold text-foreground mb-4">
               A Associação
@@ -111,13 +85,8 @@ export function Footer() {
                       {link.label}
                     </a>
                   ) : (
-                    <Link to={link.href}>
-                      <span
-                        className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer inline-block text-sm"
-                        data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
-                      >
-                        {link.label}
-                      </span>
+                    <Link to={link.href} className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer inline-block text-sm" data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, '-')}`}>
+                      {link.label}
                     </Link>
                   )}
                 </li>
@@ -125,7 +94,6 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Coluna 3: Links "Suporte" */}
           <div>
             <h4 className="text-lg font-semibold text-foreground mb-4">
               Suporte
@@ -133,20 +101,14 @@ export function Footer() {
             <ul className="space-y-3">
               {quickLinks.suporte.map((link, index) => (
                 <li key={index}>
-                  <Link to={link.href}>
-                    <span
-                      className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer inline-block text-sm"
-                      data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
-                    >
-                      {link.label}
-                    </span>
+                  <Link to={link.href} className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer inline-block text-sm" data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, '-')}`}>
+                    {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Coluna 4: Informações de Contato */}
           <div>
             <h4 className="text-lg font-semibold text-foreground mb-4">
               Contato
@@ -167,7 +129,6 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Linha de Copyright */}
         <div className="mt-12 pt-8 border-t border-border">
           <p className="text-center text-sm text-muted-foreground">
             &copy; {currentYear} AMB - Amazonas Basquete Master. Todos os direitos reservados.

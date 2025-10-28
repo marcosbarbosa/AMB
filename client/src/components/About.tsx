@@ -7,37 +7,39 @@
  * Todos os direitos reservados.
  *
  * Data: 27 de outubro de 2025
- * Hora: 19:15
- * Versão: 1.2 (Atualizado com texto do Estatuto AMB)
+ * Hora: 22:18
+ * Versão: 1.3 (Adicionado Link do Mapa)
  *
  * Descrição: Componente "Sobre Nós" da página inicial.
- * ATUALIZADO para usar o texto oficial da AMB, derivado do estatuto.
+ * ATUALIZADO para adicionar um link do Google Maps ao
+ * placeholder da imagem.
  *
  * ==========================================================
  */
-// 1. Mantém ícones relevantes
 import { Users, Trophy, HeartHandshake, MapPin } from 'lucide-react'; 
 // import ambBasqueteImage from '@/assets/imagem-basquete-amb.jpg'; // TODO: Adicionar imagem AMB
 
 export function About() {
-  // 2. Adapta os "destaques" com base nos objetivos do estatuto
   const destaquesAMB = [
     {
-      icon: HeartHandshake, // Ícone de Comunidade/Desenvolvimento
+      icon: HeartHandshake, 
       title: 'Desenvolvimento e Integração',
       description: 'Proporcionamos atividades esportivas, sociais e culturais, visando o desenvolvimento integral dos associados e o retorno de antigos jogadores.',
     },
     {
-      icon: Trophy, // Ícone de Troféu/Competição
+      icon: Trophy, 
       title: 'Competição e Afiliação',
       description: 'Organizamos eventos e incentivamos a participação em competições regionais, nacionais e internacionais, filiando-nos a entidades do Sistema Nacional do Desporto.',
     },
     {
-      icon: Users, // Ícone de Pessoas/Master
+      icon: Users, 
       title: 'Foco na Categoria Master',
       description: 'Difundimos e incentivamos a prática do Basquetebol Master (30+ anos, masculino e feminino), promovendo o espírito associativo nesta categoria.',
     },
   ];
+
+  // 1. DEFINE O LINK DO GOOGLE MAPS PARA A IMAGEM
+  const googleMapsUrl = 'https://maps.app.goo.gl/frXkwoWpxBpaSHSx8'; //
 
   return (
     <section id="sobre" className="py-20 lg:py-24 bg-background">
@@ -51,7 +53,6 @@ export function About() {
             >
               Quem Somos
             </h2>
-            {/* 3. SUBSTITUI O TEXTO ANTERIOR PELO TEXTO ADAPTADO DO ESTATUTO */}
             <p 
               className="text-lg text-muted-foreground leading-relaxed mb-6"
               data-testid="text-about-description"
@@ -64,28 +65,30 @@ export function About() {
              <p className="text-lg text-muted-foreground leading-relaxed">
               Como entidade afiliada à FBBM e, por consequência, à FIMBA, organizamos eventos, promovemos intercâmbios e incentivamos a participação em competições em todos os níveis.
             </p>
-            {/* TODO: Adicionar botão "Ver Estatuto Completo"? */}
           </div>
 
-          {/* Coluna da Imagem */}
+          {/* Coluna da Imagem (Agora com Link) */}
           <div className="relative">
-            {/* 4. Mantém o Placeholder por agora */}
-            <div className="rounded-md w-full h-96 bg-muted flex items-center justify-center shadow-lg border border-border">
-               <MapPin className="h-16 w-16 text-muted-foreground" />
-               <p className="absolute bottom-4 text-muted-foreground text-sm">Sede da AMB - Manaus/AM</p>
-            </div>
-             {/* Se tiver a imagem real, use:
-             <img 
-               src={ambBasqueteImage} 
-               alt="Equipe de Basquete Master AMB" 
-               className="rounded-md w-full h-auto shadow-lg"
-               data-testid="img-about-amb"
-             /> 
-             */}
+            {/* 2. ADICIONA O LINK `<a>` ENVOLVENDO O PLACEHOLDER */}
+            <a 
+              href={googleMapsUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="block group" // Adiciona 'group' para hover
+              data-testid="link-maps-about"
+            >
+              <div className="rounded-md w-full h-96 bg-muted flex items-center justify-center shadow-lg border border-border group-hover:border-primary group-hover:shadow-xl transition-all duration-300"> {/* Efeito hover */}
+                 <MapPin className="h-16 w-16 text-muted-foreground group-hover:text-primary transition-colors" />
+                 <p className="absolute bottom-4 text-muted-foreground text-sm group-hover:text-primary transition-colors">
+                   Sede da AMB - Manaus/AM (Clique para ver no mapa) {/* */}
+                 </p>
+              </div>
+            </a>
+             {/* Se tiver a imagem real, envolva o <img> com o <a> */}
           </div>
         </div>
 
-        {/* 5. Renderiza os destaques adaptados */}
+        {/* Secção de Destaques (Mantida) */}
         <div className="grid md:grid-cols-3 gap-8 mt-16">
           {destaquesAMB.map((destaque, index) => (
             <div 
