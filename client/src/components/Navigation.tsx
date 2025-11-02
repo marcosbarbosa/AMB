@@ -6,24 +6,20 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 27 de outubro de 2025
- * Hora: 18:25
- * Versão: 1.2 (Atualizado com Logótipo AMB)
+ * Data: 1 de novembro de 2025
+ * Hora: 20:30
+ * Versão: 1.4 (Adiciona Link Parceiros)
  *
  * Descrição: Cabeçalho principal de navegação.
- * ATUALIZADO para incluir o logótipo da AMB importado
- * da pasta assets e ajustar o link principal.
+ * ATUALIZADO para incluir o novo link "Parceiros".
  *
  * ==========================================================
  */
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Edit3, LogOut, LayoutDashboard } from 'lucide-react';
+import { Menu, X, User, Edit3, LogOut, LayoutDashboard } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
-
-// 1. IMPORTA O FICHEIRO DO LOGÓTIPO
-// O Vite trata de encontrar o ficheiro em src/assets/
 import ambLogo from '@/assets/logo-amb.png'; 
 
 export function Navigation() {
@@ -31,16 +27,15 @@ export function Navigation() {
   const location = useLocation();
   const { isAuthenticated, atleta, logout } = useAuth();
 
+  // 1. ADICIONA O LINK "PARCEIROS"
   const navItems = [
     { label: 'Início', href: '/' },
     { label: 'Sobre', href: '/#sobre' },
-    // { label: 'Serviços', href: '/#servicos' }, // Comentei/Removi Serviços por agora
+    { label: 'Parceiros', href: '/parceiros' }, // <-- NOVO LINK
     { label: 'Contato', href: '/contato' },
-    // TODO: Adicionar links para Campeonatos, Blog (se aplicável)
   ];
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    // ... (Esta função continua idêntica)
     if (href.startsWith('/#')) {
       e.preventDefault();
       const sectionId = href.substring(2);
@@ -61,12 +56,12 @@ export function Navigation() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* 2. LINK PRINCIPAL AGORA MOSTRA O LOGÓTIPO */}
+          {/* Logo (Mantido) */}
           <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
             <img 
-              src={ambLogo}
+              src={ambLogo} 
               alt="Logótipo AMB Amazonas Basquete Master" 
-              className="h-10 w-auto"
+              className="h-10 w-auto" 
               data-testid="logo-amb"
             />
             <span className="hidden sm:inline text-xl font-bold font-accent bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -75,12 +70,12 @@ export function Navigation() {
           </Link>
 
           <div className="flex items-center gap-4">
-            {/* Navegação principal (Desktop) */}
+            {/* Navegação principal (Desktop - Atualizada) */}
             <div className="hidden md:flex items-center space-x-1">
               {navItems.map((item) => (
                 <Link key={item.href} to={item.href}>
                   <span
-                    onClick={(e: any) => scrollToSection(e, item.href)}
+                    onClick={(e: any) => item.href.startsWith('/#') ? scrollToSection(e, item.href) : setIsMenuOpen(false)} // Ajuste no onClick
                     data-testid={`link-nav-${item.label.toLowerCase()}`}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer inline-block ${
                       location.pathname === item.href || (item.href.startsWith('/#') && location.pathname === '/')
@@ -94,32 +89,32 @@ export function Navigation() {
               ))}
             </div>
 
-            {/* Botões de Ação (Login/Cadastro OU Olá/Painel/Logout) */}
+            {/* Botões de Ação (Mantidos) */}
             <div className="hidden md:flex items-center gap-2">
               {isAuthenticated && atleta ? (
                 <>
                   <span className="text-sm text-muted-foreground hidden lg:inline">
                     Olá, {atleta.nome_completo.split(' ')[0]} 
                   </span>
-                  <Button variant="outline" size="sm" asChild>
+                  <Button variant="outline" asChild size="sm"> 
                     <Link to="/painel">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Meu Painel
                     </Link>
                   </Button>
                   <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair">
-                    <LogOut className="h-5 w-5 text-destructive hover:text-destructive/80" /> {/* Cor vermelha */}
+                    <LogOut className="h-5 w-5 text-destructive hover:text-destructive/80" /> 
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button variant="ghost" size="sm" asChild>
+                  <Button variant="ghost" asChild size="sm"> 
                     <Link to="/login">
                       <User className="mr-2 h-4 w-4" />
                       Login
                     </Link>
                   </Button>
-                  <Button variant="default" size="sm" asChild>
+                  <Button variant="default" asChild size="sm"> 
                     <Link to="/cadastro">
                       <Edit3 className="mr-2 h-4 w-4" />
                       Cadastro
@@ -129,7 +124,7 @@ export function Navigation() {
               )}
             </div>
 
-            {/* Botão do Menu Mobile */}
+            {/* Botão do Menu Mobile (Mantido) */}
             <Button
               variant="ghost"
               size="icon"
@@ -143,16 +138,16 @@ export function Navigation() {
         </div>
       </div>
 
-      {/* Menu Mobile (Atualizado para refletir mudanças) */}
+      {/* Menu Mobile (Atualizado) */}
       {isMenuOpen && (
         <div className="md:hidden bg-background border-t border-border" data-testid="mobile-menu">
-          <div className="px-4 pt-4 pb-6 space-y-2"> {/* Ajustei padding */}
-            {/* Links de Navegação Mobile */}
+          <div className="px-4 pt-4 pb-6 space-y-2"> 
+            {/* Links de Navegação Mobile (Atualizados) */}
             {navItems.map((item) => (
               <Link key={item.href} to={item.href}>
                 <span
                   onClick={(e: any) => {
-                    scrollToSection(e, item.href);
+                    if(item.href.startsWith('/#')) scrollToSection(e, item.href);
                     setIsMenuOpen(false);
                   }}
                   className={`block px-4 py-3 rounded-md text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer ${
@@ -168,7 +163,7 @@ export function Navigation() {
 
             <hr className="border-border my-4" />
 
-            {/* Links de Ação Mobile (Condicional) */}
+            {/* Links de Ação Mobile (Mantidos) */}
             {isAuthenticated && atleta ? (
               <>
                 <div className="px-4 py-2 text-sm text-foreground">
@@ -180,7 +175,7 @@ export function Navigation() {
                     Meu Painel
                   </Link>
                 </Button>
-                <Button variant="destructive" className="w-full justify-start mt-2" onClick={handleLogout}> {/* Adicionei mt-2 */}
+                <Button variant="destructive" className="w-full justify-start mt-2" onClick={handleLogout}> 
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair (Logout)
                 </Button>
@@ -193,7 +188,7 @@ export function Navigation() {
                     Login
                   </Link>
                 </Button>
-                <Button variant="default" className="w-full justify-start mt-2" asChild> {/* Adicionei mt-2 */}
+                <Button variant="default" className="w-full justify-start mt-2" asChild> 
                   <Link to="/cadastro" onClick={() => setIsMenuOpen(false)}>
                     <Edit3 className="mr-2 h-4 w-4" />
                     Cadastro
