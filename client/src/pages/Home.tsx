@@ -6,24 +6,26 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 27 de outubro de 2025
- * Hora: 19:24
- * Versão: 1.2 (Remove Serviços)
+ * Data: 1 de novembro de 2025
+ * Hora: 21:15
+ * Versão: 1.3 (Adiciona ParceirosDestaque)
  *
  * Descrição: Página inicial (Home).
- * ATUALIZADO para remover a secção genérica "Serviços".
+ * ATUALIZADO para incluir o novo componente ParceirosDestaque.
  *
  * ==========================================================
  */
 import { Navigation } from '@/components/Navigation';
 import { CarouselHero } from '@/components/CarouselHero'; 
 import { About } from '@/components/About';
-// import { Services } from '@/components/Services'; // 1. REMOVE OU COMENTA A IMPORTAÇÃO
 import { Stats } from '@/components/Stats';
 import { CTABanner } from '@/components/CTABanner';
 import { Testimonials } from '@/components/Testimonials';
 import { ContactPreview } from '@/components/ContactPreview';
 import { Footer } from '@/components/Footer';
+
+// 1. IMPORTA O NOVO COMPONENTE "VITRINE"
+import { ParceirosDestaque } from '@/components/ParceirosDestaque'; 
 
 export default function Home() {
   return (
@@ -32,10 +34,12 @@ export default function Home() {
       <main>
         <CarouselHero /> 
         <About />
-        {/* <Services /> */} {/* 2. REMOVE OU COMENTA O USO DO COMPONENTE */}
         <Stats />
         <CTABanner />
-        {/* TODO: Avaliar se a secção Testimonials faz sentido para a AMB */}
+
+        {/* 2. ADICIONA A NOVA SECÇÃO DE PARCEIROS DESTAQUE AQUI */}
+        <ParceirosDestaque />
+
         <Testimonials /> 
         <ContactPreview />
       </main>
