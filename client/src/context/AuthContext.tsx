@@ -6,36 +6,45 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 27 de outubro de 2025
- * Hora: 23:14
- * Versão: 1.1 (Refatoração de Terminologia)
+ * Data: 1 de novembro de 2025
+ * Hora: 19:45
+ * Versão: 1.2 (Adiciona Estado de 'isLoading')
  *
  * Descrição: Contexto de Autenticação (AuthContext).
- * ATUALIZADO para usar a terminologia "Associado" nos comentários e logs.
- * A estrutura interna de dados ('atleta') é mantida para compatibilidade
- * com o backend.
+ * ATUALIZADO para incluir um estado 'isLoading', que nos diz
+ * quando o contexto terminou de ler o localStorage.
  *
  * ==========================================================
  */
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-// Interface: Define o formato dos dados recebidos do backend
-// Mantemos 'AtletaInfo' para clareza de onde vêm os dados
+// Interface AtletaInfo (sem mudança)
 interface AtletaInfo {
   id: number;
   nome_completo: string;
   email: string;
   status_cadastro: 'pendente' | 'aprovado' | 'rejeitado';
-  role: 'atleta' | 'admin'; // 'atleta' aqui é o *tipo* de role
-  categoria_atual: string;
+  role: 'atleta' | 'admin';
+  categoria_atual: string | null;
+  // Adiciona campos que sabemos que vêm do backend (para evitar erros)
+  cpf?: string;
+  data_nascimento?: string;
+  endereco?: string;
+  rg?: string;
+  nacionalidade?: string;
+  naturalidade?: string;
+  filiacao?: string;
+  autoriza_imagem?: boolean;
+  preferencia_newsletter?: string;
 }
 
-// Interface: Define o formato do Contexto
+// Interface do Contexto (Adiciona isLoading)
 interface AuthContextType {
   isAuthenticated: boolean;
-  atleta: AtletaInfo | null; // A variável interna ainda se chama 'atleta'
+  atleta: AtletaInfo | null;
   token: string | null;
+  isLoading: boolean; // <-- NOVO: Estado de carregamento
   login: (data: AtletaInfo, token: string) => void;
   logout: () => void;
 }
@@ -45,24 +54,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [atleta, setAtleta] = useState<AtletaInfo | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // <-- NOVO: Começa como 'a carregar'
 
+  // Efeito: Tenta carregar os dados do localStorage ao iniciar a App
   useEffect(() => {
+    setIsLoading(true); // Define a carregar
     try {
       const storedToken = localStorage.getItem('authToken');
-      // Mantém 'atletaInfo' como chave do localStorage por compatibilidade
-      const storedAtleta = localStorage.getItem('atletaInfo'); 
+      const storedAtleta = localStorage.getItem('atletaInfo');
 
       if (storedToken && storedAtleta) {
         setToken(storedToken);
         setAtleta(JSON.parse(storedAtleta));
       }
     } catch (error) {
-      console.error("Falha ao carregar dados de autenticação do associado", error); // Log atualizado
+      console.error("Falha ao carregar dados de autenticação do associado", error);
       localStorage.removeItem('authToken');
       localStorage.removeItem('atletaInfo');
+    } finally {
+      setIsLoading(false); // <-- NOVO: Terminou de carregar (com ou sem dados)
     }
-  }, []);
+  }, []); // Executa apenas uma vez
 
+  // Função de Login (sem mudança)
   const login = (data: AtletaInfo, token: string) => {
     setAtleta(data);
     setToken(token);
@@ -70,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('atletaInfo', JSON.stringify(data));
   };
 
+  // Função de Logout (sem mudança)
   const logout = () => {
     setAtleta(null);
     setToken(null);
@@ -77,11 +92,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('atletaInfo');
   };
 
-  // O valor partilhado continua usando 'atleta' como nome da propriedade
   const value = {
     isAuthenticated: !!token && !!atleta, 
     atleta, 
     token,
+    isLoading, // <-- NOVO: Partilha o estado de carregamento
     login,
     logout,
   };
@@ -89,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// Hook 'useAuth' (sem mudança)
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

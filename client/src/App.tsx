@@ -6,12 +6,12 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 28 de outubro de 2025
- * Hora: 11:14
- * Versão: 1.2 (Adiciona Rota Editar Perfil)
+ * Data: 1 de novembro de 2025
+ * Hora: 20:05
+ * Versão: 1.4 (Adiciona Rota Redefinir Senha)
  *
  * Descrição: Componente raiz da aplicação, define as rotas.
- * ATUALIZADO para incluir a rota /painel/editar.
+ * ATUALIZADO para incluir a rota /redefinir-senha.
  *
  * ==========================================================
  */
@@ -27,9 +27,12 @@ import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/LoginPage";
 import CadastroPage from "@/pages/CadastroPage";
 import PainelPage from "@/pages/PainelPage";
-
-// 1. IMPORTA A NOSSA NOVA PÁGINA
 import EditarPerfilPage from "@/pages/EditarPerfilPage"; 
+import AdminPainelPage from "@/pages/admin/AdminPainelPage";
+import EsqueciSenhaPage from "@/pages/EsqueciSenhaPage"; // Importação da Parte 1
+
+// 1. IMPORTA A NOVA PÁGINA
+import RedefinirSenhaPage from "@/pages/RedefinirSenhaPage";
 
 function App() {
   return (
@@ -42,11 +45,15 @@ function App() {
           <Route path="/contato" element={<Contact />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cadastro" element={<CadastroPage />} />
+          <Route path="/esqueci-senha" element={<EsqueciSenhaPage />} />
 
-          {/* Rotas Privadas (Protegidas dentro das próprias páginas) */}
-          <Route path="/painel" element={<PainelPage />} />
           {/* 2. ADICIONA A NOVA ROTA */}
+          <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
+
+          {/* Rotas Privadas */}
+          <Route path="/painel" element={<PainelPage />} />
           <Route path="/painel/editar" element={<EditarPerfilPage />} />
+          <Route path="/admin/painel" element={<AdminPainelPage />} />
 
           {/* Rota 404 */}
           <Route path="*" element={<NotFound />} />
