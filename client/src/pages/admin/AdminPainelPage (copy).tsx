@@ -7,20 +7,20 @@
  * Todos os direitos reservados.
  *
  * Data: 2 de novembro de 2025
- * Hora: 02:20
- * Versão: 1.8 (Adiciona Edição de Evento com Modal)
- * Tarefa: 275 (Módulo 27)
+ * Hora: 02:00
+ * Versão: 1.7 (Corrige "Apagar Evento")
+ * Tarefa: 264
  *
  * Descrição: Página do Painel de Administração.
- * ATUALIZADO para incluir um Modal (pop-up) de Edição
- * para a Gestão de Eventos.
+ * CORRIGIDO: Adiciona o <AlertDialog> (pop-up "Tem a certeza?")
+ * ao botão de apagar evento, que estava em falta.
  *
  * ==========================================================
  */
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext'; 
-import { useEffect, useState, useCallback, useReducer } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import { Button } from '@/components/ui/button'; 
 import { Input } from '@/components/ui/input'; 
@@ -36,17 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-// 1. (NOVO) Importa componentes de Diálogo (Modal)
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose, // Para o botão de fechar
-} from "@/components/ui/dialog"
+// 1. (CORREÇÃO) Importa o componente de Diálogo/Alerta
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,16 +49,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-// --- APIs de Admin (Completas) ---
+// --- APIs de Admin ---
 const LISTAR_ASSOCIADOS_API_URL = 'https://www.ambamazonas.com.br/api/listar_associados.php';
 const ATUALIZAR_ASSOCIADO_API_URL = 'https://www.ambamazonas.com.br/api/atualizar_status_atleta.php'; 
 const LISTAR_PARCEIROS_API_URL = 'https://www.ambamazonas.com.br/api/admin_listar_parceiros.php';
 const ATUALIZAR_PARCEIRO_API_URL = 'https://www.ambamazonas.com.br/api/admin_atualizar_parceiro.php';
 const LISTAR_EVENTOS_API_URL = 'https://www.ambamazonas.com.br/api/listar_eventos.php'; 
 const CRIAR_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_criar_evento.php';
-const APAGAR_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_apagar_evento.php';
-// 2. (NOVA) API de Atualizar Evento
-const ATUALIZAR_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_atualizar_evento.php';
+const APAGAR_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_apagar_evento.php'; 
 
 // --- Interfaces (Mantidas) ---
 interface Associado { /* ... (mantida) ... */ 
@@ -91,13 +79,6 @@ interface EventoFormData { /* ... (mantida) ... */
   data_inicio: string; data_fim: string; descricao: string;
 }
 
-// 3. (NOVA) Interface para o formulário de Edição de Evento
-// Inclui o ID
-interface EventoEditFormData extends EventoFormData {
-  id: number;
-}
-
-
 export default function AdminPainelPage() {
   const { isAuthenticated, atleta, token, isLoading: isAuthLoading } = useAuth(); 
   const navigate = useNavigate(); 
@@ -113,19 +94,13 @@ export default function AdminPainelPage() {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [isLoadingEventos, setIsLoadingEventos] = useState(true);
   const [erroEventos, setErroEventos] = useState<string | null>(null);
-
-  // Estados de Formulário de Evento (Mantidos)
   const [isSubmittingEvento, setIsSubmittingEvento] = useState(false);
   const initialEventoFormState: EventoFormData = {
     nome_evento: '', genero: 'misto', data_inicio: '', data_fim: '', descricao: ''
   };
   const [eventoFormData, setEventoFormData] = useState(initialEventoFormState);
 
-  // 4. (NOVO) Estado para o Modal de Edição de Evento
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [eventoParaEditar, setEventoParaEditar] = useState<EventoEditFormData | null>(null);
-
-  // ... (Funções de Fetch, Efeitos de Segurança/Dados, Handlers de Associado/Parceiro mantidos) ...
+  // Funções de Fetch e Segurança (Mantidas)
   const fetchAdminData = useCallback(async (
     url: string, 
     setter: React.Dispatch<React.SetStateAction<any[]>>, 
@@ -173,6 +148,7 @@ export default function AdminPainelPage() {
     }
   }, [isAuthenticated, atleta, token, isAuthLoading, fetchAdminData, toast]); 
 
+  // Funções de Handler (Mantidas)
   const handleAtualizarAssociado = async (idAssociado: number, novoStatus: 'aprovado' | 'rejeitado') => { /* ... (código mantido) ... */ 
     if (!token) return;
     try {
@@ -209,14 +185,6 @@ export default function AdminPainelPage() {
       toast({ title: 'Erro', description: msg, variant: 'destructive' });
     }
   };
-
-  // --- Funções de Gestão de Eventos (Atualizadas) ---
-
-  const handleEventoFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = event.target;
-    setEventoFormData(prev => ({ ...prev, [name]: value }));
-  };
-
   const handleCriarEvento = async (event: React.FormEvent<HTMLFormElement>) => { /* ... (código mantido) ... */ 
     event.preventDefault();
     if (!token) return;
@@ -239,7 +207,6 @@ export default function AdminPainelPage() {
       setIsSubmittingEvento(false);
     }
   };
-
   const handleApagarEvento = async (idEvento: number) => { /* ... (código mantido) ... */ 
     if (!token) return;
     try {
@@ -254,60 +221,10 @@ export default function AdminPainelPage() {
       toast({ title: 'Erro', description: msg, variant: 'destructive' });
     }
   };
-
-  // 5. (NOVAS) Funções para o Modal de Edição
-  const handleAbrirModalEditar = (evento: Evento) => {
-    // Converte datas (que podem ser NULAS) para strings vazias para o formulário
-    setEventoParaEditar({
-      ...evento,
-      data_inicio: evento.data_inicio ? evento.data_inicio.split('T')[0] : '',
-      data_fim: evento.data_fim ? evento.data_fim.split('T')[0] : '',
-      descricao: evento.descricao || '',
-    });
-    setIsEditModalOpen(true);
-  };
-
-  const handleEditFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleEventoFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
-    if (eventoParaEditar) {
-      setEventoParaEditar(prev => ({ ...prev!, [name]: value }));
-    }
+    setEventoFormData(prev => ({ ...prev, [name]: value }));
   };
-
-  const handleSalvarEdicaoEvento = async () => {
-    if (!token || !eventoParaEditar) return;
-    setIsSubmittingEvento(true);
-
-    const payload = {
-      token: token,
-      data: {
-        id_evento: eventoParaEditar.id,
-        nome_evento: eventoParaEditar.nome_evento,
-        genero: eventoParaEditar.genero,
-        data_inicio: eventoParaEditar.data_inicio,
-        data_fim: eventoParaEditar.data_fim || null,
-        descricao: eventoParaEditar.descricao || null,
-      }
-    };
-
-    try {
-      const response = await axios.post(ATUALIZAR_EVENTO_API_URL, payload);
-      if (response.data.status === 'sucesso' || response.data.status === 'info') {
-        toast({ title: 'Sucesso!', description: response.data.mensagem });
-        setIsEditModalOpen(false); // Fecha o modal
-        // Recarrega a lista de eventos
-        fetchAdminData(LISTAR_EVENTOS_API_URL, setEventos, setErroEventos, setIsLoadingEventos, false);
-      } else {
-        throw new Error(response.data.mensagem);
-      }
-    } catch (error: any) {
-      let msg = error.response?.data?.mensagem || 'Não foi possível atualizar o evento.';
-      toast({ title: 'Erro', description: msg, variant: 'destructive' });
-    } finally {
-      setIsSubmittingEvento(false);
-    }
-  };
-
 
   // Estado de Carregamento Principal (Mantido)
   if (isAuthLoading || (atleta?.role === 'admin' && (isLoadingAssociados || isLoadingParceiros || isLoadingEventos))) {
@@ -324,7 +241,7 @@ export default function AdminPainelPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="pt-16"> 
-        {/* ... (Secções Título, Associados, Parceiros mantidas) ... */}
+        {/* ... (Secções Título e Associados mantidas) ... */}
         <section className="py-16 lg:py-20 bg-card">
            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
              <h1 className="text-3xl font-semibold font-accent text-foreground mb-4">
@@ -391,6 +308,8 @@ export default function AdminPainelPage() {
             </div>
           </div>
         </section>
+
+        {/* ... (Secção Parceiros mantida) ... */}
         <section className="py-16 lg:py-20 bg-muted/30"> 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl font-semibold text-foreground mb-6">
@@ -468,17 +387,13 @@ export default function AdminPainelPage() {
           </div>
         </section>
 
-        {/* ========================================================== */}
-        {/* 7. (ATUALIZADA) SECÇÃO GESTÃO DE EVENTOS                 */}
-        {/* ========================================================== */}
+        {/* Secção Gestão de Eventos (Mantida) */}
         <section className="py-16 lg:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl font-semibold text-foreground mb-6">
               Gestão de Eventos
             </h2>
             <div className="grid lg:grid-cols-2 gap-12">
-
-              {/* Coluna 1: Formulário de Novo Evento (Mantido) */}
               <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
                 <h3 className="text-xl font-semibold text-foreground mb-4">
                   Criar Novo Evento
@@ -550,18 +465,10 @@ export default function AdminPainelPage() {
                             </p>
                           </div>
                           <div className="flex gap-2 flex-shrink-0">
-                             {/* 8. (NOVO) ATIVA O BOTÃO DE EDIÇÃO */}
-                             <DialogTrigger asChild>
-                               <Button 
-                                 variant="outline" size="icon" className="h-8 w-8" 
-                                 title="Editar Evento"
-                                 onClick={() => handleAbrirModalEditar(evento)} // Abre o modal com os dados
-                               >
-                                 <Edit className="h-4 w-4" />
-                               </Button>
-                             </DialogTrigger>
-
-                             {/* 9. (NOVO) O botão de Apagar (com pop-up) foi mantido */}
+                             <Button variant="outline" size="icon" className="h-8 w-8" title="Editar Evento (em breve)">
+                               <Edit className="h-4 w-4" />
+                             </Button>
+                             {/* 2. (CORREÇÃO) ADICIONA O DIÁLOGO DE CONFIRMAÇÃO PARA APAGAR */}
                              <AlertDialog>
                                <AlertDialogTrigger asChild>
                                  <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Apagar Evento">
@@ -600,79 +507,8 @@ export default function AdminPainelPage() {
             </div>
           </div>
         </section>
+
       </main>
-
-      {/* 10. (NOVO) MODAL DE EDIÇÃO DE EVENTO */}
-      {/* Este Dialog fica "embrulhando" a página inteira */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Editar Evento</DialogTitle>
-            <DialogDescription>
-              Altere os detalhes do evento. Clique em "Salvar" quando terminar.
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Formulário de Edição (pré-preenchido) */}
-          {eventoParaEditar && (
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-nome_evento">Nome do Evento</Label>
-                <Input id="edit-nome_evento" name="nome_evento" 
-                       value={eventoParaEditar.nome_evento} 
-                       onChange={handleEditFormChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-genero">Gênero</Label>
-                <Select name="genero" 
-                        value={eventoParaEditar.genero} 
-                        onValueChange={(value) => setEventoParaEditar(prev => ({...prev!, genero: value as any}))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="misto">Misto</SelectItem>
-                    <SelectItem value="masculino">Masculino</SelectItem>
-                    <SelectItem value="feminino">Feminino</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-data_inicio">Data de Início</Label>
-                  <Input id="edit-data_inicio" name="data_inicio" type="date" 
-                         value={eventoParaEditar.data_inicio} 
-                         onChange={handleEditFormChange} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-data_fim">Data de Fim (Opcional)</Label>
-                  <Input id="edit-data_fim" name="data_fim" type="date"
-                         value={eventoParaEditar.data_fim} 
-                         onChange={handleEditFormChange} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-descricao">Descrição (Opcional)</Label>
-                <Textarea id="edit-descricao" name="descricao" rows={4}
-                          value={eventoParaEditar.descricao} 
-                          onChange={handleEditFormChange} />
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button type="submit" onClick={handleSalvarEdicaoEvento} disabled={isSubmittingEvento}>
-              {isSubmittingEvento && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSubmittingEvento ? 'A salvar...' : 'Salvar Alterações'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <Footer />
     </div>
   );
