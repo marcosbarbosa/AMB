@@ -6,32 +6,34 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 1 de novembro de 2025
- * Hora: 20:30
- * Versão: 1.4 (Adiciona Link Parceiros)
+ * Data: 2 de novembro de 2025
+ * Hora: 13:28
+ * Versão: 1.4 (Corrige Importação do Logótipo .PNG)
+ * Tarefa: 264
  *
  * Descrição: Cabeçalho principal de navegação.
- * ATUALIZADO para incluir o novo link "Parceiros".
+ * CORRIGIDO para usar o caminho do ficheiro 'logo-amb.png',
+ * resolvendo o erro de crash.
  *
  * ==========================================================
  */
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Edit3, LogOut, LayoutDashboard } from 'lucide-react'; 
+import { Menu, X, User, Edit3, LogOut, LayoutDashboard, Lock } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
-import ambLogo from '@/assets/logo-amb.png'; 
+// 1. CORREÇÃO: O caminho foi alterado para '../assets/logo-amb.png'
+import ambLogo from '../assets/logo-amb.png'; 
 
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const { isAuthenticated, atleta, logout } = useAuth();
 
-  // 1. ADICIONA O LINK "PARCEIROS"
   const navItems = [
     { label: 'Início', href: '/' },
     { label: 'Sobre', href: '/#sobre' },
-    { label: 'Parceiros', href: '/parceiros' }, // <-- NOVO LINK
+    { label: 'Parceiros', href: '/parceiros' }, 
     { label: 'Contato', href: '/contato' },
   ];
 
@@ -70,12 +72,12 @@ export function Navigation() {
           </Link>
 
           <div className="flex items-center gap-4">
-            {/* Navegação principal (Desktop - Atualizada) */}
+            {/* Navegação principal (Desktop) */}
             <div className="hidden md:flex items-center space-x-1">
               {navItems.map((item) => (
                 <Link key={item.href} to={item.href}>
                   <span
-                    onClick={(e: any) => item.href.startsWith('/#') ? scrollToSection(e, item.href) : setIsMenuOpen(false)} // Ajuste no onClick
+                    onClick={(e: any) => item.href.startsWith('/#') ? scrollToSection(e, item.href) : undefined} 
                     data-testid={`link-nav-${item.label.toLowerCase()}`}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer inline-block ${
                       location.pathname === item.href || (item.href.startsWith('/#') && location.pathname === '/')
@@ -89,24 +91,39 @@ export function Navigation() {
               ))}
             </div>
 
-            {/* Botões de Ação (Mantidos) */}
-            <div className="hidden md:flex items-center gap-2">
+            {/* BLOCO LÓGICO DE ACESSO */}
+            <div className="flex items-center gap-2">
               {isAuthenticated && atleta ? (
-                <>
+                // ****** SE ESTIVER LOGADO ******
+                <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground hidden lg:inline">
                     Olá, {atleta.nome_completo.split(' ')[0]} 
                   </span>
+
+                  {/* ÍCONE DE ADMIN (Cadeado Amarelo) */}
+                  {atleta.role === 'admin' && (
+                    <Button variant="ghost" size="icon" asChild title="Acesso Admin" data-testid="link-admin-panel">
+                      <Link to="/admin/painel">
+                        <Lock className="h-5 w-5 text-yellow-600 hover:text-yellow-700 transition-colors" />
+                      </Link>
+                    </Button>
+                  )}
+
+                  {/* BOTão MEU PAINEL */}
                   <Button variant="outline" asChild size="sm"> 
                     <Link to="/painel">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Meu Painel
                     </Link>
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair">
+
+                  {/* BOTÃO LOGOUT */}
+                  <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair" data-testid="button-logout">
                     <LogOut className="h-5 w-5 text-destructive hover:text-destructive/80" /> 
                   </Button>
-                </>
+                </div>
               ) : (
+                // ****** SE NÃO ESTIVER LOGADO (Mantido) ******
                 <>
                   <Button variant="ghost" asChild size="sm"> 
                     <Link to="/login">
@@ -138,11 +155,10 @@ export function Navigation() {
         </div>
       </div>
 
-      {/* Menu Mobile (Atualizado) */}
+      {/* Menu Mobile (Atualizado para o novo ícone) */}
       {isMenuOpen && (
         <div className="md:hidden bg-background border-t border-border" data-testid="mobile-menu">
           <div className="px-4 pt-4 pb-6 space-y-2"> 
-            {/* Links de Navegação Mobile (Atualizados) */}
             {navItems.map((item) => (
               <Link key={item.href} to={item.href}>
                 <span
@@ -163,12 +179,23 @@ export function Navigation() {
 
             <hr className="border-border my-4" />
 
-            {/* Links de Ação Mobile (Mantidos) */}
+            {/* Links de Ação Mobile (Condicional) */}
             {isAuthenticated && atleta ? (
               <>
                 <div className="px-4 py-2 text-sm text-foreground">
                   Logado como: <span className="font-medium">{atleta.nome_completo}</span>
                 </div>
+
+                {/* LINK DE ADMIN NO MOBILE */}
+                {atleta.role === 'admin' && (
+                    <Button variant="ghost" className="w-full justify-start text-yellow-700" asChild>
+                        <Link to="/admin/painel" onClick={() => setIsMenuOpen(false)}>
+                            <Lock className="mr-2 h-4 w-4" />
+                            Acesso Admin
+                        </Link>
+                    </Button>
+                )}
+
                 <Button variant="outline" className="w-full justify-start" asChild>
                   <Link to="/painel" onClick={() => setIsMenuOpen(false)}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
