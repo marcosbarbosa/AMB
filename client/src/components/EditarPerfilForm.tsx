@@ -6,13 +6,14 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 28 de outubro de 2025
- * Hora: 11:45
- * Versão: 1.1 (Contorno de Token)
+ * Data: 2 de novembro de 2025
+ * Hora: 14:15
+ * Versão: 1.2 (Remove Whatsapp Newsletter)
+ * Tarefa: 267
  *
  * Descrição: Formulário para o associado editar seus dados.
- * ATUALIZADO para enviar o Token JWT no cabeçalho 'X-Authorization'
- * como contorno para o bloqueio do servidor.
+ * ATUALIZADO para remover a opção "Pelo WhatsApp" das preferências
+ * de comunicação.
  *
  * ==========================================================
  */
@@ -54,10 +55,12 @@ export function EditarPerfilForm() {
         naturalidade: atleta.naturalidade || '',
         filiacao: atleta.filiacao || '',
         autoriza_imagem: atleta.autoriza_imagem || false,
-        preferencia_newsletter: atleta.preferencia_newsletter || 'nenhum',
+        // 1. Garante que o valor inicial não é 'whatsapp' (se fosse o antigo)
+        preferencia_newsletter: atleta.preferencia_newsletter === 'whatsapp' ? 'email' : (atleta.preferencia_newsletter || 'nenhum'),
       });
     }
   }, [atleta]);
+
 
   // Handlers de mudança
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -86,13 +89,10 @@ export function EditarPerfilForm() {
     try {
       const payload = { ...formData }; 
 
-      // 1. A CORREÇÃO ESTÁ AQUI:
       const response = await axios.post(API_URL, payload, { 
         headers: {
           'Content-Type': 'application/json',
-          // De: 'Authorization': `Bearer ${token}`
-          // Para:
-          'X-Authorization': `Bearer ${token}`, // Usa o cabeçalho personalizado
+          'X-Authorization': `Bearer ${token}`, 
         },
       });
 
@@ -126,10 +126,10 @@ export function EditarPerfilForm() {
 
    if (!atleta) return <p className="text-muted-foreground">Carregando dados...</p>;
 
-  // JSX do Formulário (O código HTML/JSX não muda)
+  // JSX do Formulário
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* --- Dados Pessoais --- */}
+      {/* ... (Secções Dados Pessoais e Foto mantidas) ... */}
       <h3 className="text-xl font-semibold text-foreground border-b pb-2">Dados Pessoais</h3>
       <div className="space-y-4">
         <div className="space-y-2">
@@ -174,8 +174,7 @@ export function EditarPerfilForm() {
         </div>
       </div>
 
-      {/* --- Foto e Termos --- */}
-       <div className="flex items-center space-x-2 pt-4">
+      <div className="flex items-center space-x-2 pt-4">
         <Checkbox 
             id="autoriza_imagem" 
             name="autoriza_imagem" 
@@ -187,20 +186,17 @@ export function EditarPerfilForm() {
         </Label>
       </div>
 
-      {/* --- Comunicações --- */}
+      {/* --- Comunicações (ATUALIZADA SEM WHATSAPP) --- */}
       <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Comunicações</h3>
       <div className="space-y-3">
-         <Label>Preferência para receber a Newsletter AMB:</Label>
+         <Label>Deseja receber a Newsletter da AMB?</Label>
          <RadioGroup 
             name="preferencia_newsletter" 
             value={formData.preferencia_newsletter} 
             onValueChange={handleRadioChange} 
             className="flex flex-col sm:flex-row gap-4 sm:gap-6 pt-2"
          >
-           <div className="flex items-center space-x-2">
-             <RadioGroupItem value="whatsapp" id="edit-news-whatsapp" />
-             <Label htmlFor="edit-news-whatsapp" className="cursor-pointer">Pelo WhatsApp</Label>
-           </div>
+           {/* 2. Opção WhatsApp REMOVIDA */}
            <div className="flex items-center space-x-2">
              <RadioGroupItem value="email" id="edit-news-email" />
              <Label htmlFor="edit-news-email" className="cursor-pointer">Por E-mail</Label>
@@ -212,7 +208,7 @@ export function EditarPerfilForm() {
          </RadioGroup>
       </div>
 
-      {/* --- Ação --- */}
+      {/* --- Ação (Mantida) --- */}
       <Button 
         type="submit" 
         className="w-full h-12 text-base mt-8"

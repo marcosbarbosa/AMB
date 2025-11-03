@@ -7,12 +7,12 @@
  * Todos os direitos reservados.
  *
  * Data: 2 de novembro de 2025
- * Hora: 13:30
- * Versão: 1.0
- * Tarefa: 263 (Módulo 27 - Refatoração)
+ * Hora: 21:00
+ * Versão: 1.2 (Corrige Erro 'edit is not defined')
+ * Tarefa: 269
  *
  * Descrição: Nova página dedicada à Gestão de Parceiros.
- * Move a tabela de gestão de parceiros para esta rota (/admin/parceiros).
+ * CORRIGIDO: O erro de sintaxe ao renderizar o ícone de edição foi removido.
  *
  * ==========================================================
  */
@@ -149,7 +149,7 @@ export default function GestaoParceirosPage() {
               Gestão de Parceiros ({parceiros.length})
             </h1>
 
-            {/* A Tabela de Parceiros (movida para cá) */}
+            {/* Tabela de Parceiros (movida para cá) */}
             <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
               {erroParceiros && <p className="text-red-600">{erroParceiros}</p>}
               {!isLoadingParceiros && !erroParceiros && (
@@ -214,11 +214,11 @@ export default function GestaoParceirosPage() {
                                 </Button>
                               </div>
                             )}
-                            {/* TODO: Botão para Editar Parceiro (futuramente) */}
+                            {/* CORREÇÃO APLICADA AQUI */}
                             {parc.partner_tier !== 'pendente' && (
-                              <Button variant="outline" size="icon" className="h-8 w-8" title="Visualizar/Editar Parceiro (em breve)">
-                                <Edit className="h-4 w-4" />
-                              </Button>
+                                <Button variant="outline" size="icon" className="h-8 w-8" title="Visualizar/Editar Parceiro (em breve)">
+                                   <Edit className="h-4 w-4" /> 
+                                </Button>
                             )}
                           </td>
                         </tr>

@@ -6,16 +6,17 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 27 de outubro de 2025
- * Hora: 23:05
- * Versão: 1.2 (Refatoração de Terminologia)
+ * Data: 2 de novembro de 2025
+ * Hora: 14:10
+ * Versão: 1.3 (Remove Whatsapp Newsletter)
+ * Tarefa: 266
  *
  * Descrição: Formulário de cadastro de associado.
- * ATUALIZADO para usar a terminologia "Associado" em vez de "Atleta".
+ * ATUALIZADO para remover a opção "Pelo WhatsApp" das preferências
+ * de comunicação.
  *
  * ==========================================================
  */
-// ... (importações mantidas - useState, axios, useToast, etc.)
 import { useState } from 'react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
@@ -25,9 +26,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label'; 
 import { Checkbox } from '@/components/ui/checkbox'; 
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'; 
-import { Send } from 'lucide-react'; // Removi ícones não usados aqui
+import { Send } from 'lucide-react'; 
 
-const API_URL = 'https://www.ambamazonas.com.br/api/cadastrar_atleta.php'; // Backend ainda usa 'atleta' no nome do script
+const API_URL = 'https://www.ambamazonas.com.br/api/cadastrar_atleta.php'; 
 
 export function CadastroForm() {
   const { toast } = useToast();
@@ -44,19 +45,17 @@ export function CadastroForm() {
       });
       toast({
         title: 'Cadastro enviado!',
-         // 1. ATUALIZA A MENSAGEM DE SUCESSO VINDA DO PHP (se necessário)
-         // O PHP já foi atualizado para dizer "Associado", então deve funcionar.
         description: response.data.mensagem, 
       });
       (event.target as HTMLFormElement).reset();
     } catch (error: any) {
-      console.error("Erro ao cadastrar associado:", error); // Atualiza log
+      console.error("Erro ao cadastrar associado:", error);
       let mensagemErro = 'Não foi possível conectar ao servidor.';
       if (error.response?.data?.mensagem) {
         mensagemErro = error.response.data.mensagem;
       }
       toast({
-        title: 'Erro ao cadastrar', // Mantém genérico
+        title: 'Erro ao cadastrar', 
         description: mensagemErro,
         variant: 'destructive',
       });
@@ -67,9 +66,8 @@ export function CadastroForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
-      {/* --- Secção 1: Login --- */}
+      {/* --- Secção 1: Login (Mantida) --- */}
       <h3 className="text-xl font-semibold text-foreground border-b pb-2">Informações de Acesso</h3>
-       {/* ... (campos Email, Senha mantidos) ... */}
        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
@@ -81,10 +79,8 @@ export function CadastroForm() {
         </div>
       </div>
 
-
-      {/* --- Secção 2: Dados Pessoais --- */}
+      {/* --- Secção 2: Dados Pessoais (Mantida) --- */}
       <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Dados Pessoais do Associado</h3> 
-       {/* ... (campos Nome, Data Nasc, CPF, RG, etc. - Mantidos iguais) ... */}
        <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="nome_completo">Nome Completo</Label>
@@ -124,15 +120,13 @@ export function CadastroForm() {
         </div>
       </div>
 
-      {/* --- Secção 3: Foto e Termos --- */}
+      {/* --- Secção 3: Foto e Termos (Mantida) --- */}
       <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Foto e Termos</h3>
-      {/* ... (campo Foto de Perfil mantido) ... */}
       <div className="space-y-2">
         <Label htmlFor="foto_perfil">Foto de Perfil (Selfie)</Label>
         <Input id="foto_perfil" name="foto_perfil" type="file" accept="image/png, image/jpeg" required data-testid="input-cadastro-foto" />
         <p className="text-sm text-muted-foreground">Obrigatório para a ficha. Formatos JPG ou PNG.</p>
       </div>
-      {/* ... (Checkbox Autoriza Imagem mantido) ... */}
       <div className="flex items-center space-x-2 pt-4">
         <Checkbox id="autoriza_imagem" name="autoriza_imagem" value="true" required data-testid="checkbox-cadastro-autoriza"/>
         <Label htmlFor="autoriza_imagem" className="text-sm font-medium leading-none cursor-pointer">
@@ -140,16 +134,17 @@ export function CadastroForm() {
         </Label>
       </div>
 
-      {/* --- Secção 4: Newsletter --- */}
+      {/* 4. Secção Comunicações (ATUALIZADA SEM WHATSAPP) */}
       <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Comunicações</h3>
-      {/* ... (Opções de Newsletter mantidas) ... */}
       <div className="space-y-3">
          <Label>Deseja receber a Newsletter da AMB?</Label>
-         <RadioGroup name="preferencia_newsletter" defaultValue="nenhum" className="flex flex-col sm:flex-row gap-4 sm:gap-6 pt-2" data-testid="radio-group-newsletter">
-           <div className="flex items-center space-x-2">
-             <RadioGroupItem value="whatsapp" id="news-whatsapp" />
-             <Label htmlFor="news-whatsapp" className="cursor-pointer">Pelo WhatsApp</Label>
-           </div>
+         <RadioGroup 
+            name="preferencia_newsletter" 
+            defaultValue="nenhum" 
+            className="flex flex-col sm:flex-row gap-4 sm:gap-6 pt-2"
+            data-testid="radio-group-newsletter"
+         >
+           {/* Opção WhatsApp REMOVIDA */}
            <div className="flex items-center space-x-2">
              <RadioGroupItem value="email" id="news-email" />
              <Label htmlFor="news-email" className="cursor-pointer">Por E-mail</Label>
@@ -165,7 +160,7 @@ export function CadastroForm() {
       </div>
 
 
-      {/* --- Secção Final: Envio --- */}
+      {/* --- Secção Final: Envio (Mantida) --- */}
       <Button 
         type="submit" 
         className="w-full h-12 text-base mt-8"

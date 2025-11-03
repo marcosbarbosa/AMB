@@ -7,9 +7,9 @@
  * Todos os direitos reservados.
  *
  * Data: 2 de novembro de 2025
- * Hora: 13:28
+ * Hora: 19:30
  * Versão: 1.4 (Corrige Importação do Logótipo .PNG)
- * Tarefa: 264
+ * Tarefa: 265
  *
  * Descrição: Cabeçalho principal de navegação.
  * CORRIGIDO para usar o caminho do ficheiro 'logo-amb.png',
@@ -58,7 +58,7 @@ export function Navigation() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo (Mantido) */}
+          {/* Logo (CORRIGIDO) */}
           <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
             <img 
               src={ambLogo} 
@@ -202,20 +202,26 @@ export function Navigation() {
                     Meu Painel
                   </Link>
                 </Button>
-                <Button variant="destructive" className="w-full justify-start mt-2" onClick={handleLogout}> 
+
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-destructive" 
+                  onClick={handleLogout}
+                  data-testid="button-logout-mobile"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Sair (Logout)
+                  Sair
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="outline" className="w-full justify-start" asChild>
+                <Button variant="ghost" className="w-full justify-start" asChild>
                   <Link to="/login" onClick={() => setIsMenuOpen(false)}>
                     <User className="mr-2 h-4 w-4" />
                     Login
                   </Link>
                 </Button>
-                <Button variant="default" className="w-full justify-start mt-2" asChild> 
+                <Button variant="default" className="w-full justify-start" asChild>
                   <Link to="/cadastro" onClick={() => setIsMenuOpen(false)}>
                     <Edit3 className="mr-2 h-4 w-4" />
                     Cadastro
