@@ -6,12 +6,14 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 1 de novembro de 2025
- * Hora: 20:30
- * Versão: 1.7 (Adiciona Link Parceiros)
+ * Data: 2 de novembro de 2025
+ * Hora: 21:50
+ * Versão: 1.8 (Implementa Hyperlink do Desenvolvedor)
+ * Tarefa: 262
  *
- * Descrição: Componente do Rodapé principal.
- * ATUALIZADO para incluir o novo link "Parceiros".
+ * Descrição: Componente do Rodapé principal do site.
+ * ATUALIZADO para transformar o handle do desenvolvedor em
+ * um hyperlink para o Instagram.
  *
  * ==========================================================
  */
@@ -31,29 +33,31 @@ export function Footer() {
     }
   };
 
-  // 1. ADICIONA O LINK "PARCEIROS"
   const quickLinks = {
     associacao: [ 
       { label: 'Sobre Nós', href: '/#sobre', section: 'sobre' }, 
-      { label: 'Parceiros', href: '/parceiros', section: null }, // <-- NOVO LINK
+      { label: 'Parceiros', href: '/parceiros', section: null },
       { label: 'Contato', href: '/contato', section: null }, 
     ],
   };
 
-  // ... (socialLinks, whatsappUrl, googleMapsContatoUrl mantidos) ...
-   const socialLinks = [
+  const socialLinks = [
     { icon: Instagram, href: 'https://www.instagram.com/souambmasterdobasquete/', label: 'Instagram' },
     { icon: Facebook, href: 'https://www.facebook.com/souAMBmasterdobasquete/', label: 'Facebook' },
     { icon: Youtube, href: 'https://www.youtube.com/@souAMBmasterdobasquete', label: 'YouTube' },
   ];
+
   const whatsappUrl = 'https://wa.me/5592992521345';
   const googleMapsContatoUrl = 'https://maps.app.goo.gl/dgpghYqDmS9gbkHH9'; 
+
+  // 1. URL DO INSTAGRAM DO DESENVOLVEDOR
+  const instagramDevUrl = 'https://www.instagram.com/mbelitecoach';
 
   return (
     <footer className="bg-card border-t border-card-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12"> 
-          {/* Coluna 1 (Mantida) */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+          {/* Coluna 1: Logo, Descrição, Sociais (Mantida) */}
           <div>
             <h3 className="text-2xl font-bold font-accent text-foreground mb-4">
               AMB Portal
@@ -73,7 +77,7 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Coluna 2: Links "A Associação" (Atualizada) */}
+          {/* Coluna 2: Links "A Associação" (Mantida) */}
           <div>
             <h4 className="text-lg font-semibold text-foreground mb-4">
               A Associação
@@ -125,12 +129,21 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Linha Inferior (Mantida) */}
+        {/* Linha Inferior: Copyright e Links (ATUALIZADO) */}
         <div className="border-t border-border mt-12 pt-8">
-          {/* ... (código do copyright mantido) ... */}
-           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground text-center md:text-left">
-              &copy; {currentYear} Associação Master de Basquetebol do Amazonas (AMB). Todos os direitos reservados. <br className="sm:hidden"/> Desenvolvido por Marcos Barbosa @mbelitecoach.
+              &copy; {currentYear} Associação Master de Basquetebol do Amazonas (AMB). Todos os direitos reservados. 
+              {/* 2. ADICIONA O HYPERLINK */}
+              <br className="sm:hidden"/> Desenvolvido por 
+              <a 
+                href={instagramDevUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-foreground transition-colors font-medium ml-1"
+              >
+                Marcos Barbosa @mbelitecoach
+              </a>.
             </p>
             <div className="flex gap-4 text-sm text-muted-foreground">
               <a href="#" className="hover:text-foreground transition-colors">

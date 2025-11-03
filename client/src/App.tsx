@@ -7,12 +7,12 @@
  * Todos os direitos reservados.
  *
  * Data: 2 de novembro de 2025
- * Hora: 13:30
- * Versão: 1.7 (Refatora Rotas Admin)
- * Tarefa: 264
+ * Hora: 23:05
+ * Versão: 1.8 (Adiciona Rota Eventos Admin)
+ * Tarefa: 265
  *
  * Descrição: Componente raiz da aplicação, define as rotas.
- * ATUALIZADO para incluir a nova rota /admin/parceiros.
+ * ATUALIZADO para incluir a nova rota /admin/eventos.
  *
  * ==========================================================
  */
@@ -38,8 +38,9 @@ import EditarPerfilPage from "@/pages/EditarPerfilPage";
 // Páginas Privadas (Admin)
 import AdminPainelPage from "@/pages/admin/AdminPainelPage"; // O novo "Menu"
 import GestaoAssociadosPage from "@/pages/admin/GestaoAssociadosPage"; 
-// 1. IMPORTA A NOVA PÁGINA DE GESTÃO
-import GestaoParceirosPage from "@/pages/admin/GestaoParceirosPage"; 
+import GestaoParceirosPage from "@/pages/admin/GestaoParceirosPage"; // Já existe
+// 1. IMPORTA A NOVA PÁGINA
+import GestaoEventosPage from "@/pages/admin/GestaoEventosPage"; 
 
 function App() {
   return (
@@ -64,9 +65,9 @@ function App() {
           {/* Rotas Privadas (Admin) */}
           <Route path="/admin/painel" element={<AdminPainelPage />} />
           <Route path="/admin/associados" element={<GestaoAssociadosPage />} />
-          {/* 2. ADICIONA A NOVA ROTA DE GESTÃO */}
           <Route path="/admin/parceiros" element={<GestaoParceirosPage />} />
-          {/* TODO: Adicionar rotas /admin/eventos */}
+          {/* 2. ADICIONA A NOVA ROTA DE GESTÃO */}
+          <Route path="/admin/eventos" element={<GestaoEventosPage />} />
 
           {/* Rota 404 */}
           <Route path="*" element={<NotFound />} />

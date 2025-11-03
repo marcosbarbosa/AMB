@@ -6,14 +6,15 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 2 de novembro de 2025
- * Hora: 14:15
- * Versão: 1.2 (Remove Whatsapp Newsletter)
- * Tarefa: 267
+ * Data: 3 de novembro de 2025
+ * Hora: 10:50
+ * Versão: 1.5 (Corrige Envio de Token e Bug do Checkbox)
+ * Tarefa: 273
  *
  * Descrição: Formulário para o associado editar seus dados.
- * ATUALIZADO para remover a opção "Pelo WhatsApp" das preferências
- * de comunicação.
+ * CORRIGIDO: 
+ * 1. Estrutura do payload para {token:..., data: {...}} (para o backend Plano G).
+ * 2. Lógica de carregamento do Checkbox (Autoriza Imagem).
  *
  * ==========================================================
  */
@@ -43,7 +44,7 @@ export function EditarPerfilForm() {
     autoriza_imagem: false, preferencia_newsletter: 'nenhum',
   });
 
-  // Carrega dados do atleta no formulário
+  // 1. CORREÇÃO CHECKBOX (Carregamento)
   useEffect(() => {
     if (atleta) {
       setFormData({
@@ -54,28 +55,32 @@ export function EditarPerfilForm() {
         nacionalidade: atleta.nacionalidade || '',
         naturalidade: atleta.naturalidade || '',
         filiacao: atleta.filiacao || '',
-        autoriza_imagem: atleta.autoriza_imagem || false,
-        // 1. Garante que o valor inicial não é 'whatsapp' (se fosse o antigo)
+        // CORREÇÃO CRÍTICA: O 'atleta' do AuthContext já tem o boolean (do login.php)
+        // A conversão '!!' garante que 'undefined' ou 'null' vire 'false'.
+        autoriza_imagem: !!atleta.autoriza_imagem, 
         preferencia_newsletter: atleta.preferencia_newsletter === 'whatsapp' ? 'email' : (atleta.preferencia_newsletter || 'nenhum'),
       });
     }
   }, [atleta]);
 
 
-  // Handlers de mudança
+  // Handlers de mudança (Mantidos)
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     setFormData(prevState => ({ ...prevState, [name]: value, }));
   };
   const handleCheckboxChange = (checked: boolean | 'indeterminate') => {
-      setFormData(prevState => ({ ...prevState, autoriza_imagem: checked === true, }));
+      setFormData(prevState => ({ 
+        ...prevState, 
+        autoriza_imagem: checked === true, // Salva como true/false
+      }));
   };
   const handleRadioChange = (value: string) => {
       setFormData(prevState => ({ ...prevState, preferencia_newsletter: value, }));
   };
 
 
-  // Função de Envio
+  // 2. CORREÇÃO TOKEN (Envio)
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
@@ -87,12 +92,26 @@ export function EditarPerfilForm() {
     }
 
     try {
-      const payload = { ...formData }; 
+      // 2a. CORREÇÃO PAYLOAD: Estrutura o JSON para o Backend
+      const payloadCompleto = {
+        token: token,
+        data: { // Os dados do formulário vão para o sub-objeto 'data'
+            nome_completo: formData.nome_completo,
+            data_nascimento: formData.data_nascimento,
+            endereco: formData.endereco,
+            rg: formData.rg,
+            nacionalidade: formData.nacionalidade,
+            naturalidade: formData.naturalidade,
+            filiacao: formData.filiacao,
+            autoriza_imagem: formData.autoriza_imagem, 
+            preferencia_newsletter: formData.preferencia_newsletter,
+        }
+      };
 
-      const response = await axios.post(API_URL, payload, { 
+      const response = await axios.post(API_URL, payloadCompleto, { 
         headers: {
           'Content-Type': 'application/json',
-          'X-Authorization': `Bearer ${token}`, 
+          // 2b. REMOVE CABEÇALHO X-AUTHORIZATION (desnecessário, pois o token está no BODY)
         },
       });
 
@@ -101,17 +120,18 @@ export function EditarPerfilForm() {
         description: response.data.mensagem, 
       });
 
-      // Atualiza o "cérebro" (AuthContext)
-      if (atleta && response.data.status !== 'info') { 
-           const atletaAtualizado = { ...atleta, ...payload };
-           atletaAtualizado.autoriza_imagem = formData.autoriza_imagem; 
-           login(atletaAtualizado, token); 
+      // 3. ATUALIZA O "CÉREBRO" (AuthContext) com os dados que acabamos de salvar
+      if (atleta && (response.data.status === 'sucesso' || response.data.status === 'info')) { 
+           const atletaAtualizado = { ...atleta, ...payloadCompleto.data };
+           // O 'login' recarrega o estado global com os dados atualizados
+           login(atletaAtualizado as any, token); 
       }
 
     } catch (error: any) {
       console.error("Erro ao atualizar perfil:", error);
       let mensagemErro = 'Não foi possível conectar ao servidor.';
       if (error.response?.data?.mensagem) {
+        // Ex: O erro do PHP "Token (Body) inválido ou ausente."
         mensagemErro = error.response.data.mensagem;
       }
       toast({
@@ -129,7 +149,7 @@ export function EditarPerfilForm() {
   // JSX do Formulário
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* ... (Secções Dados Pessoais e Foto mantidas) ... */}
+      {/* --- Secções Dados Pessoais --- */}
       <h3 className="text-xl font-semibold text-foreground border-b pb-2">Dados Pessoais</h3>
       <div className="space-y-4">
         <div className="space-y-2">
@@ -174,6 +194,7 @@ export function EditarPerfilForm() {
         </div>
       </div>
 
+      {/* --- Checkbox Autorizo Imagem (CORRIGIDO) --- */}
       <div className="flex items-center space-x-2 pt-4">
         <Checkbox 
             id="autoriza_imagem" 
@@ -186,7 +207,7 @@ export function EditarPerfilForm() {
         </Label>
       </div>
 
-      {/* --- Comunicações (ATUALIZADA SEM WHATSAPP) --- */}
+      {/* --- Comunicações (REMOVIDO WHATSAPP) --- */}
       <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Comunicações</h3>
       <div className="space-y-3">
          <Label>Deseja receber a Newsletter da AMB?</Label>
@@ -196,7 +217,6 @@ export function EditarPerfilForm() {
             onValueChange={handleRadioChange} 
             className="flex flex-col sm:flex-row gap-4 sm:gap-6 pt-2"
          >
-           {/* 2. Opção WhatsApp REMOVIDA */}
            <div className="flex items-center space-x-2">
              <RadioGroupItem value="email" id="edit-news-email" />
              <Label htmlFor="edit-news-email" className="cursor-pointer">Por E-mail</Label>
@@ -208,7 +228,7 @@ export function EditarPerfilForm() {
          </RadioGroup>
       </div>
 
-      {/* --- Ação (Mantida) --- */}
+      {/* --- Ação --- */}
       <Button 
         type="submit" 
         className="w-full h-12 text-base mt-8"

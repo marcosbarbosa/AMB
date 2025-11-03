@@ -6,13 +6,14 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 2 de novembro de 2025
- * Hora: 13:05
- * Versão: 1.1 (Final)
- * Tarefa: 268
+ * Data: 3 de novembro de 2025
+ * Hora: 09:30
+ * Versão: 1.2 (Adiciona Exclusão de Associado)
+ * Tarefa: 274 (Módulo 33)
  *
- * Descrição: Nova página dedicada à Gestão de Associados.
- * Move a tabela de aprovação de associados para esta rota.
+ * Descrição: Página dedicada à Gestão de Associados.
+ * ATUALIZADO para separar a ação de "Rejeitar" (Status) da
+ * ação de "Apagar" (Exclusão permanente).
  *
  * ==========================================================
  */
@@ -22,15 +23,28 @@ import { useAuth } from '@/context/AuthContext';
 import { useEffect, useState, useCallback } from 'react'; 
 import { useNavigate, Link } from 'react-router-dom'; 
 import { Button } from '@/components/ui/button'; 
-import { Check, X, Loader2, ArrowLeft } from 'lucide-react'; 
+import { Check, X, Loader2, ArrowLeft, Trash2 } from 'lucide-react'; // Importa Trash2
 import axios from 'axios'; 
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
-// APIs de Associados (existentes)
+// APIs de Associados
 const LISTAR_ASSOCIADOS_API_URL = 'https://www.ambamazonas.com.br/api/listar_associados.php';
 const ATUALIZAR_ASSOCIADO_API_URL = 'https://www.ambamazonas.com.br/api/atualizar_status_atleta.php'; 
+// 1. NOVA API para DELETE
+const APAGAR_ASSOCIADO_API_URL = 'https://www.ambamazonas.com.br/api/admin_apagar_associado.php'; 
 
-// Interfaces (existentes)
+// Interface (Apenas Associado)
 interface Associado {
   id: number; nome_completo: string; email: string; 
   status_cadastro: 'pendente' | 'aprovado' | 'rejeitado';
@@ -46,7 +60,7 @@ export default function GestaoAssociadosPage() {
   const [isLoadingAssociados, setIsLoadingAssociados] = useState(true);
   const [erroAssociados, setErroAssociados] = useState<string | null>(null);
 
-  // Efeito de Segurança (Verifica se é Admin)
+  // Efeito de Segurança (Mantido)
   useEffect(() => {
     if (isAuthLoading) return; 
     if (!isAuthenticated || (isAuthenticated && atleta?.role !== 'admin')) {
@@ -55,13 +69,12 @@ export default function GestaoAssociadosPage() {
     }
   }, [isAuthenticated, atleta, isAuthLoading, navigate, toast]); 
 
-  // Handler de Fetch (movido para dentro do componente)
+  // Handler de Fetch (Mantido)
   const fetchAssociados = useCallback(async () => {
     if (!isAuthLoading && isAuthenticated && atleta?.role === 'admin' && token) {
       setIsLoadingAssociados(true);
       setErroAssociados(null);
       try {
-        // Usa o token no body
         const response = await axios.post(LISTAR_ASSOCIADOS_API_URL, { token: token });
         if (response.data.status === 'sucesso') {
           setAssociados(response.data.associados);
@@ -83,7 +96,7 @@ export default function GestaoAssociadosPage() {
     fetchAssociados();
   }, [fetchAssociados]);
 
-  // Handler para Aprovar/Rejeitar
+  // 2. Handler para Aprovar/Rejeitar (Apenas muda o Status)
   const handleAtualizarAssociado = async (idAssociado: number, novoStatus: 'aprovado' | 'rejeitado') => {
     if (!token) return;
     try {
@@ -100,7 +113,29 @@ export default function GestaoAssociadosPage() {
     }
   };
 
-  // Estado de Carregamento
+  // 3. NOVO Handler para APAGAR PERMANENTEMENTE
+  const handleApagarAssociado = async (idAssociado: number, nomeAssociado: string) => {
+    if (!token) return;
+
+    try {
+      const payload = { token: token, data: { id_atleta: idAssociado }};
+      const response = await axios.post(APAGAR_ASSOCIADO_API_URL, payload);
+
+      if (response.data.status === 'sucesso') {
+        toast({ title: 'Exclusão Sucesso!', description: `Associado ${nomeAssociado} foi excluído.` });
+        // Remove da lista local
+        setAssociados(prev => prev.filter(a => a.id !== idAssociado));
+      } else {
+        throw new Error(response.data.mensagem);
+      }
+    } catch (error: any) {
+      let msg = error.response?.data?.mensagem || 'Não foi possível excluir o associado.';
+      toast({ title: 'Erro', description: msg, variant: 'destructive' });
+    }
+  };
+
+
+  // Estado de Carregamento (Mantido)
   if (isAuthLoading || isLoadingAssociados) {
      return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -132,7 +167,7 @@ export default function GestaoAssociadosPage() {
               Gestão de Associados ({associados.length})
             </h1>
 
-            {/* A Tabela de Associados (movida para cá) */}
+            {/* Tabela de Associados */}
             <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
               {erroAssociados && <p className="text-red-600">{erroAssociados}</p>}
               {!isLoadingAssociados && !erroAssociados && (
@@ -165,18 +200,48 @@ export default function GestaoAssociadosPage() {
                             <td className="px-4 py-3 text-sm text-muted-foreground">{assoc.categoria_atual || 'N/D'}</td>
                             <td className="px-4 py-3 text-sm text-muted-foreground">{new Date(assoc.data_cadastro).toLocaleDateString('pt-BR')}</td>
                             <td className="px-4 py-3 text-center">
-                              {assoc.status_cadastro === 'pendente' && (
-                                <div className="flex justify-center gap-2">
+                              <div className="flex justify-center gap-2">
+                                {/* Botão APROVAR (Sempre visível para pendentes) */}
+                                {assoc.status_cadastro === 'pendente' && (
                                   <Button variant="outline" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 border-green-600/50 hover:bg-green-600/10"
                                     onClick={() => handleAtualizarAssociado(assoc.id, 'aprovado')} title="Aprovar Associado">
                                     <Check className="h-4 w-4" />
                                   </Button>
+                                )}
+                                {/* Botão REJEITAR (Sempre visível para pendentes) */}
+                                {assoc.status_cadastro === 'pendente' && (
                                   <Button variant="outline" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 border-red-600/50 hover:bg-red-600/10"
-                                    onClick={() => handleAtualizarAssociado(assoc.id, 'rejeitado')} title="Rejeitar Associado">
+                                    onClick={() => handleAtualizarAssociado(assoc.id, 'rejeitado')} title="Rejeitar (Mudar Status)">
                                     <X className="h-4 w-4" />
                                   </Button>
-                                </div>
-                              )}
+                                )}
+                                {/* 4. NOVO BOTÃO: APAGAR (Com pop-up de confirmação) */}
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" title="Excluir Permanentemente">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir {assoc.nome_completo}?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Esta ação é permanente. Isto irá APAGAR completamente o cadastro 
+                                        e todas as inscrições relacionadas deste associado.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        className="bg-destructive hover:bg-destructive/90"
+                                        onClick={() => handleApagarAssociado(assoc.id, assoc.nome_completo)}
+                                      >
+                                        Sim, Apagar Associado
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
                             </td>
                           </tr>
                         ))}
