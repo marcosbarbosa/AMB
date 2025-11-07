@@ -7,13 +7,13 @@
  * Todos os direitos reservados.
  *
  * Data: 5 de novembro de 2025
- * Hora: 16:35
- * Versão: 2.2 (Corrige Bug de Fecho do Dialog e isSubmitting)
- * Tarefa: 281-C (Módulo 29)
+ * Hora: 17:15
+ * Versão: 2.2 (CRUD Completo de Eventos e Formulários de Posts)
+ * Tarefa: 282
  *
  * Descrição: Página de Gestão de Eventos (/admin/eventos).
- * CORRIGIDO: Adicionado o fecho </Dialog> em falta que
- * estava a "crashar" a aplicação.
+ * Implementa o CRUD de Eventos (Criar/Editar/Apagar) e os
+ * formulários de Posts e Boletins (Módulo 29).
  *
  * ==========================================================
  */
@@ -67,6 +67,7 @@ const ATUALIZAR_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_atual
 const CRIAR_POST_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_criar_post_evento.php';
 const CRIAR_BOLETIM_API_URL = 'https://www.ambamazonas.com.br/api/admin_criar_boletim.php';
 
+
 // --- Interfaces ---
 interface Evento {
   id: number; nome_evento: string; genero: 'masculino' | 'feminino' | 'misto';
@@ -100,14 +101,15 @@ export default function GestaoEventosPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [eventoParaEditar, setEventoParaEditar] = useState<EventoEditFormData | null>(null);
 
+  // Estados para novos formulários (Post e Boletim)
   const [postTitulo, setPostTitulo] = useState('');
   const [postTipo, setPostTipo] = useState('jogo_do_dia');
   const [postImagem, setPostImagem] = useState<File | null>(null);
   const [boletimTitulo, setBoletimTitulo] = useState('');
   const [boletimPdf, setBoletimPdf] = useState<File | null>(null);
-  const [eventoSelecionado, setEventoSelecionado] = useState<string>(''); 
+  const [eventoSelecionado, setEventoSelecionado] = useState<string>(''); // ID do evento para o post/boletim
 
-  // Função Fetch
+  // 1. FUNÇÃO DE FETCH GENÉRICA PARA EVENTOS
   const fetchEventos = useCallback(async () => {
     setIsLoadingEventos(true);
     setErroEventos(null);
@@ -133,7 +135,7 @@ export default function GestaoEventosPage() {
       toast({ title: 'Acesso Negado', description: 'Você não tem permissão para ver esta página.', variant: 'destructive' });
       navigate('/'); 
     } else {
-      fetchEventos(); 
+      fetchEventos(); // Busca os eventos
     }
   }, [isAuthenticated, atleta, isAuthLoading, navigate, toast, fetchEventos]); 
 
@@ -164,7 +166,7 @@ export default function GestaoEventosPage() {
       if (response.data.status === 'sucesso') {
         toast({ title: 'Sucesso!', description: 'Evento criado com sucesso!' });
         setEventoFormData(initialEventoFormState); 
-        fetchEventos(); 
+        fetchEventos(); // Recarrega a lista
       } else { throw new Error(response.data.mensagem); }
     } catch (error: any) {
       let msg = error.response?.data?.mensagem || 'Não foi possível criar o evento.';
@@ -182,6 +184,7 @@ export default function GestaoEventosPage() {
       const response = await axios.post(APAGAR_EVENTO_API_URL, payload);
       if (response.data.status === 'sucesso') {
         toast({ title: 'Sucesso!', description: 'Evento apagado com sucesso.' });
+        // Atualiza a lista localmente (mais rápido que buscar de novo)
         setEventos(prev => prev.filter(evento => evento.id !== idEvento)); 
       } else { throw new Error(response.data.mensagem); }
     } catch (error: any) {
@@ -194,7 +197,7 @@ export default function GestaoEventosPage() {
   const handleAbrirModalEditar = (evento: Evento) => {
     setEventoParaEditar({
       ...evento,
-      id: evento.id, 
+      id: evento.id, // Adiciona o ID para a API de update
       data_inicio: evento.data_inicio ? evento.data_inicio.split('T')[0] : '',
       data_fim: evento.data_fim ? evento.data_fim.split('T')[0] : '',
       descricao: evento.descricao || '',
@@ -222,7 +225,7 @@ export default function GestaoEventosPage() {
     const payload = {
       token: token,
       data: {
-        id_evento: eventoParaEditar.id, 
+        id_evento: eventoParaEditar.id, // ID é obrigatório para o backend
         nome_evento: eventoParaEditar.nome_evento,
         genero: eventoParaEditar.genero,
         tipo: eventoParaEditar.tipo,
@@ -237,7 +240,7 @@ export default function GestaoEventosPage() {
       if (response.data.status === 'sucesso' || response.data.status === 'info') {
         toast({ title: 'Sucesso!', description: response.data.mensagem });
         setIsEditModalOpen(false); 
-        fetchEventos(); 
+        fetchEventos(); // Recarrega a lista para mostrar a alteração
       } else {
         throw new Error(response.data.mensagem);
       }
