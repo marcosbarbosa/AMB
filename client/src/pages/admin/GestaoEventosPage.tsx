@@ -610,112 +610,113 @@ export default function GestaoEventosPage() {
 
               </div>
 
-            {/* Modal de Edição de Evento */}
-            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Editar Evento</DialogTitle>
-                  <DialogDescription>
-                    Faça alterações aos detalhes do evento.
-                  </DialogDescription>
-                </DialogHeader>
-                {eventoParaEditar && (
-                  <form onSubmit={(e) => { e.preventDefault(); handleSalvarEdicaoEvento(); }} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-nome_evento">Nome do Evento</Label>
-                      <Input 
-                        id="edit-nome_evento" 
-                        name="nome_evento" 
-                        required 
-                        value={eventoParaEditar.nome_evento} 
-                        onChange={handleEditFormChange} 
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-genero">Gênero</Label>
-                        <Select 
-                          name="genero" 
-                          required
-                          value={eventoParaEditar.genero} 
-                          onValueChange={(value) => handleEditSelectChange('genero', value)}
-                        >
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="misto">Misto</SelectItem>
-                            <SelectItem value="masculino">Masculino</SelectItem>
-                            <SelectItem value="feminino">Feminino</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-tipo">Tipo</Label>
-                        <Select 
-                          name="tipo" 
-                          required
-                          value={eventoParaEditar.tipo} 
-                          onValueChange={(value) => handleEditSelectChange('tipo', value)}
-                        >
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="campeonato">Campeonato</SelectItem>
-                            <SelectItem value="torneio">Torneio</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-data_inicio">Data de Início</Label>
-                        <Input 
-                          id="edit-data_inicio" 
-                          name="data_inicio" 
-                          type="date" 
-                          required 
-                          value={eventoParaEditar.data_inicio} 
-                          onChange={handleEditFormChange} 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-data_fim">Data de Fim (Opcional)</Label>
-                        <Input 
-                          id="edit-data_fim" 
-                          name="data_fim" 
-                          type="date"
-                          value={eventoParaEditar.data_fim || ''} 
-                          onChange={handleEditFormChange} 
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-descricao">Descrição (Opcional)</Label>
-                      <Textarea 
-                        id="edit-descricao" 
-                        name="descricao" 
-                        rows={4}
-                        value={eventoParaEditar.descricao || ''} 
-                        onChange={handleEditFormChange} 
-                      />
-                    </div>
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button type="button" variant="outline">
-                          Cancelar
-                        </Button>
-                      </DialogClose>
-                      <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Salvar Alterações
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                )}
-              </DialogContent>
-            </Dialog>
-
           </div>
         </section>
       </main>
+
+      {/* Modal de Edição de Evento */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Evento</DialogTitle>
+            <DialogDescription>
+              Faça alterações aos detalhes do evento.
+            </DialogDescription>
+          </DialogHeader>
+          {eventoParaEditar && (
+            <form onSubmit={(e) => { e.preventDefault(); handleSalvarEdicaoEvento(); }} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-nome_evento">Nome do Evento</Label>
+                <Input 
+                  id="edit-nome_evento" 
+                  name="nome_evento" 
+                  required 
+                  value={eventoParaEditar.nome_evento} 
+                  onChange={handleEditFormChange} 
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-genero">Gênero</Label>
+                  <Select 
+                    name="genero" 
+                    required
+                    value={eventoParaEditar.genero} 
+                    onValueChange={(value) => handleEditSelectChange('genero', value)}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="misto">Misto</SelectItem>
+                      <SelectItem value="masculino">Masculino</SelectItem>
+                      <SelectItem value="feminino">Feminino</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-tipo">Tipo</Label>
+                  <Select 
+                    name="tipo" 
+                    required
+                    value={eventoParaEditar.tipo} 
+                    onValueChange={(value) => handleEditSelectChange('tipo', value)}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="campeonato">Campeonato</SelectItem>
+                      <SelectItem value="torneio">Torneio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-data_inicio">Data de Início</Label>
+                  <Input 
+                    id="edit-data_inicio" 
+                    name="data_inicio" 
+                    type="date" 
+                    required 
+                    value={eventoParaEditar.data_inicio} 
+                    onChange={handleEditFormChange} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-data_fim">Data de Fim (Opcional)</Label>
+                  <Input 
+                    id="edit-data_fim" 
+                    name="data_fim" 
+                    type="date"
+                    value={eventoParaEditar.data_fim || ''} 
+                    onChange={handleEditFormChange} 
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-descricao">Descrição (Opcional)</Label>
+                <Textarea 
+                  id="edit-descricao" 
+                  name="descricao" 
+                  rows={4}
+                  value={eventoParaEditar.descricao || ''} 
+                  onChange={handleEditFormChange} 
+                />
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Cancelar
+                  </Button>
+                </DialogClose>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Salvar Alterações
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );
