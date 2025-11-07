@@ -1,0 +1,288 @@
+================================================================================
+                    PORTAL AMB DO AMAZONAS
+                    Estrutura de Pastas e Arquivos
+================================================================================
+
+Projeto: AMB Portal - Site Institucional
+Organização: Amazonas Basquete Master (AMB)
+Data de Geração: 07/11/2025 às 15:34:57
+Versão: 1.0
+
+================================================================================
+
+ESTRUTURA DO PROJETO:
+
+.
+├── client/                    → Frontend React + TypeScript + Vite
+│   ├── public/
+│   │   └── favicon.png
+│   ├── src/
+│   │   ├── assets/           → Imagens e recursos estáticos
+│   │   │   ├── logo-amb.png
+│   │   │   ├── logo-amb.jpg
+│   │   │   ├── foto-time-amb.jpg
+│   │   │   ├── banner_logo_campeonato_05.png
+│   │   │   ├── gav1.jpg
+│   │   │   ├── gav2.jpg
+│   │   │   └── todas-as-nacoes.png
+│   │   │
+│   │   ├── components/       → Componentes React reutilizáveis
+│   │   │   ├── ui/          → Componentes Shadcn UI
+│   │   │   │   ├── accordion.tsx
+│   │   │   │   ├── alert-dialog.tsx
+│   │   │   │   ├── alert.tsx
+│   │   │   │   ├── aspect-ratio.tsx
+│   │   │   │   ├── avatar.tsx
+│   │   │   │   ├── badge.tsx
+│   │   │   │   ├── breadcrumb.tsx
+│   │   │   │   ├── button.tsx
+│   │   │   │   ├── calendar.tsx
+│   │   │   │   ├── card.tsx
+│   │   │   │   ├── carousel.tsx
+│   │   │   │   ├── chart.tsx
+│   │   │   │   ├── checkbox.tsx
+│   │   │   │   ├── collapsible.tsx
+│   │   │   │   ├── command.tsx
+│   │   │   │   ├── context-menu.tsx
+│   │   │   │   ├── dialog.tsx
+│   │   │   │   ├── drawer.tsx
+│   │   │   │   ├── dropdown-menu.tsx
+│   │   │   │   ├── form.tsx
+│   │   │   │   ├── hover-card.tsx
+│   │   │   │   ├── input-otp.tsx
+│   │   │   │   ├── input.tsx
+│   │   │   │   ├── label.tsx
+│   │   │   │   ├── menubar.tsx
+│   │   │   │   ├── navigation-menu.tsx
+│   │   │   │   ├── pagination.tsx
+│   │   │   │   ├── popover.tsx
+│   │   │   │   ├── progress.tsx
+│   │   │   │   ├── radio-group.tsx
+│   │   │   │   ├── resizable.tsx
+│   │   │   │   ├── scroll-area.tsx
+│   │   │   │   ├── select.tsx
+│   │   │   │   ├── separator.tsx
+│   │   │   │   ├── sheet.tsx
+│   │   │   │   ├── sidebar.tsx
+│   │   │   │   ├── skeleton.tsx
+│   │   │   │   ├── slider.tsx
+│   │   │   │   ├── switch.tsx
+│   │   │   │   ├── table.tsx
+│   │   │   │   ├── tabs.tsx
+│   │   │   │   ├── textarea.tsx
+│   │   │   │   ├── toast.tsx
+│   │   │   │   ├── toaster.tsx
+│   │   │   │   ├── toggle-group.tsx
+│   │   │   │   └── toggle.tsx
+│   │   │   │
+│   │   │   ├── About.tsx            → Seção Sobre Nós
+│   │   │   ├── CadastroForm.tsx     → Formulário de cadastro de atletas
+│   │   │   ├── CarouselHero.tsx     → Carrossel hero da home
+│   │   │   ├── ContactForm.tsx      → Formulário de contato
+│   │   │   ├── ContactPreview.tsx   → Preview de contato na home
+│   │   │   ├── CTABanner.tsx        → Banner de call-to-action
+│   │   │   ├── EditarPerfilForm.tsx → Formulário edição de perfil
+│   │   │   ├── Footer.tsx           → Rodapé do site
+│   │   │   ├── Hero.tsx             → Hero section
+│   │   │   ├── LoginForm.tsx        → Formulário de login
+│   │   │   ├── Navigation.tsx       → Header e navegação principal
+│   │   │   ├── ParceirosDestaque.tsx → Destaque de parceiros
+│   │   │   ├── Services.tsx         → Seção de serviços
+│   │   │   ├── Stats.tsx            → Estatísticas destacadas
+│   │   │   └── Testimonials.tsx     → Depoimentos de clientes
+│   │   │
+│   │   ├── pages/            → Páginas da aplicação
+│   │   │   ├── admin/       → Páginas administrativas
+│   │   │   │   ├── AdminPainelPage.tsx        → Painel principal admin
+│   │   │   │   ├── GestaoAssociadosPage.tsx   → Gestão de associados
+│   │   │   │   ├── GestaoEventosPage.tsx      → Gestão de eventos
+│   │   │   │   ├── GestaoParceirosPage.tsx    → Gestão de parceiros
+│   │   │   │   └── GestaoTimesPage.tsx        → Gestão de times
+│   │   │   │
+│   │   │   ├── CadastroPage.tsx         → Página de cadastro
+│   │   │   ├── Contact.tsx              → Página de contato
+│   │   │   ├── EditarPerfilPage.tsx     → Editar perfil do atleta
+│   │   │   ├── EsqueciSenhaPage.tsx     → Recuperação de senha
+│   │   │   ├── GestaoAssociadosPage.tsx → Gestão de associados (duplicado?)
+│   │   │   ├── Home.tsx                 → Página inicial
+│   │   │   ├── LoginPage.tsx            → Página de login
+│   │   │   ├── not-found.tsx            → Página 404
+│   │   │   ├── PainelPage.tsx           → Painel do atleta
+│   │   │   ├── ParceirosPage.tsx        → Página de parceiros
+│   │   │   └── RedefinirSenhaPage.tsx   → Redefinir senha
+│   │   │
+│   │   ├── context/          → React Context API
+│   │   │   └── AuthContext.tsx → Contexto de autenticação
+│   │   │
+│   │   ├── hooks/            → Custom React Hooks
+│   │   │   ├── use-mobile.tsx → Hook para detectar mobile
+│   │   │   └── use-toast.ts   → Hook para notificações toast
+│   │   │
+│   │   ├── lib/              → Utilitários e configurações
+│   │   │   ├── queryClient.ts → Configuração TanStack Query
+│   │   │   └── utils.ts       → Funções utilitárias
+│   │   │
+│   │   ├── App.tsx           → Componente raiz da aplicação
+│   │   ├── index.css         → Estilos globais e design tokens
+│   │   └── main.tsx          → Entry point do React
+│   │
+│   └── index.html            → HTML base
+
+├── server/                   → Backend Express.js
+│   ├── index.ts             → Entry point do servidor
+│   ├── routes.ts            → Rotas da API
+│   ├── storage.ts           → Interface de armazenamento
+│   └── vite.ts              → Configuração Vite SSR
+
+├── shared/                   → Código compartilhado frontend/backend
+│   ├── Footer.tsx           → Footer compartilhado
+│   └── schema.ts            → Schemas e tipos TypeScript
+
+├── attached_assets/          → Assets anexados ao projeto
+│   └── generated_images/    → Imagens geradas
+│       ├── About_section_office_space_b80c1f58.png
+│       ├── Service_consultation_imagery_a102d031.png
+│       ├── Technology_service_interface_69bd39b7.png
+│       └── Team_success_imagery_1c422dd7.png
+
+├── components.json           → Configuração Shadcn UI
+├── design_guidelines.md      → Guidelines de design do projeto
+├── drizzle.config.ts        → Configuração Drizzle ORM
+├── package.json             → Dependências do projeto
+├── package-lock.json        → Lock de dependências
+├── postcss.config.js        → Configuração PostCSS
+├── project-structure.txt    → Estrutura anterior do projeto
+├── replit.md                → Documentação do projeto no Replit
+├── tailwind.config.ts       → Configuração Tailwind CSS
+├── tsconfig.json            → Configuração TypeScript
+└── vite.config.ts           → Configuração Vite
+
+================================================================================
+ESTATÍSTICAS DO PROJETO:
+================================================================================
+
+Total de arquivos TypeScript/TSX: 3657
+Total de componentes React: 62
+Total de páginas: 16
+Total de componentes UI (Shadcn): 47
+
+================================================================================
+DESCRIÇÃO DAS PRINCIPAIS TECNOLOGIAS:
+================================================================================
+
+🎨 FRONTEND:
+   • React 18               → Framework JavaScript
+   • TypeScript             → Tipagem estática
+   • Vite                   → Build tool e dev server
+   • React Router Dom       → Roteamento
+   • Tailwind CSS           → Framework CSS utility-first
+   • Shadcn UI              → Componentes reutilizáveis
+   • Framer Motion          → Animações
+   • Axios                  → Cliente HTTP
+   • Lucide React           → Ícones
+
+🔧 BACKEND:
+   • Express.js             → Framework Node.js
+   • TypeScript             → Tipagem estática
+   • Axios                  → Requisições HTTP
+   • Integrações com PHP    → API HostGator externa
+
+📦 OUTRAS FERRAMENTAS:
+   • Drizzle ORM            → ORM para banco de dados
+   • Zod                    → Validação de schemas
+   • TanStack Query         → Gerenciamento de estado server
+   • React Hook Form        → Formulários
+   • PostCSS                → Processamento CSS
+
+================================================================================
+ESTRUTURA DE PÁGINAS:
+================================================================================
+
+PÚBLICAS:
+   / (Home)                 → Página inicial com hero, serviços, depoimentos
+   /contato                 → Formulário de contato
+   /parceiros               → Lista de parceiros
+   /login                   → Autenticação de atletas
+   /cadastro                → Cadastro de novos atletas
+   /esqueci-senha           → Recuperação de senha
+   /redefinir-senha         → Redefinir senha
+
+AUTENTICADAS (Atleta):
+   /painel                  → Painel do atleta logado
+   /editar-perfil           → Editar informações pessoais
+
+ADMINISTRATIVAS (Admin):
+   /admin/painel            → Painel principal do admin
+   /admin/gestao-associados → Gerenciar atletas cadastrados
+   /admin/gestao-parceiros  → Gerenciar parceiros
+   /admin/gestao-eventos    → Gerenciar eventos
+   /admin/gestao-times      → Gerenciar times
+
+================================================================================
+INTEGRAÇÕES COM API EXTERNA (PHP - HostGator):
+================================================================================
+
+Base URL: https://www.ambamazonas.com.br/api/
+
+AUTENTICAÇÃO:
+   • login.php              → Login de atletas
+   • cadastro_atleta.php    → Cadastro de novos atletas
+   • esqueci_senha.php      → Solicitar recuperação de senha
+   • redefinir_senha.php    → Redefinir senha com token
+
+GESTÃO DE ATLETAS:
+   • listar_associados.php  → Listar todos os atletas
+   • atualizar_status_atleta.php → Aprovar/rejeitar atletas
+   • atualizar_perfil.php   → Atualizar perfil do atleta
+
+GESTÃO DE PARCEIROS:
+   • admin_listar_parceiros.php → Listar parceiros
+   • admin_atualizar_parceiro.php → Atualizar parceiro
+
+GESTÃO DE EVENTOS:
+   • listar_eventos.php     → Listar eventos
+   • admin_criar_evento.php → Criar novo evento
+   • admin_apagar_evento.php → Deletar evento
+
+================================================================================
+DESIGN SYSTEM:
+================================================================================
+
+TIPOGRAFIA:
+   • Primary: Inter (Google Fonts)
+   • Accent: Space Grotesk (Google Fonts)
+
+CORES (Tokens CSS):
+   • Primary: Blue (#3B82F6)
+   • Background: White / Dark
+   • Card: Elevação sutil
+   • Muted: Cinza neutro
+   • Border: Bordas sutis
+
+ESPAÇAMENTO:
+   • Sections: py-20 lg:py-24
+   • Component padding: p-6 to p-8
+   • Gaps: gap-6 to gap-12
+
+RESPONSIVIDADE:
+   • Mobile: < 768px
+   • Tablet: 768px - 1024px
+   • Desktop: > 1024px
+
+================================================================================
+OBSERVAÇÕES:
+================================================================================
+
+✅ Projeto configurado para Replit (0.0.0.0:5000)
+✅ Frontend e Backend no mesmo servidor Vite
+✅ Autenticação JWT via API PHP externa
+✅ Design system completo com Shadcn UI + Tailwind
+✅ Responsivo e otimizado para mobile
+✅ Comunicação 100% em Português (Brasil)
+
+⚠️  Não modificar: vite.config.ts, package.json (usar packager_tool)
+⚠️  Backend real hospedado em servidor PHP externo (HostGator)
+
+================================================================================
+FIM DO ARQUIVO - Gerado em 07/11/2025 às 15:35:18
+================================================================================
