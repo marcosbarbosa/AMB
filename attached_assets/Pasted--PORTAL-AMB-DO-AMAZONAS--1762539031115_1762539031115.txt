@@ -1,0 +1,254 @@
+/*
+ * ==========================================================
+ * PORTAL AMB DO AMAZONAS
+ * ==========================================================
+ *
+ * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
+ * Todos os direitos reservados.
+ *
+ * Data: 5 de novembro de 2025
+ * Hora: 16:50
+ * Versão: 2.2 (Corrige Bug de Fecho do Dialog e Sincronização)
+ * Tarefa: 281-C
+ *
+ * Descrição: Página de Gestão de Eventos (/admin/eventos).
+ * CORRIGIDO: O erro de fecho </Dialog> e a confusão de variáveis
+ * foram resolvidos. (Aplica a lógica completa de CRUD e formulários).
+ *
+ * ==========================================================
+ */
+import { Navigation } from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
+import { useAuth } from '@/context/AuthContext'; 
+import { useEffect, useState, useCallback } from 'react';
+import { useNavigate, Link } from 'react-router-dom'; 
+import { Button } from '@/components/ui/button'; 
+import { Input } from '@/components/ui/input'; 
+import { Label } from '@/components/ui/label'; 
+import { Textarea } from '@/components/ui/textarea'; 
+import { Check, X, Loader2, ArrowLeft, Edit, Trash2, PlusCircle, Upload, FileText } from 'lucide-react'; 
+import axios from 'axios'; 
+import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog"
+
+// --- APIs ---
+const LISTAR_EVENTOS_API_URL = 'https://www.ambamazonas.com.br/api/listar_eventos.php'; 
+const CRIAR_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_criar_evento.php';
+const APAGAR_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_apagar_evento.php';
+const ATUALIZAR_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_atualizar_evento.php';
+const CRIAR_POST_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_criar_post_evento.php';
+const CRIAR_BOLETIM_API_URL = 'https://www.ambamazonas.com.br/api/admin_criar_boletim.php';
+
+
+// --- Interfaces ---
+interface Evento {
+  id: number; nome_evento: string; genero: 'masculino' | 'feminino' | 'misto';
+  data_inicio: string; data_fim: string | null; descricao: string | null;
+  tipo: 'campeonato' | 'torneio';
+}
+interface EventoFormData {
+  nome_evento: string; genero: 'masculino' | 'feminino' | 'misto';
+  tipo: 'campeonato' | 'torneio';
+  data_inicio: string; data_fim: string; descricao: string;
+}
+interface EventoEditFormData extends EventoFormData { id: number; }
+
+
+export default function GestaoEventosPage() {
+  const { isAuthenticated, atleta, token, isLoading: isAuthLoading } = useAuth(); 
+  const navigate = useNavigate(); 
+  const { toast } = useToast();
+
+  // Estados de Eventos (Lista)
+  const [eventos, setEventos] = useState<Evento[]>([]);
+  const [isLoadingEventos, setIsLoadingEventos] = useState(true);
+  const [erroEventos, setErroEventos] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Genérico para todos os forms
+  
+  const initialEventoFormState: EventoFormData = {
+    nome_evento: '', genero: 'misto', tipo: 'campeonato', 
+    data_inicio: '', data_fim: '', descricao: ''
+  };
+  const [eventoFormData, setEventoFormData] = useState(initialEventoFormState);
+  
+  // Estado para o Modal de Edição
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [eventoParaEditar, setEventoParaEditar] = useState<EventoEditFormData | null>(null);
+
+  // Estados para novos formulários (Post e Boletim)
+  const [postTitulo, setPostTitulo] = useState('');
+  const [postTipo, setPostTipo] = useState('jogo_do_dia');
+  const [postImagem, setPostImagem] = useState<File | null>(null);
+  const [boletimTitulo, setBoletimTitulo] = useState('');
+  const [boletimPdf, setBoletimPdf] = useState<File | null>(null);
+  const [eventoSelecionado, setEventoSelecionado] = useState<string>(''); // ID do evento para o post/boletim
+
+  // 1. FUNÇÃO DE FETCH GENÉRICA PARA EVENTOS
+  const fetchEventos = useCallback(async () => {
+    setIsLoadingEventos(true);
+    setErroEventos(null);
+    try {
+      const response = await axios.get(LISTAR_EVENTOS_API_URL); 
+      if (response.data.status === 'sucesso') {
+        setEventos(response.data.eventos || []);
+      } else {
+        throw new Error(response.data.mensagem || 'Erro ao buscar eventos');
+      }
+    } catch (error) {
+      console.error("Erro ao buscar eventos:", error);
+      setErroEventos('Não foi possível carregar os eventos.');
+    } finally {
+      setIsLoadingEventos(false);
+    }
+  }, []);
+
+  // Efeitos de Segurança e Dados
+  useEffect(() => {
+    if (isAuthLoading) return; 
+    if (!isAuthenticated || (isAuthenticated && atleta?.role !== 'admin')) { 
+      toast({ title: 'Acesso Negado', description: 'Você não tem permissão para ver esta página.', variant: 'destructive' });
+      navigate('/'); 
+    } else {
+      fetchEventos(); 
+    }
+  }, [isAuthenticated, atleta, isAuthLoading, navigate, toast, fetchEventos]); 
+
+  // Handlers de Formulário (Criação)
+  const handleEventoFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = event.target;
+    setEventoFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleEventoSelectChange = (name: string, value: string) => {
+     setEventoFormData(prev => ({ ...prev, [name]: value as any }));
+  };
+
+  const handleCriarEvento = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!token) return;
+    setIsSubmitting(true);
+    
+    const dataToSend = { ...eventoFormData, 
+      data_fim: eventoFormData.data_fim || null, 
+      descricao: eventoFormData.descricao || null 
+    };
+
+    const payload = { token: token, data: dataToSend };
+
+    try {
+      const response = await axios.post(CRIAR_EVENTO_API_URL, payload);
+      if (response.data.status === 'sucesso') {
+        toast({ title: 'Sucesso!', description: 'Evento criado com sucesso!' });
+        setEventoFormData(initialEventoFormState); 
+        fetchEventos(); // Recarrega a lista
+      } else { throw new Error(response.data.mensagem); }
+    } catch (error: any) {
+      let msg = error.response?.data?.mensagem || 'Não foi possível criar o evento.';
+      toast({ title: 'Erro', description: msg, variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  // Handler para Apagar Evento
+  const handleApagarEvento = async (idEvento: number) => {
+    if (!token) return;
+    try {
+      const payload = { token: token, data: { id_evento: idEvento }};
+      const response = await axios.post(APAGAR_EVENTO_API_URL, payload);
+      if (response.data.status === 'sucesso') {
+        toast({ title: 'Sucesso!', description: 'Evento apagado com sucesso.' });
+        // Atualiza a lista localmente (mais rápido que buscar de novo)
+        setEventos(prev => prev.filter(evento => evento.id !== idEvento)); 
+      } else { throw new Error(response.data.mensagem); }
+    } catch (error: any) {
+      let msg = error.response?.data?.mensagem || 'Não foi possível apagar o evento.';
+      toast({ title: 'Erro', description: msg, variant: 'destructive' });
+    }
+  };
+
+  // Handlers de Edição (Modal)
+  const handleAbrirModalEditar = (evento: Evento) => {
+    setEventoParaEditar({
+      ...evento,
+      id: evento.id, // Adiciona o ID para a API de update
+      data_inicio: evento.data_inicio ? evento.data_inicio.split('T')[0] : '',
+      data_fim: evento.data_fim ? evento.data_fim.split('T')[0] : '',
+      descricao: evento.descricao || '',
+    });
+    setIsEditModalOpen(true);
+  };
+  
+  const handleEditFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = event.target;
+    if (eventoParaEditar) {
+      setEventoParaEditar(prev => ({ ...prev!, [name]: value }));
+    }
+  };
+  
+  const handleEditSelectChange = (name: string, value: string) => {
+     if (eventoParaEditar) {
+      setEventoParaEditar(prev => ({ ...prev!, [name]: value as any }));
+    }
+  };
+  
+  const handleSalvarEdicaoEvento = async () => {
+    if (!token || !eventoParaEditar) return;
+    setIsSubmitting(true);
+
+    const payload = {
+      token: token,
+      data: {
+        id_evento: eventoParaEditar.id, // ID é obrigatório para o backend
+        nome_evento: eventoParaEditar.nome_evento,
+        genero: eventoParaEditar.genero,
+        tipo: eventoParaEditar.tipo,
+        data_inicio: eventoParaEditar.data_inicio,
+        data_fim: eventoParaEditar.data_fim || null,
+        descricao: eventoParaEditar.descricao || null,
+      }
+    };
+
+    try {
+      const response = await axios.post(ATUALIZAR_EVENTO_API_URL, payload);
+      if (response.data.status === 'sucesso' || response.data.status === 'info') {
+        toast({ title: 'Sucesso!', description: response.data.mensagem });
+        setIsEditModalOpen(false); 
+        fetchEventos(); // Recarrega a lista para mostrar a alteração
+      } else {
+        throw new Error(response.data.mensagem);
+      }
+    } catch (error: any) {
+      let msg = error.response?.data?.mensagem || 'Não foi possível atualizar o evento.';
+      toast({ title: 'Erro', description: msg, variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
