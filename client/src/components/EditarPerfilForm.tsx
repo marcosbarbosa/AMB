@@ -6,15 +6,15 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 3 de novembro de 2025
- * Hora: 10:50
- * Versão: 1.5 (Corrige Envio de Token e Bug do Checkbox)
- * Tarefa: 273
+ * Data: 2 de novembro de 2025
+ * Hora: 21:30
+ * Versão: 1.4 (Corrige Token Body e Checkbox)
+ * Tarefa: 271
  *
  * Descrição: Formulário para o associado editar seus dados.
  * CORRIGIDO: 
- * 1. Estrutura do payload para {token:..., data: {...}} (para o backend Plano G).
- * 2. Lógica de carregamento do Checkbox (Autoriza Imagem).
+ * 1. Lógica de carregamento do Checkbox (Autoriza Imagem).
+ * 2. Estrutura do payload para {token:..., data: {...}} (para o backend corrigido).
  *
  * ==========================================================
  */
@@ -44,7 +44,7 @@ export function EditarPerfilForm() {
     autoriza_imagem: false, preferencia_newsletter: 'nenhum',
   });
 
-  // 1. CORREÇÃO CHECKBOX (Carregamento)
+  // 1. CORREÇÃO: Carrega dados do atleta no formulário
   useEffect(() => {
     if (atleta) {
       setFormData({
@@ -55,9 +55,9 @@ export function EditarPerfilForm() {
         nacionalidade: atleta.nacionalidade || '',
         naturalidade: atleta.naturalidade || '',
         filiacao: atleta.filiacao || '',
-        // CORREÇÃO CRÍTICA: O 'atleta' do AuthContext já tem o boolean (do login.php)
-        // A conversão '!!' garante que 'undefined' ou 'null' vire 'false'.
-        autoriza_imagem: !!atleta.autoriza_imagem, 
+        // CORREÇÃO CRÍTICA DO CHECKBOX: O backend envia agora um boolean, mas o JavaScript precisa de garantias.
+        autoriza_imagem: !!atleta.autoriza_imagem, // Garante que 1, "1", ou true se torna true.
+        // Garante que o valor inicial não é 'whatsapp'
         preferencia_newsletter: atleta.preferencia_newsletter === 'whatsapp' ? 'email' : (atleta.preferencia_newsletter || 'nenhum'),
       });
     }
@@ -80,7 +80,7 @@ export function EditarPerfilForm() {
   };
 
 
-  // 2. CORREÇÃO TOKEN (Envio)
+  // Função de Envio
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
@@ -92,7 +92,7 @@ export function EditarPerfilForm() {
     }
 
     try {
-      // 2a. CORREÇÃO PAYLOAD: Estrutura o JSON para o Backend
+      // 2. CORREÇÃO PAYLOAD: Estrutura o JSON para o Backend
       const payloadCompleto = {
         token: token,
         data: { // Os dados do formulário vão para o sub-objeto 'data'
@@ -111,7 +111,7 @@ export function EditarPerfilForm() {
       const response = await axios.post(API_URL, payloadCompleto, { 
         headers: {
           'Content-Type': 'application/json',
-          // 2b. REMOVE CABEÇALHO X-AUTHORIZATION (desnecessário, pois o token está no BODY)
+          // O token está no BODY, não precisa de cabeçalho aqui
         },
       });
 
@@ -120,10 +120,12 @@ export function EditarPerfilForm() {
         description: response.data.mensagem, 
       });
 
-      // 3. ATUALIZA O "CÉREBRO" (AuthContext) com os dados que acabamos de salvar
+      // 4. ATUALIZA O "CÉREBRO" (AuthContext)
       if (atleta && (response.data.status === 'sucesso' || response.data.status === 'info')) { 
+           // O PHP só atualiza o que enviamos, então combinamos os objetos
            const atletaAtualizado = { ...atleta, ...payloadCompleto.data };
-           // O 'login' recarrega o estado global com os dados atualizados
+           // Forçamos a atualização do booleano e fazemos o login
+           atletaAtualizado.autoriza_imagem = payloadCompleto.data.autoriza_imagem; 
            login(atletaAtualizado as any, token); 
       }
 
@@ -131,7 +133,6 @@ export function EditarPerfilForm() {
       console.error("Erro ao atualizar perfil:", error);
       let mensagemErro = 'Não foi possível conectar ao servidor.';
       if (error.response?.data?.mensagem) {
-        // Ex: O erro do PHP "Token (Body) inválido ou ausente."
         mensagemErro = error.response.data.mensagem;
       }
       toast({
@@ -146,7 +147,7 @@ export function EditarPerfilForm() {
 
    if (!atleta) return <p className="text-muted-foreground">Carregando dados...</p>;
 
-  // JSX do Formulário
+  // JSX do Formulário (Mantido)
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* --- Secções Dados Pessoais --- */}

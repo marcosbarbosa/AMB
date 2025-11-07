@@ -113,7 +113,7 @@ export default function GestaoTimesPage() {
 
     // Usa FormData para upload de ficheiros e token
     const formData = new FormData();
-    formData.append('token', token); 
+    formData.append('token', token); // Token vai no FormData
     formData.append('nome_time', nomeNovoTime);
     if (logoNovoTime) {
       formData.append('url_logo_time', logoNovoTime);
@@ -145,13 +145,12 @@ export default function GestaoTimesPage() {
   const handleApagarTime = async (idTime: number, nomeTime: string) => {
     if (!token) return;
     try {
-      // O backend PHP está configurado para ler o ID do GET/URL
+      // Usamos POST/JSON para DELETE (mais compatível com nossa arquitetura)
+      const payload = { token: token, id_time: idTime };
       const response = await axios.delete(GERENCIAR_TIMES_API_URL + '?id=' + idTime, {
-        headers: { 
-          'Content-Type': 'application/json' 
-        },
+        headers: { 'Content-Type': 'application/json' },
         // Enviamos o token no body (JSON)
-        data: { token: token } 
+        data: payload 
       }); 
 
       if (response.data.status === 'sucesso') {
