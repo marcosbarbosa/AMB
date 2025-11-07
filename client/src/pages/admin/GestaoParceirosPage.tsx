@@ -22,7 +22,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useEffect, useState, useCallback } from 'react'; 
 import { useNavigate, Link } from 'react-router-dom'; 
 import { Button } from '@/components/ui/button'; 
-import { Check, X, Loader2, ArrowLeft, Edit } from 'lucide-react'; // 1. Ícones CORRIGIDOS (incluindo Edit)
+// 1. IMPORTADO ÍCONE 'Edit'
+import { Check, X, Loader2, ArrowLeft, Edit } from 'lucide-react'; 
 import axios from 'axios'; 
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -214,6 +215,7 @@ export default function GestaoParceirosPage() {
                                 </Button>
                               </div>
                             )}
+                            {/* 2. CORREÇÃO APLICADA (usando <Edit />) */}
                             {parc.partner_tier !== 'pendente' && (
                                 <Button variant="outline" size="icon" className="h-8 w-8" title="Visualizar/Editar Parceiro (em breve)">
                                    <Edit className="h-4 w-4" /> 
