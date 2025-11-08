@@ -189,7 +189,8 @@ export default function GestaoEventosPage() {
       data_inicio: evento.data_inicio ? evento.data_inicio.split('T')[0] : '',
       data_fim: evento.data_fim ? evento.data_fim.split('T')[0] : '',
       descricao: evento.descricao || '',
-      tipo: evento.tipo || 'campeonato', // Garantir que 'tipo' tenha um valor válido
+      genero: (evento.genero?.toLowerCase() || 'misto') as 'masculino' | 'feminino' | 'misto',
+      tipo: (evento.tipo?.toLowerCase() || 'campeonato') as 'campeonato' | 'torneio',
     });
     setIsEditModalOpen(true);
   };
