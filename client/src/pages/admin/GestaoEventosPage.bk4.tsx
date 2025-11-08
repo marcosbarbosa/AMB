@@ -453,10 +453,10 @@ export default function GestaoEventosPage() {
                               </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
+                         <div className="space-y-2">
                             <Label htmlFor="edit-tipo">Tipo</Label>
                             <Select name="tipo" 
-                                    value={eventoParaEditar.tipo}
+                                    value={eventoParaEditar?.tipo || 'campeonato' }
                                     onValueChange={(value) => handleEditSelectChange('tipo', value)}
                             >
                               <SelectTrigger><SelectValue /></SelectTrigger>
