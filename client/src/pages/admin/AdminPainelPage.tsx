@@ -70,8 +70,11 @@ export default function AdminPainelPage() {
       title: "Gestão de Parceiros",
       description: "Gerir níveis (Ouro, Prata) e status de parcerias.",
       icon: Handshake,
-      link: "/admin/parceiros", 
-      testid: "admin-link-parceiros"
+      //link: "/admin/parceiros", 
+      //testid: "admin-link-parceiros"
+
+      link: "/admin/times", 
+      testid: "admin-link-times"
     },
     {
       title: "Gestão de Eventos",

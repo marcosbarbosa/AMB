@@ -6,15 +6,14 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 5 de novembro de 2025
- * Hora: 18:30
- * Versão: 3.0 (Plano B - Modularizado)
- * Tarefa: 282 (Módulo 29)
+ * Data: 7 de novembro de 2025
+ * Hora: 20:30
+ * Versão: 3.1 (Plano B - Modularizado)
+ * Tarefa: 295 (Módulo 29-B)
  *
  * Descrição: Página de Gestão de Eventos (/admin/eventos).
- * REFEITO DO ZERO (Plano B) para focar apenas no CRUD de Eventos.
- * Corrige o bug "Expected corresponding JSX closing tag for <Dialog>".
- * Adiciona link para a futura página de Gestão de Conteúdo.
+ * ATUALIZADO: O botão "Gerir Conteúdo" agora aponta para
+ * a nova página de Inscrição de Times.
  *
  * ==========================================================
  */
@@ -27,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input'; 
 import { Label } from '@/components/ui/label'; 
 import { Textarea } from '@/components/ui/textarea'; 
-import { Check, X, Loader2, ArrowLeft, Edit, Trash2, PlusCircle, Newspaper } from 'lucide-react'; 
+import { Check, X, Loader2, ArrowLeft, Edit, Trash2, PlusCircle, Users, Newspaper, FileText } from 'lucide-react';
 import axios from 'axios'; 
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -189,8 +188,6 @@ export default function GestaoEventosPage() {
       data_inicio: evento.data_inicio ? evento.data_inicio.split('T')[0] : '',
       data_fim: evento.data_fim ? evento.data_fim.split('T')[0] : '',
       descricao: evento.descricao || '',
-      genero: (evento.genero?.toLowerCase() || 'misto') as 'masculino' | 'feminino' | 'misto',
-      tipo: (evento.tipo?.toLowerCase() || 'campeonato') as 'campeonato' | 'torneio',
     });
     setIsEditModalOpen(true);
   };
@@ -204,7 +201,7 @@ export default function GestaoEventosPage() {
 
   const handleEditSelectChange = (name: string, value: string) => {
      if (eventoParaEditar) {
-      setEventoParaEditar(prev => ({ ...prev!, [name]: value }));  // value as any
+      setEventoParaEditar(prev => ({ ...prev!, [name]: value as any }));
     }
   };
 
@@ -258,7 +255,6 @@ export default function GestaoEventosPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="pt-16"> 
-        {/* 1. (CORREÇÃO) O <Dialog> agora embrulha toda a secção */}
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
           <section className="py-16 lg:py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -375,11 +371,20 @@ export default function GestaoEventosPage() {
                                    </Button>
                                  </DialogTrigger>
 
-                                 {/* NOVO: Botão para Gerir Conteúdo (Módulo 29) */}
+                                 {/* (CORREÇÃO) Botão para Gerir Times/Inscrições */}
                                  <Button 
                                    variant="outline" size="icon" className="h-8 w-8" 
-                                   title="Gerir Posts e Boletins (Em Breve)"
-                                   onClick={() => navigate(`/admin/eventos/conteudo/${evento.id}`)} // Rota futura
+                                   title="Inscrever Times no Evento"
+                                   onClick={() => navigate(`/admin/eventos/inscricoes/${evento.id}`)} // Rota Correta
+                                 >
+                                   <Users className="h-4 w-4" />
+                                 </Button>
+
+                                 {/* (CORREÇÃO) Botão para Gerir Conteúdo */}
+                                 <Button 
+                                   variant="outline" size="icon" className="h-8 w-8" 
+                                   title="Gerir Posts e Boletins"
+                                   onClick={() => navigate(`/admin/eventos/conteudo/${evento.id}`)} // Rota Correta
                                  >
                                    <Newspaper className="h-4 w-4" />
                                  </Button>
@@ -454,10 +459,10 @@ export default function GestaoEventosPage() {
                               </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
+                         <div className="space-y-2">
                             <Label htmlFor="edit-tipo">Tipo</Label>
                             <Select name="tipo" 
-                                    value={eventoParaEditar.tipo}
+                                    value={eventoParaEditar.tipo} 
                                     onValueChange={(value) => handleEditSelectChange('tipo', value)}
                             >
                               <SelectTrigger><SelectValue /></SelectTrigger>

@@ -6,10 +6,10 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 5 de novembro de 2025
- * Hora: 19:30
+ * Data: 7 de novembro de 2025
+ * Hora: 20:30
  * Versão: 1.0
- * Tarefa: 289 (Módulo 29-B - Times)
+ * Tarefa: 285 (Módulo 29-B - Gestão de Times)
  *
  * Descrição: Página dedicada à Gestão de Times (Equipes).
  * Permite ao Admin Criar, Listar e Apagar equipes.
@@ -66,6 +66,12 @@ export default function GestaoTimesPage() {
 
   // 1. FUNÇÃO DE FETCH DE TIMES
   const fetchTimes = useCallback(async () => {
+    if (!token) {
+        setIsLoading(false);
+        setErro("Token não encontrado. Faça login novamente.");
+        return;
+    }
+
     setIsLoading(true);
     setErro(null);
     try {
@@ -81,10 +87,7 @@ export default function GestaoTimesPage() {
       }
     } catch (error: any) {
       console.error("Erro ao buscar times:", error);
-      let msg = 'Não foi possível carregar a lista de times.';
-       if (error.response?.status === 403 || error.response?.status === 401) {
-            msg = "Acesso negado. Você não é um administrador válido.";
-       }
+      let msg = error.response?.data?.mensagem || 'Não foi possível carregar a lista de times.';
       setErro(msg);
     } finally {
       setIsLoading(false);
@@ -98,7 +101,7 @@ export default function GestaoTimesPage() {
       toast({ title: 'Acesso Negado', description: 'Você não tem permissão para ver esta página.', variant: 'destructive' });
       navigate('/'); 
     } else {
-      if(token) { // Garante que o token existe antes de fazer o fetch
+      if(token) { 
         fetchTimes(); 
       }
     }
@@ -144,10 +147,10 @@ export default function GestaoTimesPage() {
   const handleApagarTime = async (idTime: number, nomeTime: string) => {
     if (!token) return;
     try {
-      // O backend PHP está configurado para ler o ID do GET/URL
-      const response = await axios.delete(GERENCIAR_TIMES_API_URL + `?id=${idTime}`, {
+      const payload = { token: token, id_time: idTime };
+      const response = await axios.delete(GERENCIAR_TIMES_API_URL, {
         headers: { 'Content-Type': 'application/json' },
-        data: { token: token } // Token no body
+        data: payload // Enviamos o token e o ID no body
       }); 
 
       if (response.data.status === 'sucesso') {
@@ -203,7 +206,7 @@ export default function GestaoTimesPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="logo_time">Logo do Time (Opcional)</Label>
-                    <Input id="logo_time" name="url_logo_time" type="file" accept="image/*"
+                    <Input id="logo_time" name="url_logo_time" type="file" accept="image/png, image/jpeg, image/webp"
                            onChange={(e) => setLogoNovoTime(e.target.files ? e.target.files[0] : null)} />
                     <p className="text-sm text-muted-foreground">Use JPG, PNG, WEBP. Ideal: 150x150px.</p>
                   </div>

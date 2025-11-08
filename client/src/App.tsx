@@ -6,14 +6,13 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 5 de novembro de 2025
- * Hora: 19:30
- * Versão: 2.1 (Corrige Typo na Rota)
- * Tarefa: 290-B
+ * Data: 7 de novembro de 2025
+ * Hora: 23:55
+ * Versão: 2.2 (Adiciona Rota de Inscrição de Times)
+ * Tarefa: 294 (Módulo 29-B)
  *
  * Descrição: Componente raiz da aplicação, define as rotas.
- * CORRIGIDO: O erro de digitação em "@pagesGEsqueciSenhaPage"
- * foi corrigido para "@pages/EsqueciSenhaPage".
+ * ATUALIZADO para incluir a nova rota /admin/eventos/inscricoes/:eventoId
  *
  * ==========================================================
  */
@@ -28,8 +27,7 @@ import Contact from "@/pages/Contact";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/LoginPage";
 import CadastroPage from "@/pages/CadastroPage";
-// 1. CORREÇÃO DO TYPO:
-import EsqueciSenhaPage from "@/pages/EsqueciSenhaPage"; 
+import EsqueciSenhaPage from "@/pages/EsqueciSenhaPage";
 import RedefinirSenhaPage from "@/pages/RedefinirSenhaPage";
 import ParceirosPage from "@/pages/ParceirosPage"; 
 
@@ -44,6 +42,8 @@ import GestaoParceirosPage from "@/pages/admin/GestaoParceirosPage";
 import GestaoEventosPage from "@/pages/admin/GestaoEventosPage"; 
 import GestaoConteudoEventoPage from "@/pages/admin/GestaoConteudoEventoPage"; 
 import GestaoTimesPage from "@/pages/admin/GestaoTimesPage";
+// 1. IMPORTA A NOVA PÁGINA DE INSCRIÇÕES
+import GestaoInscricaoTimesPage from "@/pages/admin/GestaoInscricaoTimesPage";
 
 function App() {
   return (
@@ -72,6 +72,8 @@ function App() {
           <Route path="/admin/eventos" element={<GestaoEventosPage />} />
           <Route path="/admin/eventos/conteudo/:eventoId" element={<GestaoConteudoEventoPage />} />
           <Route path="/admin/times" element={<GestaoTimesPage />} />
+          {/* 2. ADICIONA A NOVA ROTA DE GESTÃO DE INSCRIÇÕES */}
+          <Route path="/admin/eventos/inscricoes/:eventoId" element={<GestaoInscricaoTimesPage />} />
 
           {/* Rota 404 */}
           <Route path="*" element={<NotFound />} />
