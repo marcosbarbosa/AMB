@@ -189,6 +189,7 @@ export default function GestaoEventosPage() {
       data_inicio: evento.data_inicio ? evento.data_inicio.split('T')[0] : '',
       data_fim: evento.data_fim ? evento.data_fim.split('T')[0] : '',
       descricao: evento.descricao || '',
+      tipo: evento.tipo || 'campeonato', // Garantir que 'tipo' tenha um valor válido
     });
     setIsEditModalOpen(true);
   };
@@ -202,7 +203,7 @@ export default function GestaoEventosPage() {
 
   const handleEditSelectChange = (name: string, value: string) => {
      if (eventoParaEditar) {
-      setEventoParaEditar(prev => ({ ...prev!, [name]: value as any }));
+      setEventoParaEditar(prev => ({ ...prev!, [name]: value }));  // value as any
     }
   };
 
@@ -455,7 +456,7 @@ export default function GestaoEventosPage() {
                          <div className="space-y-2">
                             <Label htmlFor="edit-tipo">Tipo</Label>
                             <Select name="tipo" 
-                                    value={eventoParaEditar.tipo} 
+                                    value={eventoParaEditar?.tipo || 'campeonato' }
                                     onValueChange={(value) => handleEditSelectChange('tipo', value)}
                             >
                               <SelectTrigger><SelectValue /></SelectTrigger>
