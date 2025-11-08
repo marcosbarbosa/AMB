@@ -6,10 +6,10 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 3 de novembro de 2025
- * Hora: 11:35
+ * Data: 5 de novembro de 2025
+ * Hora: 19:30
  * Versão: 1.0
- * Tarefa: 285 (Módulo 29 - Gestão de Times)
+ * Tarefa: 289 (Módulo 29-B - Times)
  *
  * Descrição: Página dedicada à Gestão de Times (Equipes).
  * Permite ao Admin Criar, Listar e Apagar equipes.
@@ -66,7 +66,6 @@ export default function GestaoTimesPage() {
 
   // 1. FUNÇÃO DE FETCH DE TIMES
   const fetchTimes = useCallback(async () => {
-    // Usamos GET para listar (não precisa de token no body, apenas admin logado)
     setIsLoading(true);
     setErro(null);
     try {
@@ -80,29 +79,30 @@ export default function GestaoTimesPage() {
       } else {
         throw new Error(response.data.mensagem || 'Erro ao buscar times');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao buscar times:", error);
-      let msg = 'Não foi possível carregar a lista de times. (Acesso negado ou erro no servidor)';
-      // NOVO: Adicionado tratamento para o erro 403/401 do backend
-       if (axios.isAxiosError(error) && error.response?.status === 403) {
+      let msg = 'Não foi possível carregar a lista de times.';
+       if (error.response?.status === 403 || error.response?.status === 401) {
             msg = "Acesso negado. Você não é um administrador válido.";
        }
       setErro(msg);
     } finally {
       setIsLoading(false);
     }
-  }, [token, isAuthenticated, atleta]); // Adicionado isAuthenticated e atleta
+  }, [token]);
 
   // Efeito de Segurança e Dados
   useEffect(() => {
     if (isAuthLoading) return; 
     if (!isAuthenticated || (atleta?.role !== 'admin')) { 
-      // Não mostra toast aqui, pois o Navigation já trata.
+      toast({ title: 'Acesso Negado', description: 'Você não tem permissão para ver esta página.', variant: 'destructive' });
       navigate('/'); 
     } else {
-      fetchTimes(); // Busca os times se for admin
+      if(token) { // Garante que o token existe antes de fazer o fetch
+        fetchTimes(); 
+      }
     }
-  }, [isAuthenticated, atleta, isAuthLoading, navigate, fetchTimes]); 
+  }, [isAuthenticated, atleta, isAuthLoading, navigate, token, fetchTimes]); 
 
 
   // 2. HANDLER PARA CRIAR TIME
@@ -111,7 +111,6 @@ export default function GestaoTimesPage() {
     if (!token || !nomeNovoTime) return;
     setIsSubmitting(true);
 
-    // Usa FormData para upload de ficheiros e token
     const formData = new FormData();
     formData.append('token', token); // Token vai no FormData
     formData.append('nome_time', nomeNovoTime);
@@ -126,9 +125,9 @@ export default function GestaoTimesPage() {
 
       if (response.data.status === 'sucesso') {
         toast({ title: 'Sucesso!', description: response.data.mensagem });
-        setNomeNovoTime(''); // Limpa o nome
-        setLogoNovoTime(null); // Limpa o logo
-        (event.target as HTMLFormElement).reset(); // Limpa o input de arquivo
+        setNomeNovoTime(''); 
+        setLogoNovoTime(null); 
+        (event.target as HTMLFormElement).reset(); 
         fetchTimes(); // Recarrega a lista
       } else { 
         throw new Error(response.data.mensagem); 
@@ -145,12 +144,10 @@ export default function GestaoTimesPage() {
   const handleApagarTime = async (idTime: number, nomeTime: string) => {
     if (!token) return;
     try {
-      // Usamos POST/JSON para DELETE (mais compatível com nossa arquitetura)
-      const payload = { token: token, id_time: idTime };
-      const response = await axios.delete(GERENCIAR_TIMES_API_URL + '?id=' + idTime, {
+      // O backend PHP está configurado para ler o ID do GET/URL
+      const response = await axios.delete(GERENCIAR_TIMES_API_URL + `?id=${idTime}`, {
         headers: { 'Content-Type': 'application/json' },
-        // Enviamos o token no body (JSON)
-        data: payload 
+        data: { token: token } // Token no body
       }); 
 
       if (response.data.status === 'sucesso') {
@@ -224,11 +221,18 @@ export default function GestaoTimesPage() {
                 <h3 className="text-xl font-semibold text-foreground mb-4 border-b pb-2">
                   Times Cadastrados ({times.length})
                 </h3>
+                {isLoading && (
+                  <div className="flex items-center justify-center text-muted-foreground">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> A carregar...
+                  </div>
+                )}
                 {erro && <p className="text-red-600 mb-4">{erro}</p>}
 
-                {times.length === 0 && !erro ? (
+                {times.length === 0 && !isLoading && !erro && (
                   <p className="text-muted-foreground">Nenhum time cadastrado ainda.</p>
-                ) : (
+                )}
+
+                {!isLoading && times.length > 0 && (
                   <div className="overflow-x-auto max-h-[70vh]">
                     <table className="min-w-full divide-y divide-border">
                       <thead className="bg-muted/50">
@@ -244,9 +248,11 @@ export default function GestaoTimesPage() {
                           <tr key={time.id} className="hover:bg-muted/50 transition-colors">
                             <td className="px-4 py-3 text-sm font-medium text-foreground">
                               {time.url_logo_time ? (
-                                <img src={time.url_logo_time} alt={time.nome_time} className="h-8 w-8 object-contain" />
+                                <img src={`https://www.ambamazonas.com.br${time.url_logo_time}`} alt={time.nome_time} className="h-8 w-8 object-contain rounded-full" />
                               ) : (
-                                <User className="h-6 w-6 text-muted-foreground" />
+                                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                </div>
                               )}
                             </td>
                             <td className="px-4 py-3 text-sm font-medium text-foreground">{time.nome_time}</td>

@@ -6,13 +6,14 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 2 de novembro de 2025
- * Hora: 23:05
- * Versão: 1.8 (Adiciona Rota Eventos Admin)
- * Tarefa: 265
+ * Data: 5 de novembro de 2025
+ * Hora: 19:30
+ * Versão: 2.1 (Corrige Typo na Rota)
+ * Tarefa: 290-B
  *
  * Descrição: Componente raiz da aplicação, define as rotas.
- * ATUALIZADO para incluir a nova rota /admin/eventos.
+ * CORRIGIDO: O erro de digitação em "@pagesGEsqueciSenhaPage"
+ * foi corrigido para "@pages/EsqueciSenhaPage".
  *
  * ==========================================================
  */
@@ -27,7 +28,8 @@ import Contact from "@/pages/Contact";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/LoginPage";
 import CadastroPage from "@/pages/CadastroPage";
-import EsqueciSenhaPage from "@/pages/EsqueciSenhaPage";
+// 1. CORREÇÃO DO TYPO:
+import EsqueciSenhaPage from "@/pages/EsqueciSenhaPage"; 
 import RedefinirSenhaPage from "@/pages/RedefinirSenhaPage";
 import ParceirosPage from "@/pages/ParceirosPage"; 
 
@@ -36,11 +38,12 @@ import PainelPage from "@/pages/PainelPage";
 import EditarPerfilPage from "@/pages/EditarPerfilPage"; 
 
 // Páginas Privadas (Admin)
-import AdminPainelPage from "@/pages/admin/AdminPainelPage"; // O novo "Menu"
+import AdminPainelPage from "@/pages/admin/AdminPainelPage"; 
 import GestaoAssociadosPage from "@/pages/admin/GestaoAssociadosPage"; 
-import GestaoParceirosPage from "@/pages/admin/GestaoParceirosPage"; // Já existe
-// 1. IMPORTA A NOVA PÁGINA
+import GestaoParceirosPage from "@/pages/admin/GestaoParceirosPage";
 import GestaoEventosPage from "@/pages/admin/GestaoEventosPage"; 
+import GestaoConteudoEventoPage from "@/pages/admin/GestaoConteudoEventoPage"; 
+import GestaoTimesPage from "@/pages/admin/GestaoTimesPage";
 
 function App() {
   return (
@@ -66,8 +69,9 @@ function App() {
           <Route path="/admin/painel" element={<AdminPainelPage />} />
           <Route path="/admin/associados" element={<GestaoAssociadosPage />} />
           <Route path="/admin/parceiros" element={<GestaoParceirosPage />} />
-          {/* 2. ADICIONA A NOVA ROTA DE GESTÃO */}
           <Route path="/admin/eventos" element={<GestaoEventosPage />} />
+          <Route path="/admin/eventos/conteudo/:eventoId" element={<GestaoConteudoEventoPage />} />
+          <Route path="/admin/times" element={<GestaoTimesPage />} />
 
           {/* Rota 404 */}
           <Route path="*" element={<NotFound />} />
