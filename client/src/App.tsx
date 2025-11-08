@@ -6,13 +6,13 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 7 de novembro de 2025
- * Hora: 23:55
- * Versão: 2.2 (Adiciona Rota de Inscrição de Times)
- * Tarefa: 294 (Módulo 29-B)
+ * Data: 8 de novembro de 2025
+ * Hora: 00:10
+ * Versão: 2.3 (Adiciona Rota de Gestão de Jogos)
+ * Tarefa: 299 (Módulo 29-C)
  *
  * Descrição: Componente raiz da aplicação, define as rotas.
- * ATUALIZADO para incluir a nova rota /admin/eventos/inscricoes/:eventoId
+ * ATUALIZADO para incluir a nova rota /admin/eventos/jogos/:eventoId
  *
  * ==========================================================
  */
@@ -42,8 +42,9 @@ import GestaoParceirosPage from "@/pages/admin/GestaoParceirosPage";
 import GestaoEventosPage from "@/pages/admin/GestaoEventosPage"; 
 import GestaoConteudoEventoPage from "@/pages/admin/GestaoConteudoEventoPage"; 
 import GestaoTimesPage from "@/pages/admin/GestaoTimesPage";
-// 1. IMPORTA A NOVA PÁGINA DE INSCRIÇÕES
 import GestaoInscricaoTimesPage from "@/pages/admin/GestaoInscricaoTimesPage";
+// 1. IMPORTA A NOVA PÁGINA DE JOGOS
+import GestaoJogosPage from "@/pages/admin/GestaoJogosPage";
 
 function App() {
   return (
@@ -72,8 +73,9 @@ function App() {
           <Route path="/admin/eventos" element={<GestaoEventosPage />} />
           <Route path="/admin/eventos/conteudo/:eventoId" element={<GestaoConteudoEventoPage />} />
           <Route path="/admin/times" element={<GestaoTimesPage />} />
-          {/* 2. ADICIONA A NOVA ROTA DE GESTÃO DE INSCRIÇÕES */}
           <Route path="/admin/eventos/inscricoes/:eventoId" element={<GestaoInscricaoTimesPage />} />
+          {/* 2. ADICIONA A NOVA ROTA DE GESTÃO DE JOGOS (TABELA NBB) */}
+          <Route path="/admin/eventos/jogos/:eventoId" element={<GestaoJogosPage />} />
 
           {/* Rota 404 */}
           <Route path="*" element={<NotFound />} />

@@ -6,13 +6,14 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 8 de novembro de 2025
- * Hora: 00:10
- * Versão: 3.2 (Plano B - Modularizado)
- * Tarefa: 300 (Módulo 29-C)
+ * Data: 7 de novembro de 2025
+ * Hora: 20:30
+ * Versão: 3.1 (Plano B - Modularizado)
+ * Tarefa: 295 (Módulo 29-B)
  *
  * Descrição: Página de Gestão de Eventos (/admin/eventos).
- * ATUALIZADO: Adiciona o botão "Tabela de Jogos".
+ * ATUALIZADO: O botão "Gerir Conteúdo" agora aponta para
+ * a nova página de Inscrição de Times.
  *
  * ==========================================================
  */
@@ -25,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input'; 
 import { Label } from '@/components/ui/label'; 
 import { Textarea } from '@/components/ui/textarea'; 
-import { Check, X, Loader2, ArrowLeft, Edit, Trash2, PlusCircle, Newspaper, Users, CalendarClock } from 'lucide-react'; // Adicionado CalendarClock
+import { Check, X, Loader2, ArrowLeft, Edit, Trash2, PlusCircle, Users, Newspaper, FileText } from 'lucide-react';
 import axios from 'axios'; 
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -281,7 +282,6 @@ export default function GestaoEventosPage() {
                       1. Criar Evento
                     </h3>
                     <form onSubmit={handleCriarEvento} className="space-y-4">
-                      {/* ... (Formulário de Evento mantido) ... */}
                       <div className="space-y-2">
                         <Label htmlFor="nome_evento">Nome do Evento</Label>
                         <Input id="nome_evento" name="nome_evento" required 
@@ -360,7 +360,7 @@ export default function GestaoEventosPage() {
                                 </p>
                               </div>
                               <div className="flex gap-2 flex-shrink-0">
-                                 {/* 1. Botão Editar */}
+                                 {/* O <DialogTrigger> ESTÁ AQUI */}
                                  <DialogTrigger asChild>
                                    <Button 
                                      variant="outline" size="icon" className="h-8 w-8" 
@@ -371,34 +371,25 @@ export default function GestaoEventosPage() {
                                    </Button>
                                  </DialogTrigger>
 
-                                 {/* 2. Botão Inscrever Times */}
+                                 {/* (CORREÇÃO) Botão para Gerir Times/Inscrições */}
                                  <Button 
                                    variant="outline" size="icon" className="h-8 w-8" 
                                    title="Inscrever Times no Evento"
-                                   onClick={() => navigate(`/admin/eventos/inscricoes/${evento.id}`)}
+                                   onClick={() => navigate(`/admin/eventos/inscricoes/${evento.id}`)} // Rota Correta
                                  >
                                    <Users className="h-4 w-4" />
                                  </Button>
 
-                                 {/* 3. Botão Tabela de Jogos (NOVO) */}
-                                 <Button 
-                                   variant="outline" size="icon" className="h-8 w-8" 
-                                   title="Gerir Tabela de Jogos"
-                                   onClick={() => navigate(`/admin/eventos/jogos/${evento.id}`)}
-                                 >
-                                   <CalendarClock className="h-4 w-4" />
-                                 </Button>
-
-                                 {/* 4. Botão Gerir Conteúdo */}
+                                 {/* (CORREÇÃO) Botão para Gerir Conteúdo */}
                                  <Button 
                                    variant="outline" size="icon" className="h-8 w-8" 
                                    title="Gerir Posts e Boletins"
-                                   onClick={() => navigate(`/admin/eventos/conteudo/${evento.id}`)}
+                                   onClick={() => navigate(`/admin/eventos/conteudo/${evento.id}`)} // Rota Correta
                                  >
                                    <Newspaper className="h-4 w-4" />
                                  </Button>
 
-                                 {/* 5. Botão Apagar */}
+                                 {/* O <AlertDialogTrigger> (Apagar) ESTÁ AQUI */}
                                  <AlertDialog>
                                    <AlertDialogTrigger asChild>
                                      <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Apagar Evento">
@@ -426,6 +417,9 @@ export default function GestaoEventosPage() {
                                  </AlertDialog>
                               </div>
                             </div>
+                            {evento.descricao && (
+                              <p className="text-sm text-muted-foreground mt-2">{evento.descricao}</p>
+                            )}
                           </li>
                         ))}
                       </ul>
