@@ -7,12 +7,12 @@
  * Todos os direitos reservados.
  *
  * Data: 8 de novembro de 2025
- * Hora: 00:30
- * Versão: 2.4 (Adiciona Rota de Placar)
- * Tarefa: 305 (Módulo 29-D)
+ * Hora: 00:10
+ * Versão: 2.3 (Adiciona Rota de Gestão de Jogos)
+ * Tarefa: 299 (Módulo 29-C)
  *
  * Descrição: Componente raiz da aplicação, define as rotas.
- * ATUALIZADO para incluir a nova rota /admin/jogos/placar/:jogoId
+ * ATUALIZADO para incluir a nova rota /admin/eventos/jogos/:eventoId
  *
  * ==========================================================
  */
@@ -43,9 +43,8 @@ import GestaoEventosPage from "@/pages/admin/GestaoEventosPage";
 import GestaoConteudoEventoPage from "@/pages/admin/GestaoConteudoEventoPage"; 
 import GestaoTimesPage from "@/pages/admin/GestaoTimesPage";
 import GestaoInscricaoTimesPage from "@/pages/admin/GestaoInscricaoTimesPage";
+// 1. IMPORTA A NOVA PÁGINA DE JOGOS
 import GestaoJogosPage from "@/pages/admin/GestaoJogosPage";
-// 1. IMPORTA A NOVA PÁGINA DE PLACAR
-import GestaoPlacarPage from "@/pages/admin/GestaoPlacarPage";
 
 function App() {
   return (
@@ -75,9 +74,8 @@ function App() {
           <Route path="/admin/eventos/conteudo/:eventoId" element={<GestaoConteudoEventoPage />} />
           <Route path="/admin/times" element={<GestaoTimesPage />} />
           <Route path="/admin/eventos/inscricoes/:eventoId" element={<GestaoInscricaoTimesPage />} />
+          {/* 2. ADICIONA A NOVA ROTA DE GESTÃO DE JOGOS (TABELA NBB) */}
           <Route path="/admin/eventos/jogos/:eventoId" element={<GestaoJogosPage />} />
-          {/* 2. ADICIONA A NOVA ROTA DE GESTÃO DE PLACAR */}
-          <Route path="/admin/jogos/placar/:eventoId/:jogoId" element={<GestaoPlacarPage />} />
 
           {/* Rota 404 */}
           <Route path="*" element={<NotFound />} />
