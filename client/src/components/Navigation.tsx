@@ -3,235 +3,130 @@
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
  *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
+ * Copyright (c) 2026 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 2 de novembro de 2025
- * Hora: 19:30
- * Versão: 1.4 (Corrige Importação do Logótipo .PNG)
- * Tarefa: 265
+ * Data: 9 de janeiro de 2026
+ * Hora: 16:40
+ * Versão: 3.0 (Sincronização de Estado Pós-Login)
+ * Tarefa: 282
  *
- * Descrição: Cabeçalho principal de navegação.
- * CORRIGIDO para usar o caminho do ficheiro 'logo-amb.png',
- * resolvendo o erro de crash.
+ * Descrição: Menu de Navegação Superior.
+ * ATUALIZADO para forçar a re-renderização após o login,
+ * garantindo que a saudação, o botão "Meu Painel" e o 
+ * "Cadeado" de Admin apareçam imediatamente.
  *
  * ==========================================================
  */
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Edit3, LogOut, LayoutDashboard, Lock } from 'lucide-react'; 
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/context/AuthContext';
-// 1. CORREÇÃO: O caminho foi alterado para '../assets/logo-amb.png'
-import ambLogo from '../assets/logo-amb.png'; 
+
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { 
+  Home, 
+  Info, 
+  Handshake, 
+  Mail, 
+  UserPlus, 
+  LogIn,
+  LayoutDashboard,
+  Lock,
+  LogOut,
+  Menu
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext"; 
+import logoAmb from "@/assets/logo-amb.png";
 
 export function Navigation() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, logout, isAuthenticated } = useAuth();
   const location = useLocation();
-  const { isAuthenticated, atleta, logout } = useAuth();
 
-  const navItems = [
-    { label: 'Início', href: '/' },
-    { label: 'Sobre', href: '/#sobre' },
-    { label: 'Parceiros', href: '/parceiros' }, 
-    { label: 'Contato', href: '/contato' },
-  ];
-
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (href.startsWith('/#')) {
-      e.preventDefault();
-      const sectionId = href.substring(2);
-      const element = document.getElementById(sectionId);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        setIsMenuOpen(false);
-      }
-    }
-  };
-
-  const handleLogout = () => {
-    logout(); 
-    setIsMenuOpen(false);
-  };
+  // Função para garantir que exibimos o nome correto vindo da API
+  const displayName = user?.nome || user?.nome_completo || "Atleta";
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo (CORRIGIDO) */}
-          <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-            <img 
-              src={ambLogo} 
-              alt="Logótipo AMB Amazonas Basquete Master" 
-              className="h-10 w-auto" 
-              data-testid="logo-amb"
-            />
-            <span className="hidden sm:inline text-xl font-bold font-accent bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              AMB Portal
-            </span>
-          </Link>
+    <nav className="bg-white border-b border-slate-100 sticky top-0 z-50 px-4 md:px-8 py-3 shadow-sm">
+      <div className="max-w-7xl mx-auto flex justify-between items-center">
 
-          <div className="flex items-center gap-4">
-            {/* Navegação principal (Desktop) */}
-            <div className="hidden md:flex items-center space-x-1">
-              {navItems.map((item) => (
-                <Link key={item.href} to={item.href}>
-                  <span
-                    onClick={(e: any) => item.href.startsWith('/#') ? scrollToSection(e, item.href) : undefined} 
-                    data-testid={`link-nav-${item.label.toLowerCase()}`}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer inline-block ${
-                      location.pathname === item.href || (item.href.startsWith('/#') && location.pathname === '/')
-                        ? 'text-foreground'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                </Link>
-              ))}
-            </div>
-
-            {/* BLOCO LÓGICO DE ACESSO */}
-            <div className="flex items-center gap-2">
-              {isAuthenticated && atleta ? (
-                // ****** SE ESTIVER LOGADO ******
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground hidden lg:inline">
-                    Olá, {atleta.nome_completo.split(' ')[0]} 
-                  </span>
-
-                  {/* ÍCONE DE ADMIN (Cadeado Amarelo) */}
-                  {atleta.role === 'admin' && (
-                    <Button variant="ghost" size="icon" asChild title="Acesso Admin" data-testid="link-admin-panel">
-                      <Link to="/admin/painel">
-                        <Lock className="h-5 w-5 text-yellow-600 hover:text-yellow-700 transition-colors" />
-                      </Link>
-                    </Button>
-                  )}
-
-                  {/* BOTão MEU PAINEL */}
-                  <Button variant="outline" asChild size="sm"> 
-                    <Link to="/painel">
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Meu Painel
-                    </Link>
-                  </Button>
-
-                  {/* BOTÃO LOGOUT */}
-                  <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair" data-testid="button-logout">
-                    <LogOut className="h-5 w-5 text-destructive hover:text-destructive/80" /> 
-                  </Button>
-                </div>
-              ) : (
-                // ****** SE NÃO ESTIVER LOGADO (Mantido) ******
-                <>
-                  <Button variant="ghost" asChild size="sm"> 
-                    <Link to="/login">
-                      <User className="mr-2 h-4 w-4" />
-                      Login
-                    </Link>
-                  </Button>
-                  <Button variant="default" asChild size="sm"> 
-                    <Link to="/cadastro">
-                      <Edit3 className="mr-2 h-4 w-4" />
-                      Cadastro
-                    </Link>
-                  </Button>
-                </>
-              )}
-            </div>
-
-            {/* Botão do Menu Mobile (Mantido) */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              data-testid="button-menu-toggle"
-            >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
+        {/* LOGO AMB PORTAL */}
+        <Link to="/" className="flex items-center gap-3">
+          <img src={logoAmb} alt="AMB" className="h-10 md:h-12 w-auto object-contain" />
+          <div className="flex flex-col">
+            <span className="text-lg md:text-xl font-bold text-slate-800 italic leading-none">AMB Portal</span>
+            <span className="text-[10px] text-orange-600 font-semibold uppercase tracking-widest">Amazonas</span>
           </div>
+        </Link>
+
+        {/* LINKS CENTRAIS (Desktop) */}
+        <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
+          <Link to="/" className={`hover:text-orange-600 flex items-center gap-1 ${location.pathname === '/' ? 'text-orange-600' : ''}`}>
+            <Home size={16}/> Início
+          </Link>
+          <Link to="/sobre" className={`hover:text-orange-600 flex items-center gap-1 ${location.pathname === '/sobre' ? 'text-orange-600' : ''}`}>
+            <Info size={16}/> Sobre
+          </Link>
+          <Link to="/parceiros" className={`hover:text-orange-600 flex items-center gap-1 ${location.pathname === '/parceiros' ? 'text-orange-600' : ''}`}>
+            <Handshake size={16}/> Parceiros
+          </Link>
+          <Link to="/contato" className={`hover:text-orange-600 flex items-center gap-1 ${location.pathname === '/contato' ? 'text-orange-600' : ''}`}>
+            <Mail size={16}/> Contato
+          </Link>
+        </div>
+
+        {/* ÁREA DINÂMICA: GESTÃO E LOGIN */}
+        <div className="flex items-center gap-2 md:gap-4">
+
+          {isAuthenticated && user ? (
+            <>
+              {/* SAUDAÇÃO PERSONALIZADA */}
+              <span className="hidden md:block text-xs font-bold text-slate-500 uppercase tracking-tight">
+                Olá, <span className="text-slate-900">{displayName.split(' ')[0]}</span>
+              </span>
+
+              {/* CADEADO DE GESTÃO: APENAS ADMIN  */}
+              {user.role === 'admin' && (
+                <Link to="/admin">
+                  <Button variant="ghost" size="icon" className="text-orange-500 hover:bg-orange-50 border border-orange-100 shadow-sm" title="Painel de Administração">
+                    <Lock size={18} />
+                  </Button>
+                </Link>
+              )}
+
+              {/* BOTÃO MEU PAINEL */}
+              <Link to="/painel">
+                <Button variant="outline" className="gap-2 border-slate-200 text-slate-700 font-bold text-xs h-9 px-4 shadow-sm hover:bg-slate-50">
+                  <LayoutDashboard size={16} /> MEU PAINEL
+                </Button>
+              </Link>
+
+              {/* LOGOUT */}
+              <Button variant="ghost" size="icon" onClick={() => logout()} className="text-red-500 hover:bg-red-50">
+                <LogOut size={20} />
+              </Button>
+            </>
+          ) : (
+            <>
+              {/* BOTÕES VISITANTE */}
+              <Link to="/cadastro" className="hidden sm:block">
+                <Button className="bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-full px-6 shadow-md border-b-4 border-orange-800 transition-all active:border-b-0 active:translate-y-1">
+                  <UserPlus size={18} className="mr-2"/> CADASTRE-SE
+                </Button>
+              </Link>
+              <Link to="/login">
+                <Button variant="ghost" className="text-slate-600 gap-2 font-bold hover:text-orange-600">
+                  <LogIn size={18} /> ENTRAR
+                </Button>
+              </Link>
+            </>
+          )}
+
+          <Button variant="ghost" size="icon" className="lg:hidden text-slate-800">
+            <Menu size={24} />
+          </Button>
         </div>
       </div>
-
-      {/* Menu Mobile (Atualizado para o novo ícone) */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-background border-t border-border" data-testid="mobile-menu">
-          <div className="px-4 pt-4 pb-6 space-y-2"> 
-            {navItems.map((item) => (
-              <Link key={item.href} to={item.href}>
-                <span
-                  onClick={(e: any) => {
-                    if(item.href.startsWith('/#')) scrollToSection(e, item.href);
-                    setIsMenuOpen(false);
-                  }}
-                  className={`block px-4 py-3 rounded-md text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer ${
-                    location.pathname === item.href || (item.href.startsWith('/#') && location.pathname === '/')
-                      ? 'text-foreground bg-accent'
-                      : 'text-muted-foreground'
-                  }`}
-                >
-                  {item.label}
-                </span>
-              </Link>
-            ))}
-
-            <hr className="border-border my-4" />
-
-            {/* Links de Ação Mobile (Condicional) */}
-            {isAuthenticated && atleta ? (
-              <>
-                <div className="px-4 py-2 text-sm text-foreground">
-                  Logado como: <span className="font-medium">{atleta.nome_completo}</span>
-                </div>
-
-                {/* LINK DE ADMIN NO MOBILE */}
-                {atleta.role === 'admin' && (
-                    <Button variant="ghost" className="w-full justify-start text-yellow-700" asChild>
-                        <Link to="/admin/painel" onClick={() => setIsMenuOpen(false)}>
-                            <Lock className="mr-2 h-4 w-4" />
-                            Acesso Admin
-                        </Link>
-                    </Button>
-                )}
-
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/painel" onClick={() => setIsMenuOpen(false)}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Meu Painel
-                  </Link>
-                </Button>
-
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start text-destructive" 
-                  onClick={handleLogout}
-                  data-testid="button-logout-mobile"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sair
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                    <User className="mr-2 h-4 w-4" />
-                    Login
-                  </Link>
-                </Button>
-                <Button variant="default" className="w-full justify-start" asChild>
-                  <Link to="/cadastro" onClick={() => setIsMenuOpen(false)}>
-                    <Edit3 className="mr-2 h-4 w-4" />
-                    Cadastro
-                  </Link>
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </nav>
   );
 }
+
+export default Navigation;

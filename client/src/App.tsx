@@ -3,23 +3,29 @@
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
  *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
+ * Copyright (c) 2026 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 8 de novembro de 2025
- * Hora: 00:30
- * Versão: 2.4 (Adiciona Rota de Placar)
- * Tarefa: 305 (Módulo 29-D)
+ * Data: 9 de janeiro de 2026
+ * Hora: 19:15
+ * Versão: 3.2 (Estrutura de Layout Global e Sincronia Admin)
  *
- * Descrição: Componente raiz da aplicação, define as rotas.
- * ATUALIZADO para incluir a nova rota /admin/jogos/placar/:jogoId
+ * Descrição: Componente raiz da aplicação. 
+ * Centraliza a Navigation e o Footer dentro do AuthProvider.
+ * Isso garante que o menu reconheça o role 'admin' e exiba 
+ * o cadeado em tempo real sem duplicar elementos.
  *
  * ==========================================================
  */
-import { Routes, Route } from "react-router-dom"; 
+
+import { Routes, Route, Navigate } from "react-router-dom"; 
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./context/AuthContext"; 
+
+// Componentes Globais (Persistentes em todas as telas)
+import { Navigation } from "@/components/Navigation"; 
+import Footer from "@/components/Footer";
 
 // Páginas Públicas
 import Home from "@/pages/Home";
@@ -44,14 +50,18 @@ import GestaoConteudoEventoPage from "@/pages/admin/GestaoConteudoEventoPage";
 import GestaoTimesPage from "@/pages/admin/GestaoTimesPage";
 import GestaoInscricaoTimesPage from "@/pages/admin/GestaoInscricaoTimesPage";
 import GestaoJogosPage from "@/pages/admin/GestaoJogosPage";
-// 1. IMPORTA A NOVA PÁGINA DE PLACAR
 import GestaoPlacarPage from "@/pages/admin/GestaoPlacarPage";
 
 function App() {
   return (
     <AuthProvider> 
       <TooltipProvider>
+
+        {/* MENU GLOBAL: Única instância para o site todo */}
+        <Navigation /> 
+
         <Toaster />
+
         <Routes>
           {/* Rotas Públicas */}
           <Route path="/" element={<Home />} />
@@ -68,6 +78,8 @@ function App() {
           <Route path="/painel/editar" element={<EditarPerfilPage />} />
 
           {/* Rotas Privadas (Admin) */}
+          {/* Redirecionamento amigável: /admin vai para o painel administrativo */}
+          <Route path="/admin" element={<Navigate to="/admin/painel" replace />} />
           <Route path="/admin/painel" element={<AdminPainelPage />} />
           <Route path="/admin/associados" element={<GestaoAssociadosPage />} />
           <Route path="/admin/parceiros" element={<GestaoParceirosPage />} />
@@ -76,12 +88,15 @@ function App() {
           <Route path="/admin/times" element={<GestaoTimesPage />} />
           <Route path="/admin/eventos/inscricoes/:eventoId" element={<GestaoInscricaoTimesPage />} />
           <Route path="/admin/eventos/jogos/:eventoId" element={<GestaoJogosPage />} />
-          {/* 2. ADICIONA A NOVA ROTA DE GESTÃO DE PLACAR */}
           <Route path="/admin/jogos/placar/:eventoId/:jogoId" element={<GestaoPlacarPage />} />
 
           {/* Rota 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+
+        {/* RODAPÉ GLOBAL: Sempre no final da página */}
+        <Footer />
+
       </TooltipProvider>
     </AuthProvider>
   );
