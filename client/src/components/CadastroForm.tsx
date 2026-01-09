@@ -6,57 +6,104 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 2 de novembro de 2025
- * Hora: 14:10
- * Versão: 1.3 (Remove Whatsapp Newsletter)
- * Tarefa: 266
+ * Data: 27 de outubro de 2025
+ * Versão: 1.2 (Corrigido)
  *
- * Descrição: Formulário de cadastro de associado.
- * ATUALIZADO para remover a opção "Pelo WhatsApp" das preferências
- * de comunicação.
+ * Descrição: Componente de formulário de cadastro de associado.
  *
  * ==========================================================
  */
+
 import { useState } from 'react';
-import axios from 'axios';
-import { useToast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label'; 
-import { Checkbox } from '@/components/ui/checkbox'; 
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'; 
-import { Send } from 'lucide-react'; 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, CheckCircle } from 'lucide-react';
+import axios from 'axios';
 
-const API_URL = 'https://www.ambamazonas.com.br/api/cadastrar_atleta.php'; 
+const cadastroSchema = z.object({
+  nome_completo: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
+  email: z.string().email('Email inválido'),
+  telefone: z.string().min(10, 'Telefone deve ter pelo menos 10 dígitos'),
+  data_nascimento: z.string().min(1, 'Data de nascimento é obrigatória'),
+  genero: z.enum(['masculino', 'feminino'], { required_error: 'Selecione o gênero' }),
+  cpf: z.string().min(11, 'CPF inválido').max(14, 'CPF inválido'),
+  endereco: z.string().min(5, 'Endereço deve ter pelo menos 5 caracteres'),
+  cidade: z.string().min(2, 'Cidade é obrigatória'),
+  estado: z.string().length(2, 'Use a sigla do estado (ex: AM)'),
+  posicao: z.string().optional(),
+  time_atual: z.string().optional(),
+  observacoes: z.string().optional(),
+});
+
+type CadastroFormData = z.infer<typeof cadastroSchema>;
 
 export function CadastroForm() {
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+    reset,
+  } = useForm<CadastroFormData>({
+    resolver: zodResolver(cadastroSchema),
+    defaultValues: {
+      nome_completo: '',
+      email: '',
+      telefone: '',
+      data_nascimento: '',
+      genero: undefined,
+      cpf: '',
+      endereco: '',
+      cidade: '',
+      estado: '',
+      posicao: '',
+      time_atual: '',
+      observacoes: '',
+    },
+  });
+
+  const onSubmit = async (data: CadastroFormData) => {
     setIsSubmitting(true);
-    const formData = new FormData(event.currentTarget);
-
     try {
-      const response = await axios.post(API_URL, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      toast({
-        title: 'Cadastro enviado!',
-        description: response.data.mensagem, 
-      });
-      (event.target as HTMLFormElement).reset();
-    } catch (error: any) {
-      console.error("Erro ao cadastrar associado:", error);
-      let mensagemErro = 'Não foi possível conectar ao servidor.';
-      if (error.response?.data?.mensagem) {
-        mensagemErro = error.response.data.mensagem;
+      // Envia para o backend PHP externo
+      const response = await axios.post(
+        'https://ambdobrasil.com.br/api/cadastro.php',
+        data,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+
+      if (response.data.success) {
+        setIsSuccess(true);
+        toast({
+          title: 'Cadastro Enviado!',
+          description: 'Seu cadastro foi recebido e está aguardando aprovação.',
+        });
+        reset();
+      } else {
+        throw new Error(response.data.message || 'Erro ao enviar cadastro');
       }
+    } catch (error: any) {
       toast({
-        title: 'Erro ao cadastrar', 
-        description: mensagemErro,
+        title: 'Erro ao enviar',
+        description: error.message || 'Tente novamente mais tarde.',
         variant: 'destructive',
       });
     } finally {
@@ -64,112 +111,223 @@ export function CadastroForm() {
     }
   };
 
+  if (isSuccess) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="pt-8 pb-8 text-center">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Cadastro Enviado!</h2>
+          <p className="text-muted-foreground mb-6">
+            Seu cadastro foi recebido com sucesso. Aguarde a aprovação da administração.
+          </p>
+          <Button onClick={() => setIsSuccess(false)} variant="outline">
+            Fazer Novo Cadastro
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
-      {/* --- Secção 1: Login (Mantida) --- */}
-      <h3 className="text-xl font-semibold text-foreground border-b pb-2">Informações de Acesso</h3>
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" placeholder="seu@email.com" required data-testid="input-cadastro-email" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="senha">Senha</Label>
-          <Input id="senha" name="senha" type="password" placeholder="********" required data-testid="input-cadastro-senha" />
-        </div>
-      </div>
+    <Card className="max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle>Ficha de Cadastro</CardTitle>
+        <CardDescription>
+          Preencha todos os campos obrigatórios (*) para se associar à AMB.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Dados Pessoais */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b pb-2">Dados Pessoais</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="nome_completo">Nome Completo *</Label>
+                <Input
+                  id="nome_completo"
+                  {...register('nome_completo')}
+                  placeholder="Seu nome completo"
+                  data-testid="input-nome"
+                />
+                {errors.nome_completo && (
+                  <p className="text-sm text-destructive">{errors.nome_completo.message}</p>
+                )}
+              </div>
 
-      {/* --- Secção 2: Dados Pessoais (Mantida) --- */}
-      <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Dados Pessoais do Associado</h3> 
-       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="nome_completo">Nome Completo</Label>
-          <Input id="nome_completo" name="nome_completo" placeholder="Seu nome completo" required data-testid="input-cadastro-nome" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-            <Input id="data_nascimento" name="data_nascimento" type="date" required data-testid="input-cadastro-data" />
+              <div className="space-y-2">
+                <Label htmlFor="cpf">CPF *</Label>
+                <Input
+                  id="cpf"
+                  {...register('cpf')}
+                  placeholder="000.000.000-00"
+                  data-testid="input-cpf"
+                />
+                {errors.cpf && (
+                  <p className="text-sm text-destructive">{errors.cpf.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register('email')}
+                  placeholder="seu@email.com"
+                  data-testid="input-email"
+                />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="telefone">Telefone/WhatsApp *</Label>
+                <Input
+                  id="telefone"
+                  {...register('telefone')}
+                  placeholder="(92) 99999-9999"
+                  data-testid="input-telefone"
+                />
+                {errors.telefone && (
+                  <p className="text-sm text-destructive">{errors.telefone.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="data_nascimento">Data de Nascimento *</Label>
+                <Input
+                  id="data_nascimento"
+                  type="date"
+                  {...register('data_nascimento')}
+                  data-testid="input-data-nascimento"
+                />
+                {errors.data_nascimento && (
+                  <p className="text-sm text-destructive">{errors.data_nascimento.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="genero">Gênero *</Label>
+                <Select onValueChange={(value) => setValue('genero', value as 'masculino' | 'feminino')}>
+                  <SelectTrigger data-testid="select-genero">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="masculino">Masculino</SelectItem>
+                    <SelectItem value="feminino">Feminino</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.genero && (
+                  <p className="text-sm text-destructive">{errors.genero.message}</p>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="cpf">CPF</Label>
-            <Input id="cpf" name="cpf" placeholder="000.000.000-00" required data-testid="input-cadastro-cpf" />
+
+          {/* Endereço */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b pb-2">Endereço</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="endereco">Endereço Completo *</Label>
+              <Input
+                id="endereco"
+                {...register('endereco')}
+                placeholder="Rua, número, bairro"
+                data-testid="input-endereco"
+              />
+              {errors.endereco && (
+                <p className="text-sm text-destructive">{errors.endereco.message}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cidade">Cidade *</Label>
+                <Input
+                  id="cidade"
+                  {...register('cidade')}
+                  placeholder="Manaus"
+                  data-testid="input-cidade"
+                />
+                {errors.cidade && (
+                  <p className="text-sm text-destructive">{errors.cidade.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="estado">Estado *</Label>
+                <Input
+                  id="estado"
+                  {...register('estado')}
+                  placeholder="AM"
+                  maxLength={2}
+                  data-testid="input-estado"
+                />
+                {errors.estado && (
+                  <p className="text-sm text-destructive">{errors.estado.message}</p>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="rg">RG</Label>
-            <Input id="rg" name="rg" placeholder="00.000.000-0" data-testid="input-cadastro-rg" />
+
+          {/* Informações Esportivas */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b pb-2">Informações Esportivas</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="posicao">Posição em Quadra</Label>
+                <Input
+                  id="posicao"
+                  {...register('posicao')}
+                  placeholder="Ex: Armador, Ala, Pivô"
+                  data-testid="input-posicao"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="time_atual">Time Atual</Label>
+                <Input
+                  id="time_atual"
+                  {...register('time_atual')}
+                  placeholder="Nome do time (se houver)"
+                  data-testid="input-time"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea
+                id="observacoes"
+                {...register('observacoes')}
+                placeholder="Informações adicionais (opcional)"
+                rows={3}
+                data-testid="input-observacoes"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="nacionalidade">Nacionalidade</Label>
-            <Input id="nacionalidade" name="nacionalidade" placeholder="Brasileiro(a)" data-testid="input-cadastro-nacionalidade" />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="naturalidade">Naturalidade (Cidade/Estado)</Label>
-          <Input id="naturalidade" name="naturalidade" placeholder="Manaus/AM" data-testid="input-cadastro-naturalidade" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="filiacao">Filiação (Nome do Pai e Mãe)</Label>
-          <Textarea id="filiacao" name="filiacao" placeholder="Nome do Pai..." rows={3} data-testid="textarea-cadastro-filiacao" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="endereco">Endereço Completo</Label>
-          <Textarea id="endereco" name="endereco" placeholder="Rua, Número, Bairro, CEP..." rows={3} data-testid="textarea-cadastro-endereco" />
-        </div>
-      </div>
 
-      {/* --- Secção 3: Foto e Termos (Mantida) --- */}
-      <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Foto e Termos</h3>
-      <div className="space-y-2">
-        <Label htmlFor="foto_perfil">Foto de Perfil (Selfie)</Label>
-        <Input id="foto_perfil" name="foto_perfil" type="file" accept="image/png, image/jpeg" required data-testid="input-cadastro-foto" />
-        <p className="text-sm text-muted-foreground">Obrigatório para a ficha. Formatos JPG ou PNG.</p>
-      </div>
-      <div className="flex items-center space-x-2 pt-4">
-        <Checkbox id="autoriza_imagem" name="autoriza_imagem" value="true" required data-testid="checkbox-cadastro-autoriza"/>
-        <Label htmlFor="autoriza_imagem" className="text-sm font-medium leading-none cursor-pointer">
-          Autorizo o direito de imagem (RF-CAD-006)
-        </Label>
-      </div>
-
-      {/* 4. Secção Comunicações (ATUALIZADA SEM WHATSAPP) */}
-      <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Comunicações</h3>
-      <div className="space-y-3">
-         <Label>Deseja receber a Newsletter da AMB?</Label>
-         <RadioGroup 
-            name="preferencia_newsletter" 
-            defaultValue="nenhum" 
-            className="flex flex-col sm:flex-row gap-4 sm:gap-6 pt-2"
-            data-testid="radio-group-newsletter"
-         >
-           {/* Opção WhatsApp REMOVIDA */}
-           <div className="flex items-center space-x-2">
-             <RadioGroupItem value="email" id="news-email" />
-             <Label htmlFor="news-email" className="cursor-pointer">Por E-mail</Label>
-           </div>
-           <div className="flex items-center space-x-2">
-             <RadioGroupItem value="nenhum" id="news-nenhum" />
-             <Label htmlFor="news-nenhum" className="cursor-pointer">Não desejo receber</Label>
-           </div>
-         </RadioGroup>
-         <p className="text-sm text-muted-foreground pt-1">
-            Enviaremos novidades sobre eventos e competições. Você pode alterar esta preferência depois no seu painel.
-         </p>
-      </div>
-
-
-      {/* --- Secção Final: Envio (Mantida) --- */}
-      <Button 
-        type="submit" 
-        className="w-full h-12 text-base mt-8"
-        disabled={isSubmitting}
-        data-testid="button-cadastro-submit"
-      >
-        {isSubmitting ? 'Enviando Cadastro...' : 'Enviar Cadastro'}
-        <Send className="ml-2 h-4 w-4" />
-      </Button>
-    </form>
+          {/* Botão de Envio */}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isSubmitting}
+            data-testid="button-submit-cadastro"
+          >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSubmitting ? 'Enviando...' : 'Enviar Cadastro'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
