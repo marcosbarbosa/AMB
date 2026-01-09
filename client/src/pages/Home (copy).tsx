@@ -7,21 +7,19 @@
  * Todos os direitos reservados.
  *
  * Data: 8 de novembro de 2025
- * Hora: 00:50
- * Versão: 1.2
- * Tarefa: 310-B (Módulo 29-E - Placar Público)
+ * Hora: 00:45
+ * Versão: 1.1
+ * Tarefa: 310 (Módulo 29-E - Placar Público)
  *
  * Descrição: Página principal (Homepage).
- * CORRIGIDO: Re-adiciona o <CarouselHero /> que foi
- * removido por engano na Tarefa 310.
+ * ATUALIZADO para incluir o novo componente PlacarDestaque.
  *
  * ==========================================================
  */
 import { Navigation } from '@/components/Navigation';
-// 1. CORREÇÃO: Importa o CarouselHero (o carrosel que sumiu)
-import { CarouselHero } from '@/components/CarouselHero'; 
-// 2. Importa o Placar
-import { PlacarDestaque } from '@/components/PlacarDestaque'; 
+import { Hero } from '@/components/Hero';
+// 1. IMPORTA O NOVO COMPONENTE
+import { PlacarDestaque } from '@/components/PlacarDestaque';
 import { About } from '@/components/About';
 import { Services } from '@/components/Services';
 import { Stats } from '@/components/Stats';
@@ -35,12 +33,9 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main>
-        {/* 3. CORREÇÃO: Renderiza o CarouselHero */}
-        <CarouselHero /> 
-
-        {/* 4. Renderiza o Placar (como planeado) */}
-        <PlacarDestaque /> 
-
+        <Hero />
+        {/* 2. ADICIONA O PLACAR AO VIVO (ANTES DO "QUEM SOMOS") */}
+        <PlacarDestaque />
         <About />
         <Services />
         <Stats />
