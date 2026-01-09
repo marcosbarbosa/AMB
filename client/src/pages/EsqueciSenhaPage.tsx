@@ -15,8 +15,6 @@
  *
  * ==========================================================
  */
-import { Navigation } from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,7 +24,6 @@ import { useState } from 'react';
 import axios from 'axios';
 import { Mail, Send, Loader2 } from 'lucide-react';
 
-// TODO: (Tarefa 172) Criar este endpoint no backend
 const SOLICITAR_API_URL = 'https://www.ambamazonas.com.br/api/solicitar_redefinicao.php';
 
 export default function EsqueciSenhaPage() {
@@ -41,7 +38,6 @@ export default function EsqueciSenhaPage() {
     setIsSuccess(false);
 
     try {
-      // O backend (a ser criado) espera um JSON com o email
       const response = await axios.post(SOLICITAR_API_URL, { email });
 
       if (response.data.status === 'sucesso') {
@@ -49,7 +45,7 @@ export default function EsqueciSenhaPage() {
           title: 'Verifique seu E-mail',
           description: response.data.mensagem,
         });
-        setIsSuccess(true); // Mostra a mensagem de sucesso na página
+        setIsSuccess(true);
       } else {
         throw new Error(response.data.mensagem || 'Erro desconhecido');
       }
@@ -58,7 +54,6 @@ export default function EsqueciSenhaPage() {
       console.error("Erro ao solicitar redefinição:", error);
       let mensagemErro = 'Não foi possível conectar ao servidor.';
       if (error.response?.data?.mensagem) {
-        // Ex: "E-mail não encontrado."
         mensagemErro = error.response.data.mensagem;
       }
       toast({
@@ -72,9 +67,7 @@ export default function EsqueciSenhaPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="pt-16"> 
+    <main className="pt-16"> 
         <section className="py-16 lg:py-20">
           <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
@@ -140,8 +133,6 @@ export default function EsqueciSenhaPage() {
             )}
           </div>
         </section>
-      </main>
-      <Footer />
-    </div>
+    </main>
   );
 }

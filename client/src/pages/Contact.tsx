@@ -15,8 +15,6 @@
  *
  * ==========================================================
  */
-import { Navigation } from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
 import { ContactForm } from '@/components/ContactForm';
 import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom'; 
@@ -31,9 +29,7 @@ export default function Contact() {
   const googleMapsUrl = 'https://maps.app.goo.gl/dgpghYqDmS9gbkHH9'; 
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="pt-16">
+    <main className="pt-16">
         {/* Secção do Título (Subtítulo Modificado) */}
         <section className="py-16 lg:py-20 bg-card">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -99,8 +95,6 @@ export default function Contact() {
             </div>
           </div>
         </section>
-      </main>
-      <Footer />
-    </div>
+    </main>
   );
 }
