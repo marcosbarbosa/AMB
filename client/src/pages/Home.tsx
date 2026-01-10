@@ -3,17 +3,14 @@
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
  *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
+ * Copyright (c) 2026 Marcos Barbosa
  *
- * Data: 8 de novembro de 2025
- * Hora: 00:50
- * Versão: 1.2
- * Tarefa: 310-B (Módulo 29-E - Placar Público)
+ * Data: 10 de janeiro de 2026
+ * Tarefa: Remoção de Conteúdo Genérico
  *
- * Descrição: Página principal (Homepage).
- * CORRIGIDO: Re-adiciona o <CarouselHero /> que foi
- * removido por engano na Tarefa 310.
+ * Descrição: Página Inicial (Home).
+ * CORREÇÃO: Remoção do componente "Services" (Consultoria, etc)
+ * que não condiz com o escopo esportivo do projeto.
  *
  * ==========================================================
  */
@@ -42,7 +39,7 @@ export default function Home() {
         <PlacarDestaque /> 
 
         <About />
-        <Services />
+        {/* {/* REMOVIDO E DELETADO DO SISTEMA <Services / > */ } 
         <Stats />
         <CTABanner />
         <Testimonials />
