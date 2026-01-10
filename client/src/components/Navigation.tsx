@@ -8,21 +8,20 @@
  *
  * Data: 2 de novembro de 2025
  * Hora: 19:30
- * Versão: 1.4 (Corrige Importação do Logótipo .PNG)
+ * Versão: 1.5 (Adiciona Botão Seja Parceiro)
  * Tarefa: 265
  *
  * Descrição: Cabeçalho principal de navegação.
- * CORRIGIDO para usar o caminho do ficheiro 'logo-amb.png',
- * resolvendo o erro de crash.
+ * ATUALIZADO: Adicionado botão CTA "Quero ser Parceiro".
  *
  * ==========================================================
  */
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Edit3, LogOut, LayoutDashboard, Lock } from 'lucide-react'; 
+// IMPORTADO HANDSHAKE AQUI EM BAIXO
+import { Menu, X, User, Edit3, LogOut, LayoutDashboard, Lock, Handshake } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
-// 1. CORREÇÃO: O caminho foi alterado para '../assets/logo-amb.png'
 import ambLogo from '../assets/logo-amb.png'; 
 
 export function Navigation() {
@@ -58,7 +57,7 @@ export function Navigation() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo (CORRIGIDO) */}
+          {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
             <img 
               src={ambLogo} 
@@ -91,6 +90,17 @@ export function Navigation() {
               ))}
             </div>
 
+            {/* BOTÃO ESPECIAL: SEJA PARCEIRO (Desktop) */}
+            {/* Só mostramos se não for admin para não poluir, ou sempre, dependendo da tua estratégia */}
+            <div className="hidden md:block">
+                <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white transition-all" size="sm" asChild>
+                    <Link to="/seja-parceiro">
+                        <Handshake className="mr-2 h-4 w-4" />
+                        Quero ser Parceiro
+                    </Link>
+                </Button>
+            </div>
+
             {/* BLOCO LÓGICO DE ACESSO */}
             <div className="flex items-center gap-2">
               {isAuthenticated && atleta ? (
@@ -100,7 +110,7 @@ export function Navigation() {
                     Olá, {atleta.nome_completo.split(' ')[0]} 
                   </span>
 
-                  {/* ÍCONE DE ADMIN (Cadeado Amarelo) */}
+                  {/* ÍCONE DE ADMIN */}
                   {atleta.role === 'admin' && (
                     <Button variant="ghost" size="icon" asChild title="Acesso Admin" data-testid="link-admin-panel">
                       <Link to="/admin/painel">
@@ -109,11 +119,11 @@ export function Navigation() {
                     </Button>
                   )}
 
-                  {/* BOTão MEU PAINEL */}
+                  {/* BOTÃO MEU PAINEL */}
                   <Button variant="outline" asChild size="sm"> 
                     <Link to="/painel">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Meu Painel
+                      <span className="hidden lg:inline">Meu Painel</span>
                     </Link>
                   </Button>
 
@@ -123,25 +133,25 @@ export function Navigation() {
                   </Button>
                 </div>
               ) : (
-                // ****** SE NÃO ESTIVER LOGADO (Mantido) ******
+                // ****** SE NÃO ESTIVER LOGADO ******
                 <>
                   <Button variant="ghost" asChild size="sm"> 
                     <Link to="/login">
                       <User className="mr-2 h-4 w-4" />
-                      Login
+                      <span className="hidden lg:inline">Login</span>
                     </Link>
                   </Button>
                   <Button variant="default" asChild size="sm"> 
                     <Link to="/cadastro">
                       <Edit3 className="mr-2 h-4 w-4" />
-                      Cadastro
+                      <span className="hidden lg:inline">Cadastro</span>
                     </Link>
                   </Button>
                 </>
               )}
             </div>
 
-            {/* Botão do Menu Mobile (Mantido) */}
+            {/* Botão do Menu Mobile */}
             <Button
               variant="ghost"
               size="icon"
@@ -155,7 +165,7 @@ export function Navigation() {
         </div>
       </div>
 
-      {/* Menu Mobile (Atualizado para o novo ícone) */}
+      {/* Menu Mobile */}
       {isMenuOpen && (
         <div className="md:hidden bg-background border-t border-border" data-testid="mobile-menu">
           <div className="px-4 pt-4 pb-6 space-y-2"> 
@@ -177,16 +187,26 @@ export function Navigation() {
               </Link>
             ))}
 
+            {/* LINK SEJA PARCEIRO NO MOBILE */}
+            <Link to="/seja-parceiro">
+                <span 
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center px-4 py-3 rounded-md text-base font-medium text-primary bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer"
+                >
+                    <Handshake className="mr-2 h-5 w-5" />
+                    Quero ser Parceiro
+                </span>
+            </Link>
+
             <hr className="border-border my-4" />
 
-            {/* Links de Ação Mobile (Condicional) */}
+            {/* Links de Ação Mobile */}
             {isAuthenticated && atleta ? (
               <>
                 <div className="px-4 py-2 text-sm text-foreground">
                   Logado como: <span className="font-medium">{atleta.nome_completo}</span>
                 </div>
 
-                {/* LINK DE ADMIN NO MOBILE */}
                 {atleta.role === 'admin' && (
                     <Button variant="ghost" className="w-full justify-start text-yellow-700" asChild>
                         <Link to="/admin/painel" onClick={() => setIsMenuOpen(false)}>

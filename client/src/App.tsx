@@ -8,13 +8,12 @@
  *
  * Data: 8 de novembro de 2025
  * Hora: 00:30
- * Versão: 2.4 (Adiciona Rota de Placar)
+ * Versão: 2.5 (Adiciona Rota Seja Parceiro)
  * Tarefa: 305 (Módulo 29-D)
  *
  * Descrição: Componente raiz da aplicação, define as rotas.
- * ATUALIZADO para incluir a nova rota /admin/jogos/placar/:jogoId
+ * ATUALIZADO: Inclui rota pública para novos parceiros.
  *
- * TESTE DE BACKUP
  * ==========================================================
  */
 import { Routes, Route } from "react-router-dom"; 
@@ -31,6 +30,8 @@ import CadastroPage from "@/pages/CadastroPage";
 import EsqueciSenhaPage from "@/pages/EsqueciSenhaPage";
 import RedefinirSenhaPage from "@/pages/RedefinirSenhaPage";
 import ParceirosPage from "@/pages/ParceirosPage"; 
+// IMPORTAÇÃO NOVA
+import SejaParceiroPage from "@/pages/SejaParceiroPage";
 
 // Páginas Privadas (Associado)
 import PainelPage from "@/pages/PainelPage";
@@ -45,7 +46,6 @@ import GestaoConteudoEventoPage from "@/pages/admin/GestaoConteudoEventoPage";
 import GestaoTimesPage from "@/pages/admin/GestaoTimesPage";
 import GestaoInscricaoTimesPage from "@/pages/admin/GestaoInscricaoTimesPage";
 import GestaoJogosPage from "@/pages/admin/GestaoJogosPage";
-// 1. IMPORTA A NOVA PÁGINA DE PLACAR
 import GestaoPlacarPage from "@/pages/admin/GestaoPlacarPage";
 
 function App() {
@@ -64,6 +64,9 @@ function App() {
           <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
           <Route path="/parceiros" element={<ParceirosPage />} />
 
+          {/* NOVA ROTA: SEJA PARCEIRO */}
+          <Route path="/seja-parceiro" element={<SejaParceiroPage />} />
+
           {/* Rotas Privadas (Associado) */}
           <Route path="/painel" element={<PainelPage />} />
           <Route path="/painel/editar" element={<EditarPerfilPage />} />
@@ -77,7 +80,6 @@ function App() {
           <Route path="/admin/times" element={<GestaoTimesPage />} />
           <Route path="/admin/eventos/inscricoes/:eventoId" element={<GestaoInscricaoTimesPage />} />
           <Route path="/admin/eventos/jogos/:eventoId" element={<GestaoJogosPage />} />
-          {/* 2. ADICIONA A NOVA ROTA DE GESTÃO DE PLACAR */}
           <Route path="/admin/jogos/placar/:eventoId/:jogoId" element={<GestaoPlacarPage />} />
 
           {/* Rota 404 */}

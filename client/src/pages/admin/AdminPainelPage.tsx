@@ -8,11 +8,11 @@
  *
  * Data: 2 de novembro de 2025
  * Hora: 23:05
- * Versão: 2.2 (Refatora Rotas Admin)
- * Tarefa: 266
+ * Versão: 2.3 (Adiciona Módulo de Times)
+ * Tarefa: 266-B
  *
  * Descrição: Página principal do Painel de Admin (/admin/painel).
- * ATUALIZADO para ligar o card 'Gestão de Eventos' à sua página dedicada.
+ * ATUALIZADO: Correção de link de parceiros e adição de botão de Times.
  *
  * ==========================================================
  */
@@ -21,7 +21,8 @@ import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext'; 
 import { useEffect } from 'react'; 
 import { useNavigate, Link } from 'react-router-dom'; 
-import { Loader2, Users, Handshake, CalendarDays, Newspaper, BarChart3, Edit3 } from 'lucide-react'; 
+// ADICIONEI "Shirt" AQUI NAS IMPORTAÇÕES PARA O ÍCONE DOS TIMES
+import { Loader2, Users, Handshake, CalendarDays, Newspaper, BarChart3, Edit3, Shirt } from 'lucide-react'; 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'; 
 import { toast } from '@/hooks/use-toast';
 
@@ -70,17 +71,15 @@ export default function AdminPainelPage() {
       title: "Gestão de Parceiros",
       description: "Gerir níveis (Ouro, Prata) e status de parcerias.",
       icon: Handshake,
-      //link: "/admin/parceiros", 
-      //testid: "admin-link-parceiros"
-
-      link: "/admin/times", 
-      testid: "admin-link-times"
+      // CORRIGIDO: O link agora aponta para a rota certa de parceiros
+      link: "/admin/parceiros", 
+      testid: "admin-link-parceiros"
     },
     {
       title: "Gestão de Eventos",
       description: "Criar, editar e apagar campeonatos.",
       icon: CalendarDays,
-      link: "/admin/eventos", // <-- LINK ATUALIZADO
+      link: "/admin/eventos", 
       testid: "admin-link-eventos"
     },
     {
@@ -103,6 +102,14 @@ export default function AdminPainelPage() {
       icon: Edit3,
       link: "/admin/categorias", 
       testid: "admin-link-categorias"
+    },
+    // NOVO MÓDULO ADICIONADO AQUI
+    {
+      title: "Gestão de Times",
+      description: "Criar, editar e gerir as equipas do campeonato.",
+      icon: Shirt, // Ícone de camisa
+      link: "/admin/times", 
+      testid: "admin-link-times"
     },
   ];
 
