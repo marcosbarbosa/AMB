@@ -2,18 +2,7 @@
  * ==========================================================
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
- *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 8 de novembro de 2025
- * Hora: 00:10
- * Versão: 2.3 (Adiciona Rota de Gestão de Jogos)
- * Tarefa: 299 (Módulo 29-C)
- *
- * Descrição: Componente raiz da aplicação, define as rotas.
- * ATUALIZADO para incluir a nova rota /admin/eventos/jogos/:eventoId
- *
+ * Versão: 2.6 (Correção de Crash e Rota de BI)
  * ==========================================================
  */
 import { Routes, Route } from "react-router-dom"; 
@@ -43,8 +32,9 @@ import GestaoEventosPage from "@/pages/admin/GestaoEventosPage";
 import GestaoConteudoEventoPage from "@/pages/admin/GestaoConteudoEventoPage"; 
 import GestaoTimesPage from "@/pages/admin/GestaoTimesPage";
 import GestaoInscricaoTimesPage from "@/pages/admin/GestaoInscricaoTimesPage";
-// 1. IMPORTA A NOVA PÁGINA DE JOGOS
 import GestaoJogosPage from "@/pages/admin/GestaoJogosPage";
+import GestaoPlacarPage from "@/pages/admin/GestaoPlacarPage";
+import GestaoDiretoriaPage from "@/pages/admin/GestaoDiretoriaPage";
 
 function App() {
   return (
@@ -74,8 +64,11 @@ function App() {
           <Route path="/admin/eventos/conteudo/:eventoId" element={<GestaoConteudoEventoPage />} />
           <Route path="/admin/times" element={<GestaoTimesPage />} />
           <Route path="/admin/eventos/inscricoes/:eventoId" element={<GestaoInscricaoTimesPage />} />
-          {/* 2. ADICIONA A NOVA ROTA DE GESTÃO DE JOGOS (TABELA NBB) */}
           <Route path="/admin/eventos/jogos/:eventoId" element={<GestaoJogosPage />} />
+          <Route path="/admin/jogos/placar/:eventoId/:jogoId" element={<GestaoPlacarPage />} />
+
+          {/* ROTA QUE RESOLVE O ERRO 404 DA DIRETORIA (BI) */}
+          <Route path="/admin/diretoria-stats" element={<GestaoDiretoriaPage />} />
 
           {/* Rota 404 */}
           <Route path="*" element={<NotFound />} />
