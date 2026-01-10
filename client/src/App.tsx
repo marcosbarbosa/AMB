@@ -1,48 +1,85 @@
 /*
  * ==========================================================
- * PORTAL AMB DO AMAZONAS - App Root
+ * PORTAL AMB DO AMAZONAS
  * ==========================================================
- * Versão: 5.1 (Layout Global e Correção de Rotas)
+ *
+ * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
+ * Todos os direitos reservados.
+ *
+ * Data: 8 de novembro de 2025
+ * Hora: 00:10
+ * Versão: 2.3 (Adiciona Rota de Gestão de Jogos)
+ * Tarefa: 299 (Módulo 29-C)
+ *
+ * Descrição: Componente raiz da aplicação, define as rotas.
+ * ATUALIZADO para incluir a nova rota /admin/eventos/jogos/:eventoId
+ *
+ * ==========================================================
  */
-import { Routes, Route, Navigate } from "react-router-dom"; 
+import { Routes, Route } from "react-router-dom"; 
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./context/AuthContext"; 
 
-import { Navigation } from "@/components/Navigation"; 
-import { Footer } from "@/components/Footer";
-
+// Páginas Públicas
 import Home from "@/pages/Home";
+import Contact from "@/pages/Contact";
+import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/LoginPage";
 import CadastroPage from "@/pages/CadastroPage";
+import EsqueciSenhaPage from "@/pages/EsqueciSenhaPage";
+import RedefinirSenhaPage from "@/pages/RedefinirSenhaPage";
+import ParceirosPage from "@/pages/ParceirosPage"; 
+
+// Páginas Privadas (Associado)
 import PainelPage from "@/pages/PainelPage";
-import AdminPainelPage from "@/pages/admin/AdminPainelPage";
-import GestaoAssociadosPage from "@/pages/admin/GestaoAssociadosPage";
+import EditarPerfilPage from "@/pages/EditarPerfilPage"; 
+
+// Páginas Privadas (Admin)
+import AdminPainelPage from "@/pages/admin/AdminPainelPage"; 
+import GestaoAssociadosPage from "@/pages/admin/GestaoAssociadosPage"; 
 import GestaoParceirosPage from "@/pages/admin/GestaoParceirosPage";
-import GestaoEventosPage from "@/pages/admin/GestaoEventosPage";
+import GestaoEventosPage from "@/pages/admin/GestaoEventosPage"; 
+import GestaoConteudoEventoPage from "@/pages/admin/GestaoConteudoEventoPage"; 
+import GestaoTimesPage from "@/pages/admin/GestaoTimesPage";
+import GestaoInscricaoTimesPage from "@/pages/admin/GestaoInscricaoTimesPage";
+// 1. IMPORTA A NOVA PÁGINA DE JOGOS
+import GestaoJogosPage from "@/pages/admin/GestaoJogosPage";
 
 function App() {
   return (
     <AuthProvider> 
       <TooltipProvider>
-        <Navigation /> 
         <Toaster />
         <Routes>
+          {/* Rotas Públicas */}
           <Route path="/" element={<Home />} />
+          <Route path="/sobre" element={<Home />} /> 
+          <Route path="/contato" element={<Contact />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cadastro" element={<CadastroPage />} />
+          <Route path="/esqueci-senha" element={<EsqueciSenhaPage />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
+          <Route path="/parceiros" element={<ParceirosPage />} />
 
-          {/* Rotas Privadas */}
+          {/* Rotas Privadas (Associado) */}
           <Route path="/painel" element={<PainelPage />} />
-          <Route path="/admin" element={<Navigate to="/admin/painel" replace />} />
+          <Route path="/painel/editar" element={<EditarPerfilPage />} />
+
+          {/* Rotas Privadas (Admin) */}
           <Route path="/admin/painel" element={<AdminPainelPage />} />
           <Route path="/admin/associados" element={<GestaoAssociadosPage />} />
           <Route path="/admin/parceiros" element={<GestaoParceirosPage />} />
           <Route path="/admin/eventos" element={<GestaoEventosPage />} />
+          <Route path="/admin/eventos/conteudo/:eventoId" element={<GestaoConteudoEventoPage />} />
+          <Route path="/admin/times" element={<GestaoTimesPage />} />
+          <Route path="/admin/eventos/inscricoes/:eventoId" element={<GestaoInscricaoTimesPage />} />
+          {/* 2. ADICIONA A NOVA ROTA DE GESTÃO DE JOGOS (TABELA NBB) */}
+          <Route path="/admin/eventos/jogos/:eventoId" element={<GestaoJogosPage />} />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Rota 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
-        <Footer />
       </TooltipProvider>
     </AuthProvider>
   );

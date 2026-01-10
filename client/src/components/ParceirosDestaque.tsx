@@ -3,28 +3,28 @@
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
  *
- * Copyright (c) 2026 Marcos Barbosa @mbelitecoach
+ * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 9 de janeiro de 2026
- * Hora: 15:10
- * Versão: 1.3 (Sincronização com API e Export Default)
+ * Data: 2 de novembro de 2025
+ * Hora: 08:20
+ * Versão: 1.2 (Refina UI dos Parceiros - Insight)
+ * Tarefa: 256 (Módulo 28)
  *
- * Descrição: Componente "Parceiros em Destaque".
- * ATUALIZADO: Adicionado export default para evitar erro no Vite.
- * CORRIGIDO: Tipagem para suportar níveis Ouro, Prata e Bronze.
+ * Descrição: Componente "Parceiros em Destaque" para a Página Inicial.
+ * ATUALIZADO para remover os títulos de secção ("Ouro", "Prata")
+ * e adicionar o ícone de nível no card.
  *
  * ==========================================================
  */
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, CardContent } from '@/components/ui/card';
-import { Phone, Globe, Loader2, Award, Shield, Gem } from 'lucide-react'; 
+import { Phone, Globe, Loader2, Award, Shield, Gem } from 'lucide-react'; // Importa Gem (Bronze)
 import { Link } from 'react-router-dom';
 
 const API_URL = 'https://www.ambamazonas.com.br/api/listar_parceiros_homepage.php';
 
-// Interface atualizada para evitar erros de TypeScript com 'bronze'
 interface ParceiroDestaque {
   id: number;
   nome_parceiro: string;
@@ -33,10 +33,10 @@ interface ParceiroDestaque {
   telefone_contato: string | null;
   url_logo: string | null;
   link_site: string | null;
-  partner_tier: 'ouro' | 'prata' | 'bronze'; 
+  partner_tier: 'ouro' | 'prata';
 }
 
-// Helper de Ícone
+// (NOVO) Helper de Ícone (usado em ambos os componentes)
 export const NivelIcone = ({ tier }: { tier: string }) => {
   if (tier === 'ouro') {
     return <Award className="h-5 w-5 text-yellow-500" title="Parceiro Ouro" />;
@@ -45,7 +45,7 @@ export const NivelIcone = ({ tier }: { tier: string }) => {
     return <Shield className="h-5 w-5 text-gray-400" title="Parceiro Prata" />;
   }
   if (tier === 'bronze') {
-    return <Gem className="h-5 w-5 text-orange-800" title="Parceiro Bronze" />;
+    return <Gem className="h-5 w-5 text-yellow-800" title="Parceiro Bronze" />;
   }
   return null;
 };
@@ -81,85 +81,114 @@ export function ParceirosDestaque() {
 
   if (isLoading) {
     return (
-      <section className="py-10 text-center">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto text-orange-600" />
-        <p className="text-sm text-slate-400 mt-2">Carregando parceiros AMB...</p>
+      <section className="py-20 lg:py-24 bg-background text-center">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
       </section>
     );
   }
 
-  if (erro || (parceirosOuro.length === 0 && parceirosPrata.length === 0)) { 
-    return null; 
+  if (erro) { return null; } // Não mostra nada se der erro
+
+  if (parceirosOuro.length === 0 && parceirosPrata.length === 0) {
+    return null; // Oculta a secção inteira
   }
 
   return (
-    <div className="space-y-12">
-      {/* SECÇÃO PARCEIROS OURO */}
+    <>
+      {/* ========================================================== */}
+      {/* SECÇÃO PARCEIROS OURO (Com Imagens/Cards)                 */}
+      {/* ========================================================== */}
       {parceirosOuro.length > 0 && (
-        <section className="py-10">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl font-black text-slate-900 italic uppercase">
-              Parceiros <span className="text-orange-600">Ouro</span>
-            </h2>
-            <div className="h-1 w-20 bg-orange-600 mx-auto mt-2"></div>
-          </div>
+        <section className="py-20 lg:py-24 bg-card border-y border-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* 1. TÍTULO GENÉRICO (PODE SER REMOVIDO SE PREFERIR) */}
+            <div className="text-center mb-16">
+              <h2 className="text-3xl sm:text-4xl font-semibold font-accent text-foreground leading-tight mb-4">
+                Nossos Parceiros em Destaque
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                Apoiadores que fortalecem nossa comunidade com benefícios premium.
+              </p>
+            </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {parceirosOuro.map((parceiro) => (
-              <Card key={parceiro.id} className="border-slate-100 hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-6 flex flex-col h-full">
-                  <div className="w-full h-32 bg-slate-50 rounded-lg mb-4 flex items-center justify-center p-4">
-                    {parceiro.url_logo ? (
-                      <img src={parceiro.url_logo} alt={parceiro.nome_parceiro} className="max-h-full max-w-full object-contain" />
-                    ) : (
-                      <span className="text-xs text-slate-400 uppercase font-bold">Logo AMB</span>
-                    )}
-                  </div>
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-bold text-slate-800 uppercase text-sm">{parceiro.nome_parceiro}</h3>
-                    <NivelIcone tier={parceiro.partner_tier} /> 
-                  </div>
-                  <p className="text-xs text-slate-500 italic mb-4 flex-grow line-clamp-3">
-                    "{parceiro.descricao_beneficio}"
-                  </p>
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                    {parceiro.telefone_contato && (
-                      <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
-                        <Phone size={12} /> {parceiro.telefone_contato}
-                      </span>
-                    )}
-                    {parceiro.link_site && (
-                       <a href={parceiro.link_site} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-orange-600 hover:underline flex items-center gap-1">
-                         <Globe size={12} /> VISITAR SITE
-                       </a>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {parceirosOuro.map((parceiro) => (
+                <Card 
+                  key={parceiro.id} 
+                  className="border-card-border hover:shadow-lg transition-shadow duration-300 flex flex-col"
+                  data-testid={`parceiro-ouro-${parceiro.id}`}
+                >
+                  <CardContent className="p-6 flex flex-col h-full">
+                    {/* Imagem/Logo (Mantido) */}
+                    <div className="w-full h-40 bg-muted rounded-md mb-4 flex items-center justify-center">
+                      {parceiro.url_logo ? (
+                        <img src={parceiro.url_logo} alt={parceiro.nome_parceiro} className="h-full w-full object-contain p-4" />
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Logo em breve</span>
+                      )}
+                    </div>
+                    {/* Detalhes */}
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="text-xl font-semibold text-foreground">{parceiro.nome_parceiro}</h3>
+                      {/* 2. ÍCONE DE NÍVEL AO LADO DO TÍTULO */}
+                      <NivelIcone tier={parceiro.partner_tier} /> 
+                    </div>
+                    <p className="text-sm font-medium text-primary mb-3">{parceiro.categoria}</p>
+                    <p className="text-muted-foreground leading-relaxed mb-4 flex-grow">
+                      "{parceiro.descricao_beneficio}"
+                    </p>
+                    {/* Contactos (Mantidos) */}
+                    <div className="flex items-center gap-4 mt-auto text-sm text-muted-foreground">
+                      {parceiro.telefone_contato && (
+                        <div className="flex items-center gap-1">
+                          <Phone className="h-4 w-4" />
+                          <span>{parceiro.telefone_contato}</span>
+                        </div>
+                      )}
+                      {parceiro.link_site && (
+                         <a href={parceiro.link_site} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
+                           <Globe className="h-4 w-4" />
+                           <span>Site</span>
+                         </a>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </section>
       )}
 
-      {/* SECÇÃO PARCEIROS PRATA */}
+      {/* ========================================================== */}
+      {/* SECÇÃO PARCEIROS PRATA (Apenas Texto - DISCRETA)           */}
+      {/* ========================================================== */}
       {parceirosPrata.length > 0 && (
-        <section className="py-8 border-t border-slate-100">
-          <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {parceirosPrata.map((parceiro) => (
-              <div key={parceiro.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition-colors">
-                 <div className="flex items-center gap-2">
-                   <NivelIcone tier={parceiro.partner_tier} />
-                   <span className="text-xs font-bold text-slate-700 uppercase">{parceiro.nome_parceiro}</span>
-                 </div>
-                 {parceiro.telefone_contato && <span className="text-[10px] text-slate-400">{parceiro.telefone_contato}</span>}
-              </div>
-            ))}
+        <section className="py-20 lg:py-24 bg-background">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            {/* 3. TÍTULO E DESCRIÇÃO REMOVIDOS (Conforme solicitado) */}
+
+            {/* Lista textual */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+              {parceirosPrata.map((parceiro) => (
+                <div 
+                  key={parceiro.id} 
+                  className="border-b border-border pb-3"
+                  data-testid={`parceiro-prata-${parceiro.id}`}
+                >
+                   {/* 4. ÍCONE DE NÍVEL AO LADO DO TÍTULO */}
+                   <div className="flex items-center gap-2 mb-1">
+                     <h3 className="text-lg font-semibold text-foreground">{parceiro.nome_parceiro}</h3>
+                     <NivelIcone tier={parceiro.partner_tier} />
+                   </div>
+                   <p className="text-sm text-muted-foreground">{parceiro.telefone_contato || parceiro.categoria}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
-    </div>
+    </>
   );
 }
-
-// OBRIGATÓRIO: Export default para o Vite encontrar o componente
-export default ParceirosDestaque;

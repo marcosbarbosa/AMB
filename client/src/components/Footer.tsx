@@ -3,61 +3,159 @@
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
  *
- * Copyright (c) 2026 Marcos Barbosa @mbelitecoach
+ * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 9 de janeiro de 2026
- * Hora: 14:15
- * Versão: 1.6 (Correção Dual Export)
- * Tarefa: 273
+ * Data: 2 de novembro de 2025
+ * Hora: 21:50
+ * Versão: 1.8 (Implementa Hyperlink do Desenvolvedor)
+ * Tarefa: 262
  *
- * Descrição: Componente de rodapé (Footer).
- * ATUALIZADO para oferecer export nomeado e default, resolvendo
- * conflitos de importação no Vite/React.
+ * Descrição: Componente do Rodapé principal do site.
+ * ATUALIZADO para transformar o handle do desenvolvedor em
+ * um hyperlink para o Instagram.
  *
  * ==========================================================
  */
+import { Mail, Phone, MapPin, Facebook, Instagram, Youtube } from 'lucide-react'; 
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
-import React from "react";
-import { Link } from "react-router-dom";
-import { Facebook, Instagram, Mail, Phone } from "lucide-react";
-
-// Export Nomeado para resolver o erro
 export function Footer() {
+  const currentYear = new Date().getFullYear();
+
+  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    e.preventDefault();
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const quickLinks = {
+    associacao: [ 
+      { label: 'Sobre Nós', href: '/#sobre', section: 'sobre' }, 
+      { label: 'Parceiros', href: '/parceiros', section: null },
+      { label: 'Contato', href: '/contato', section: null }, 
+    ],
+  };
+
+  const socialLinks = [
+    { icon: Instagram, href: 'https://www.instagram.com/souambmasterdobasquete/', label: 'Instagram' },
+    { icon: Facebook, href: 'https://www.facebook.com/souAMBmasterdobasquete/', label: 'Facebook' },
+    { icon: Youtube, href: 'https://www.youtube.com/@souAMBmasterdobasquete', label: 'YouTube' },
+  ];
+
+  const whatsappUrl = 'https://wa.me/5592992521345';
+  const googleMapsContatoUrl = 'https://maps.app.goo.gl/dgpghYqDmS9gbkHH9'; 
+
+  // 1. URL DO INSTAGRAM DO DESENVOLVEDOR
+  const instagramDevUrl = 'https://www.instagram.com/mbelitecoach';
+
   return (
-    <footer className="bg-slate-900 text-white pt-12 pb-6 px-6 border-t-4 border-orange-600">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
-        <div className="space-y-4">
-          <h3 className="text-orange-500 font-black text-xl italic uppercase font-serif">AMB Amazonas</h3>
-          <p className="text-slate-400 text-sm leading-relaxed">
-            Associação Master de Basquetebol do Amazonas. 
-            Valorizando o atleta veterano e a história do basquete nortista.
-          </p>
-        </div>
+    <footer className="bg-card border-t border-card-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+          {/* Coluna 1: Logo, Descrição, Sociais (Mantida) */}
+          <div>
+            <h3 className="text-2xl font-bold font-accent text-foreground mb-4">
+              AMB Portal
+            </h3>
+            <p className="text-muted-foreground leading-relaxed mb-6 text-sm">
+              Incentivando a prática e a paixão pelo basquete master no Amazonas. 
+              Unindo atletas, promovendo saúde e competição saudável.
+            </p>
+            <div className="flex gap-2">
+              {socialLinks.map((social, index) => (
+                <Button key={index} variant="ghost" size="icon" className="h-9 w-9" asChild data-testid={`button-social-${social.label.toLowerCase()}`}>
+                  <a href={social.href} target="_blank" rel="noopener noreferrer" aria-label={social.label} className="text-muted-foreground hover:text-primary">
+                    <social.icon className="h-4 w-4" />
+                  </a>
+                </Button>
+              ))}
+            </div>
+          </div>
 
-        <div className="space-y-4">
-          <h4 className="font-bold text-lg border-b border-slate-700 pb-2 uppercase tracking-tighter">Navegação</h4>
-          <ul className="text-slate-400 text-sm space-y-2">
-            <li><Link to="/" className="hover:text-orange-500 transition-colors">Página Inicial</Link></li>
-            <li><Link to="/cadastro" className="hover:text-orange-500 transition-colors">Recadastro de Atletas</Link></li>
-            <li><Link to="/parceiros" className="hover:text-orange-500 transition-colors">Parceiros AMB</Link></li>
-          </ul>
-        </div>
+          {/* Coluna 2: Links "A Associação" (Mantida) */}
+          <div>
+            <h4 className="text-lg font-semibold text-foreground mb-4">
+              A Associação
+            </h4>
+            <ul className="space-y-3">
+              {quickLinks.associacao.map((link, index) => (
+                <li key={index}>
+                  {link.section ? (
+                    <a href={link.href} onClick={(e) => scrollToSection(e, link.section!)} className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-sm" data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, '-')}`}>
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link to={link.href}>
+                      <span className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer inline-block text-sm" data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, '-')}`}>
+                        {link.label}
+                      </span>
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        <div className="space-y-4">
-          <h4 className="font-bold text-lg border-b border-slate-700 pb-2 uppercase tracking-tighter">Conecte-se</h4>
-          <div className="flex flex-col gap-3 text-slate-400 text-sm">
-            <span className="flex items-center gap-2"><Phone size={16} className="text-orange-500" /> (92) 9XXXX-XXXX</span>
-            <span className="flex items-center gap-2"><Mail size={16} className="text-orange-500" /> diretoria@ambamazonas.com.br</span>
+          {/* Coluna 3: Contato Direto (Mantida) */}
+          <div>
+            <h4 className="text-lg font-semibold text-foreground mb-4">
+              Contato
+            </h4>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 flex-shrink-0" />
+                <a href="mailto:contato.ambamazonas@gmail.com" className="hover:text-foreground transition-colors">
+                  contato.ambamazonas@gmail.com
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 flex-shrink-0" />
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors" data-testid="link-whatsapp">
+                  (92) 99252-1345 
+                </a>
+              </div>
+              <div className="flex items-start gap-2 pt-1">
+                <MapPin className="h-4 w-4 flex-shrink-0 mt-1" /> 
+                <a href={googleMapsContatoUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors" data-testid="link-maps-contato-footer">
+                  Manaus, Amazonas - Brasil
+                </a>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-slate-800 text-center text-slate-500 text-[10px] uppercase">
-        <p>© 2026 Portal AMB. Copyright (c) Marcos Barbosa @mbelitecoach. Todos os direitos reservados.</p>
+
+        {/* Linha Inferior: Copyright e Links (ATUALIZADO) */}
+        <div className="border-t border-border mt-12 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-muted-foreground text-center md:text-left">
+              &copy; {currentYear} Associação Master de Basquetebol do Amazonas (AMB). Todos os direitos reservados. 
+              {/* 2. ADICIONA O HYPERLINK */}
+              <br className="sm:hidden"/> Desenvolvido por 
+              <a 
+                href={instagramDevUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-foreground transition-colors font-medium ml-1"
+              >
+                Marcos Barbosa @mbelitecoach
+              </a>.
+            </p>
+            <div className="flex gap-4 text-sm text-muted-foreground">
+              <a href="#" className="hover:text-foreground transition-colors">
+                Privacidade
+              </a>
+              <a href="#" className="hover:text-foreground transition-colors">
+                Termos de Uso
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </footer>
   );
 }
-
-// Export Default para garantir compatibilidade total
-export default Footer;

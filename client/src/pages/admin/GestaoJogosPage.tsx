@@ -7,12 +7,13 @@
  * Todos os direitos reservados.
  *
  * Data: 8 de novembro de 2025
- * Hora: 00:30
- * Versão: 1.1
- * Tarefa: 306 (Módulo 29-D - Placar ao Vivo)
+ * Hora: 00:10
+ * Versão: 1.0
+ * Tarefa: 298 (Módulo 29-C - Tabela de Jogos)
  *
- * Descrição: Página para gerir a Tabela de Jogos (NBB).
- * ATUALIZADO para ligar o botão de Placar à nova página.
+ * Descrição: Página para gerir a Tabela de Jogos (NBB)
+ * de um evento (Criar, Listar, Apagar Jogos).
+ * Rota: /admin/eventos/jogos/:eventoId
  *
  * ==========================================================
  */
@@ -52,29 +53,44 @@ const GERENCIAR_INSCRICOES_API_URL = 'https://www.ambamazonas.com.br/api/admin_g
 const LISTAR_EVENTOS_API_URL = 'https://www.ambamazonas.com.br/api/listar_eventos.php';
 
 // Interfaces
-interface Time { id: number; nome_time: string; }
+interface Time {
+  id: number;
+  nome_time: string;
+}
 interface Jogo {
-  id: number; id_time_a: number; id_time_b: number;
-  nome_time_a: string; nome_time_b: string;
-  data_jogo: string; horario_jogo: string;
-  local_jogo: string; fase: string;
+  id: number;
+  id_time_a: number;
+  id_time_b: number;
+  nome_time_a: string;
+  nome_time_b: string;
+  data_jogo: string;
+  horario_jogo: string;
+  local_jogo: string;
+  fase: string;
   status_jogo: 'agendado' | 'ao_vivo' | 'finalizado';
 }
-interface Evento { id: number; nome_evento: string; }
+interface Evento {
+  id: number;
+  nome_evento: string;
+}
 interface JogoFormData {
-  id_time_a: string; id_time_b: string; data_jogo: string;
-  horario_jogo: string; local_jogo: string; fase: string;
+  id_time_a: string;
+  id_time_b: string;
+  data_jogo: string;
+  horario_jogo: string;
+  local_jogo: string;
+  fase: string;
 }
 
 export default function GestaoJogosPage() {
   const { isAuthenticated, atleta, token, isLoading: isAuthLoading } = useAuth(); 
   const navigate = useNavigate(); 
-  const { eventoId } = useParams(); 
   const { toast } = useToast();
+  const { eventoId } = useParams(); // <-- Lê o ID do evento da URL
 
   const [evento, setEvento] = useState<Evento | null>(null);
-  const [jogos, setJogos] = useState<Jogo[]>([]); 
-  const [timesInscritos, setTimesInscritos] = useState<Time[]>([]); 
+  const [jogos, setJogos] = useState<Jogo[]>([]); // Lista de jogos criados
+  const [timesInscritos, setTimesInscritos] = useState<Time[]>([]); // Times para os dropdowns
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,23 +107,33 @@ export default function GestaoJogosPage() {
       setErro("Token ou ID do Evento não encontrado.");
       return;
     }
+
     setIsLoading(true);
     setErro(null);
     try {
-      const [eventoResponse, inscritosResponse, jogosResponse] = await Promise.all([
-        axios.get(LISTAR_EVENTOS_API_URL),
-        axios.get(GERENCIAR_INSCRICOES_API_URL, { params: { token: token, id_evento: eventoId } }),
-        axios.get(GERENCIAR_JOGOS_API_URL, { params: { token: token, id_evento: eventoId } })
-      ]);
-
+      // 1. Buscar o evento
+      const eventoResponse = await axios.get(LISTAR_EVENTOS_API_URL);
       const eventoEncontrado = eventoResponse.data.eventos.find((e: Evento) => e.id === Number(eventoId));
       if (eventoEncontrado) setEvento(eventoEncontrado);
 
+      // 2. Buscar Times Inscritos (para os dropdowns)
+      const inscritosResponse = await axios.get(GERENCIAR_INSCRICOES_API_URL, {
+        params: { token: token, id_evento: eventoId }
+      });
       if (inscritosResponse.data.status === 'sucesso') {
         setTimesInscritos(inscritosResponse.data.times || []);
+      } else {
+        throw new Error(inscritosResponse.data.mensagem);
       }
+
+      // 3. Buscar Jogos Criados
+      const jogosResponse = await axios.get(GERENCIAR_JOGOS_API_URL, {
+         params: { token: token, id_evento: eventoId }
+      });
       if (jogosResponse.data.status === 'sucesso') {
         setJogos(jogosResponse.data.jogos || []);
+      } else {
+         throw new Error(jogosResponse.data.mensagem);
       }
 
     } catch (error: any) {
@@ -130,7 +156,7 @@ export default function GestaoJogosPage() {
         fetchData(); 
       }
     }
-  }, [isAuthenticated, atleta, isAuthLoading, navigate, token, fetchData, toast]); 
+  }, [isAuthenticated, atleta, isAuthLoading, navigate, token, fetchData]); 
 
 
   // Handlers do Formulário
@@ -168,8 +194,8 @@ export default function GestaoJogosPage() {
 
       if (response.data.status === 'sucesso') {
         toast({ title: 'Sucesso!', description: 'Jogo criado e adicionado à tabela!' });
-        setFormData(initialFormState); 
-        fetchData(); 
+        setFormData(initialFormState); // Limpa o formulário
+        fetchData(); // Recarrega a lista de jogos
       } else { 
         throw new Error(response.data.mensagem); 
       }
@@ -351,12 +377,7 @@ export default function GestaoJogosPage() {
                             <td className="px-4 py-3 text-sm text-muted-foreground">{jogo.fase}</td>
                             <td className="px-4 py-3 text-center">
                               <div className="flex justify-center gap-2">
-                                {/* (CORREÇÃO) Botão de Placar ao Vivo */}
-                                <Button 
-                                  variant="outline" size="icon" className="h-8 w-8" 
-                                  title="Gerir Placar ao Vivo"
-                                  onClick={() => navigate(`/admin/jogos/placar/${eventoId}/${jogo.id}`)}
-                                >
+                                <Button variant="outline" size="icon" className="h-8 w-8" title="Gerir Placar ao Vivo (em breve)">
                                   <CalendarClock className="h-4 w-4" />
                                 </Button>
                                 {/* Botão de Apagar com Confirmação */}

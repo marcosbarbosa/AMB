@@ -1,73 +1,237 @@
 /*
  * ==========================================================
- * PORTAL AMB DO AMAZONAS - Navigation
+ * PORTAL AMB DO AMAZONAS
  * ==========================================================
- * Versão: 5.1 (Proteção de Dados e Cadeado Admin)
+ *
+ * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
+ * Todos os direitos reservados.
+ *
+ * Data: 2 de novembro de 2025
+ * Hora: 19:30
+ * Versão: 1.4 (Corrige Importação do Logótipo .PNG)
+ * Tarefa: 265
+ *
+ * Descrição: Cabeçalho principal de navegação.
+ * CORRIGIDO para usar o caminho do ficheiro 'logo-amb.png',
+ * resolvendo o erro de crash.
+ *
+ * ==========================================================
  */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, X, LogOut, LayoutDashboard, Lock, LogIn, UserPlus } from 'lucide-react'; 
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, User, Edit3, LogOut, LayoutDashboard, Lock } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+// 1. CORREÇÃO: O caminho foi alterado para '../assets/logo-amb.png'
 import ambLogo from '../assets/logo-amb.png'; 
 
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
   const { isAuthenticated, atleta, logout } = useAuth();
 
-  // Fallback para o nome para evitar "OLÁ," vazio
-  const nomeExibicao = atleta?.nome_completo?.split(' ')[0] || atleta?.nome?.split(' ')[0] || "Associado";
+  const navItems = [
+    { label: 'Início', href: '/' },
+    { label: 'Sobre', href: '/#sobre' },
+    { label: 'Parceiros', href: '/parceiros' }, 
+    { label: 'Contato', href: '/contato' },
+  ];
+
+  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith('/#')) {
+      e.preventDefault();
+      const sectionId = href.substring(2);
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setIsMenuOpen(false);
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    logout(); 
+    setIsMenuOpen(false);
+  };
 
   return (
-    <nav className="bg-white border-b border-slate-100 sticky top-0 z-50 px-4 md:px-8 py-3 shadow-sm">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo (CORRIGIDO) */}
+          <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+            <img 
+              src={ambLogo} 
+              alt="Logótipo AMB Amazonas Basquete Master" 
+              className="h-10 w-auto" 
+              data-testid="logo-amb"
+            />
+            <span className="hidden sm:inline text-xl font-bold font-accent bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              AMB Portal
+            </span>
+          </Link>
 
-        <Link to="/" className="flex items-center gap-3">
-          <img src={ambLogo} alt="AMB" className="h-10 md:h-12 w-auto object-contain" />
-          <div className="flex flex-col leading-none">
-            <span className="text-lg md:text-xl font-bold text-slate-800 italic">AMB Portal</span>
-            <span className="text-[10px] text-orange-600 font-bold uppercase tracking-widest">Amazonas</span>
-          </div>
-        </Link>
-
-        <div className="hidden lg:flex items-center gap-6">
-          {isAuthenticated && atleta ? (
-            <div className="flex items-center gap-4 border-l border-slate-200 pl-4">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">
-                Olá, <span className="text-slate-900">{nomeExibicao}</span>
-              </span>
-
-              {/* Lógica do Cadeado Admin */}
-              {(atleta.role === 'admin' || atleta.nivel === 'admin') && (
-                <Link to="/admin/painel">
-                  <Button variant="ghost" size="icon" className="text-yellow-600 border border-yellow-100 bg-yellow-50/50 shadow-sm" title="Admin">
-                    <Lock size={18} />
-                  </Button>
+          <div className="flex items-center gap-4">
+            {/* Navegação principal (Desktop) */}
+            <div className="hidden md:flex items-center space-x-1">
+              {navItems.map((item) => (
+                <Link key={item.href} to={item.href}>
+                  <span
+                    onClick={(e: any) => item.href.startsWith('/#') ? scrollToSection(e, item.href) : undefined} 
+                    data-testid={`link-nav-${item.label.toLowerCase()}`}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer inline-block ${
+                      location.pathname === item.href || (item.href.startsWith('/#') && location.pathname === '/')
+                        ? 'text-foreground'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    {item.label}
+                  </span>
                 </Link>
+              ))}
+            </div>
+
+            {/* BLOCO LÓGICO DE ACESSO */}
+            <div className="flex items-center gap-2">
+              {isAuthenticated && atleta ? (
+                // ****** SE ESTIVER LOGADO ******
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground hidden lg:inline">
+                    Olá, {atleta.nome_completo.split(' ')[0]} 
+                  </span>
+
+                  {/* ÍCONE DE ADMIN (Cadeado Amarelo) */}
+                  {atleta.role === 'admin' && (
+                    <Button variant="ghost" size="icon" asChild title="Acesso Admin" data-testid="link-admin-panel">
+                      <Link to="/admin/painel">
+                        <Lock className="h-5 w-5 text-yellow-600 hover:text-yellow-700 transition-colors" />
+                      </Link>
+                    </Button>
+                  )}
+
+                  {/* BOTão MEU PAINEL */}
+                  <Button variant="outline" asChild size="sm"> 
+                    <Link to="/painel">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      Meu Painel
+                    </Link>
+                  </Button>
+
+                  {/* BOTÃO LOGOUT */}
+                  <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair" data-testid="button-logout">
+                    <LogOut className="h-5 w-5 text-destructive hover:text-destructive/80" /> 
+                  </Button>
+                </div>
+              ) : (
+                // ****** SE NÃO ESTIVER LOGADO (Mantido) ******
+                <>
+                  <Button variant="ghost" asChild size="sm"> 
+                    <Link to="/login">
+                      <User className="mr-2 h-4 w-4" />
+                      Login
+                    </Link>
+                  </Button>
+                  <Button variant="default" asChild size="sm"> 
+                    <Link to="/cadastro">
+                      <Edit3 className="mr-2 h-4 w-4" />
+                      Cadastro
+                    </Link>
+                  </Button>
+                </>
               )}
-
-              <Link to="/painel">
-                <Button variant="outline" className="text-xs font-bold gap-2 h-9 px-4">
-                  <LayoutDashboard size={16} /> MEU PAINEL
-                </Button>
-              </Link>
-
-              <Button variant="ghost" size="icon" onClick={() => logout()} className="text-red-500 hover:bg-red-50">
-                <LogOut size={20} />
-              </Button>
             </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Link to="/login"><Button variant="ghost" className="text-slate-600 text-xs font-bold">ENTRAR</Button></Link>
-              <Link to="/cadastro"><Button className="bg-orange-600 text-white font-bold text-xs h-9 px-6 rounded-full shadow-md">CADASTRE-SE</Button></Link>
-            </div>
-          )}
+
+            {/* Botão do Menu Mobile (Mantido) */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              data-testid="button-menu-toggle"
+            >
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
         </div>
-
-        <button className="lg:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
-        </button>
       </div>
+
+      {/* Menu Mobile (Atualizado para o novo ícone) */}
+      {isMenuOpen && (
+        <div className="md:hidden bg-background border-t border-border" data-testid="mobile-menu">
+          <div className="px-4 pt-4 pb-6 space-y-2"> 
+            {navItems.map((item) => (
+              <Link key={item.href} to={item.href}>
+                <span
+                  onClick={(e: any) => {
+                    if(item.href.startsWith('/#')) scrollToSection(e, item.href);
+                    setIsMenuOpen(false);
+                  }}
+                  className={`block px-4 py-3 rounded-md text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer ${
+                    location.pathname === item.href || (item.href.startsWith('/#') && location.pathname === '/')
+                      ? 'text-foreground bg-accent'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+
+            <hr className="border-border my-4" />
+
+            {/* Links de Ação Mobile (Condicional) */}
+            {isAuthenticated && atleta ? (
+              <>
+                <div className="px-4 py-2 text-sm text-foreground">
+                  Logado como: <span className="font-medium">{atleta.nome_completo}</span>
+                </div>
+
+                {/* LINK DE ADMIN NO MOBILE */}
+                {atleta.role === 'admin' && (
+                    <Button variant="ghost" className="w-full justify-start text-yellow-700" asChild>
+                        <Link to="/admin/painel" onClick={() => setIsMenuOpen(false)}>
+                            <Lock className="mr-2 h-4 w-4" />
+                            Acesso Admin
+                        </Link>
+                    </Button>
+                )}
+
+                <Button variant="outline" className="w-full justify-start" asChild>
+                  <Link to="/painel" onClick={() => setIsMenuOpen(false)}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Meu Painel
+                  </Link>
+                </Button>
+
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-destructive" 
+                  onClick={handleLogout}
+                  data-testid="button-logout-mobile"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sair
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                    <User className="mr-2 h-4 w-4" />
+                    Login
+                  </Link>
+                </Button>
+                <Button variant="default" className="w-full justify-start" asChild>
+                  <Link to="/cadastro" onClick={() => setIsMenuOpen(false)}>
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    Cadastro
+                  </Link>
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
