@@ -3,47 +3,44 @@
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
  *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
+ * Copyright (c) 2026 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 1 de novembro de 2025
- * Hora: 21:15
- * Versão: 1.3 (Adiciona ParceirosDestaque)
+ * Data: 10 de janeiro de 2026
+ * Hora: 16:55
+ * Versão: 2.0
+ * Tarefa: 351
  *
- * Descrição: Página inicial (Home).
- * ATUALIZADO para incluir o novo componente ParceirosDestaque.
+ * Descrição: Página Inicial (Home).
+ * ATUALIZAÇÃO: Removido Footer interno para evitar duplicação.
  *
  * ==========================================================
  */
-import { Navigation } from '@/components/Navigation';
-import { CarouselHero } from '@/components/CarouselHero'; 
-import { About } from '@/components/About';
-import { Stats } from '@/components/Stats';
-import { CTABanner } from '@/components/CTABanner';
-import { Testimonials } from '@/components/Testimonials';
-import { ContactPreview } from '@/components/ContactPreview';
-import { Footer } from '@/components/Footer';
 
-// 1. IMPORTA O NOVO COMPONENTE "VITRINE"
-import { ParceirosDestaque } from '@/components/ParceirosDestaque'; 
+import React from "react";
+import CarouselHero from "@/components/CarouselHero";
+import About from "@/components/About";
+import Stats from "@/components/Stats";
+import CTABanner from "@/components/CTABanner";
+import Testimonials from "@/components/Testimonials";
+import ContactPreview from "@/components/ContactPreview";
+import ParceirosDestaque from "@/components/ParceirosDestaque";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
+    <div className="min-h-screen bg-white">
       <main>
         <CarouselHero /> 
         <About />
         <Stats />
         <CTABanner />
 
-        {/* 2. ADICIONA A NOVA SECÇÃO DE PARCEIROS DESTAQUE AQUI */}
+        {/* Secção de Parceiros em Destaque */}
         <ParceirosDestaque />
 
         <Testimonials /> 
         <ContactPreview />
       </main>
-      <Footer />
     </div>
   );
 }
