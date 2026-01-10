@@ -14,6 +14,7 @@
  * Descrição: Componente raiz da aplicação, define as rotas.
  * ATUALIZADO para incluir a nova rota /admin/jogos/placar/:jogoId
  *
+ * TESTE DE BACKUP
  * ==========================================================
  */
 import { Routes, Route } from "react-router-dom"; 
