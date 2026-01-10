@@ -3,281 +3,308 @@
               ESTRUTURA COMPLETA DE ARQUIVOS DO SISTEMA WEB
 ================================================================================
 
-Data de Geração: 09 de novembro de 2025
-Versão: 3.1 (Plano B - Modularizado)
-Última Atualização: Janeiro 2026
+Data de Geracao: 10 de janeiro de 2026
+Versao: 3.1 (Plano B - Modularizado)
 
 ================================================================================
-                    ARQUIVOS DE CONFIGURAÇÃO (RAIZ)
+                         ESTRUTURA DE PASTAS
 ================================================================================
 
-./package.json                    # Dependências e scripts NPM
-./package-lock.json               # Lock de versões das dependências
-./tsconfig.json                   # Configuração do TypeScript
-./vite.config.ts                  # Configuração do Vite (NÃO EDITAR)
-./tailwind.config.ts              # Configuração do Tailwind CSS
-./postcss.config.js               # Configuração do PostCSS
-./drizzle.config.ts               # Configuração do Drizzle ORM (NÃO EDITAR)
-./components.json                 # Configuração do Shadcn UI
-./.replit                         # Configuração do ambiente Replit
-./replit.md                       # Documentação e preferências do projeto
-./design_guidelines.md            # Diretrizes de design do frontend
+amb-portal/
+|
+|-- attached_assets/
+|   |-- generated_images/
+|
+|-- client/
+|   |-- public/
+|   |-- src/
+|       |-- assets/
+|       |-- components/
+|       |   |-- ui/
+|       |-- context/
+|       |-- hooks/
+|       |-- lib/
+|       |-- pages/
+|           |-- admin/
+|
+|-- doc.amb/
+|
+|-- server/
+|
+|-- shared/
 
 ================================================================================
-                         FRONTEND (./client/)
+               ARQUIVOS DE CONFIGURACAO (RAIZ DO PROJETO)
 ================================================================================
 
-ARQUIVOS BASE:
-./client/index.html               # HTML principal (ponto de entrada)
-./client/public/favicon.png       # Favicon do site
+./package.json              Dependencias e scripts NPM
+./tsconfig.json             Configuracao do TypeScript
+./vite.config.ts            Configuracao do Vite (NAO EDITAR)
+./tailwind.config.ts        Configuracao do Tailwind CSS
+./postcss.config.js         Configuracao do PostCSS
+./drizzle.config.ts         Configuracao do Drizzle ORM (NAO EDITAR)
+./components.json           Configuracao do Shadcn UI
+./replit.md                 Documentacao e preferencias do projeto
+./design_guidelines.md      Diretrizes de design do frontend
 
-CÓDIGO FONTE (./client/src/):
-./client/src/main.tsx             # Ponto de entrada React
-./client/src/App.tsx              # Componente raiz + definição de rotas
-./client/src/index.css            # Estilos globais (Tailwind + variáveis CSS)
+================================================================================
+                    FRONTEND - ARQUIVOS BASE (./client/)
+================================================================================
 
---------------------------------------------------------------------------------
-                    COMPONENTES PRINCIPAIS (./client/src/components/)
---------------------------------------------------------------------------------
+./client/index.html         HTML principal (ponto de entrada)
+./client/public/favicon.png Favicon do site
 
-./client/src/components/Navigation.tsx        # Header/Navegação principal
-./client/src/components/Footer.tsx            # Rodapé do site
-./client/src/components/Hero.tsx              # Seção Hero (banner principal)
-./client/src/components/CarouselHero.tsx      # Carrossel do Hero
-./client/src/components/About.tsx             # Seção "Sobre Nós"
-./client/src/components/Services.tsx          # Seção de serviços
-./client/src/components/Stats.tsx             # Seção de estatísticas
-./client/src/components/CTABanner.tsx         # Banner de chamada para ação
-./client/src/components/Testimonials.tsx      # Seção de depoimentos
-./client/src/components/ContactPreview.tsx    # Preview de contato (Home)
-./client/src/components/ContactForm.tsx       # Formulário de contato completo
-./client/src/components/LoginForm.tsx         # Formulário de login
-./client/src/components/CadastroForm.tsx      # Formulário de cadastro
-./client/src/components/EditarPerfilForm.tsx  # Formulário de edição de perfil
-./client/src/components/PlacarDestaque.tsx    # Placar em destaque
-./client/src/components/ParceirosDestaque.tsx # Parceiros em destaque
+================================================================================
+                   FRONTEND - CODIGO FONTE (./client/src/)
+================================================================================
 
---------------------------------------------------------------------------------
-                    COMPONENTES UI - SHADCN (./client/src/components/ui/)
---------------------------------------------------------------------------------
+./client/src/main.tsx       Ponto de entrada React
+./client/src/App.tsx        Componente raiz + definicao de rotas
+./client/src/index.css      Estilos globais (Tailwind + variaveis CSS)
 
-./client/src/components/ui/accordion.tsx      # Acordeão expansível
-./client/src/components/ui/alert-dialog.tsx   # Diálogo de alerta/confirmação
-./client/src/components/ui/alert.tsx          # Alertas simples
-./client/src/components/ui/aspect-ratio.tsx   # Proporção de aspecto
-./client/src/components/ui/avatar.tsx         # Avatar de usuário
-./client/src/components/ui/badge.tsx          # Badges/etiquetas
-./client/src/components/ui/breadcrumb.tsx     # Navegação breadcrumb
-./client/src/components/ui/button.tsx         # Botões (essencial)
-./client/src/components/ui/calendar.tsx       # Calendário
-./client/src/components/ui/card.tsx           # Cards (essencial)
-./client/src/components/ui/carousel.tsx       # Carrossel de imagens
-./client/src/components/ui/chart.tsx          # Gráficos
-./client/src/components/ui/checkbox.tsx       # Caixas de seleção
-./client/src/components/ui/collapsible.tsx    # Conteúdo colapsável
-./client/src/components/ui/command.tsx        # Comando/pesquisa
-./client/src/components/ui/context-menu.tsx   # Menu de contexto
-./client/src/components/ui/dialog.tsx         # Modais/diálogos (essencial)
-./client/src/components/ui/drawer.tsx         # Drawer lateral
-./client/src/components/ui/dropdown-menu.tsx  # Menu dropdown
-./client/src/components/ui/form.tsx           # Formulários (essencial)
-./client/src/components/ui/hover-card.tsx     # Card ao passar mouse
-./client/src/components/ui/input-otp.tsx      # Input de código OTP
-./client/src/components/ui/input.tsx          # Campos de entrada (essencial)
-./client/src/components/ui/label.tsx          # Labels de formulário (essencial)
-./client/src/components/ui/menubar.tsx        # Barra de menu
-./client/src/components/ui/navigation-menu.tsx # Menu de navegação
-./client/src/components/ui/pagination.tsx     # Paginação
-./client/src/components/ui/popover.tsx        # Popover
-./client/src/components/ui/progress.tsx       # Barra de progresso
-./client/src/components/ui/radio-group.tsx    # Grupo de radio buttons
-./client/src/components/ui/resizable.tsx      # Painéis redimensionáveis
-./client/src/components/ui/scroll-area.tsx    # Área com scroll
-./client/src/components/ui/select.tsx         # Select/dropdown (essencial)
-./client/src/components/ui/separator.tsx      # Separador visual
-./client/src/components/ui/sheet.tsx          # Sheet lateral
-./client/src/components/ui/sidebar.tsx        # Barra lateral
-./client/src/components/ui/skeleton.tsx       # Skeleton loading
-./client/src/components/ui/slider.tsx         # Controle deslizante
-./client/src/components/ui/switch.tsx         # Toggle switch
-./client/src/components/ui/table.tsx          # Tabelas (essencial)
-./client/src/components/ui/tabs.tsx           # Abas
-./client/src/components/ui/textarea.tsx       # Área de texto (essencial)
-./client/src/components/ui/toast.tsx          # Notificações toast
-./client/src/components/ui/toaster.tsx        # Container de toasts (essencial)
-./client/src/components/ui/toggle-group.tsx   # Grupo de toggles
-./client/src/components/ui/toggle.tsx         # Botão toggle
-./client/src/components/ui/tooltip.tsx        # Dicas de ferramenta
+================================================================================
+              FRONTEND - COMPONENTES (./client/src/components/)
+================================================================================
 
---------------------------------------------------------------------------------
-                         PÁGINAS PÚBLICAS (./client/src/pages/)
---------------------------------------------------------------------------------
+./client/src/components/Navigation.tsx        Header/Navegacao principal
+./client/src/components/Footer.tsx            Rodape do site
+./client/src/components/Hero.tsx              Secao Hero (banner principal)
+./client/src/components/CarouselHero.tsx      Carrossel do Hero
+./client/src/components/About.tsx             Secao Sobre Nos
+./client/src/components/Services.tsx          Secao de servicos
+./client/src/components/Stats.tsx             Secao de estatisticas
+./client/src/components/CTABanner.tsx         Banner de chamada para acao
+./client/src/components/Testimonials.tsx      Secao de depoimentos
+./client/src/components/ContactPreview.tsx    Preview de contato (Home)
+./client/src/components/ContactForm.tsx       Formulario de contato completo
+./client/src/components/LoginForm.tsx         Formulario de login
+./client/src/components/CadastroForm.tsx      Formulario de cadastro
+./client/src/components/EditarPerfilForm.tsx  Formulario de edicao de perfil
+./client/src/components/PlacarDestaque.tsx    Placar em destaque
+./client/src/components/ParceirosDestaque.tsx Parceiros em destaque
 
-./client/src/pages/Home.tsx                   # Página inicial (/)
-./client/src/pages/Contact.tsx                # Página de contato (/contato)
-./client/src/pages/LoginPage.tsx              # Página de login (/login)
-./client/src/pages/CadastroPage.tsx           # Página de cadastro (/cadastro)
-./client/src/pages/EsqueciSenhaPage.tsx       # Esqueci minha senha
-./client/src/pages/RedefinirSenhaPage.tsx     # Redefinir senha
-./client/src/pages/PainelPage.tsx             # Painel do usuário logado
-./client/src/pages/EditarPerfilPage.tsx       # Editar perfil do usuário
-./client/src/pages/ParceirosPage.tsx          # Página de parceiros
-./client/src/pages/not-found.tsx              # Página 404
+================================================================================
+           FRONTEND - COMPONENTES UI SHADCN (./client/src/components/ui/)
+================================================================================
 
---------------------------------------------------------------------------------
-                   PÁGINAS ADMINISTRATIVAS (./client/src/pages/admin/)
---------------------------------------------------------------------------------
+./client/src/components/ui/accordion.tsx      Acordeao expansivel
+./client/src/components/ui/alert-dialog.tsx   Dialogo de alerta/confirmacao
+./client/src/components/ui/alert.tsx          Alertas simples
+./client/src/components/ui/aspect-ratio.tsx   Proporcao de aspecto
+./client/src/components/ui/avatar.tsx         Avatar de usuario
+./client/src/components/ui/badge.tsx          Badges/etiquetas
+./client/src/components/ui/breadcrumb.tsx     Navegacao breadcrumb
+./client/src/components/ui/button.tsx         Botoes
+./client/src/components/ui/calendar.tsx       Calendario
+./client/src/components/ui/card.tsx           Cards
+./client/src/components/ui/carousel.tsx       Carrossel de imagens
+./client/src/components/ui/chart.tsx          Graficos
+./client/src/components/ui/checkbox.tsx       Caixas de selecao
+./client/src/components/ui/collapsible.tsx    Conteudo colapsavel
+./client/src/components/ui/command.tsx        Comando/pesquisa
+./client/src/components/ui/context-menu.tsx   Menu de contexto
+./client/src/components/ui/dialog.tsx         Modais/dialogos
+./client/src/components/ui/drawer.tsx         Drawer lateral
+./client/src/components/ui/dropdown-menu.tsx  Menu dropdown
+./client/src/components/ui/form.tsx           Formularios
+./client/src/components/ui/hover-card.tsx     Card ao passar mouse
+./client/src/components/ui/input-otp.tsx      Input de codigo OTP
+./client/src/components/ui/input.tsx          Campos de entrada
+./client/src/components/ui/label.tsx          Labels de formulario
+./client/src/components/ui/menubar.tsx        Barra de menu
+./client/src/components/ui/navigation-menu.tsx Menu de navegacao
+./client/src/components/ui/pagination.tsx     Paginacao
+./client/src/components/ui/popover.tsx        Popover
+./client/src/components/ui/progress.tsx       Barra de progresso
+./client/src/components/ui/radio-group.tsx    Grupo de radio buttons
+./client/src/components/ui/resizable.tsx      Paineis redimensionaveis
+./client/src/components/ui/scroll-area.tsx    Area com scroll
+./client/src/components/ui/select.tsx         Select/dropdown
+./client/src/components/ui/separator.tsx      Separador visual
+./client/src/components/ui/sheet.tsx          Sheet lateral
+./client/src/components/ui/sidebar.tsx        Barra lateral
+./client/src/components/ui/skeleton.tsx       Skeleton loading
+./client/src/components/ui/slider.tsx         Controle deslizante
+./client/src/components/ui/switch.tsx         Toggle switch
+./client/src/components/ui/table.tsx          Tabelas
+./client/src/components/ui/tabs.tsx           Abas
+./client/src/components/ui/textarea.tsx       Area de texto
+./client/src/components/ui/toast.tsx          Notificacoes toast
+./client/src/components/ui/toaster.tsx        Container de toasts
+./client/src/components/ui/toggle-group.tsx   Grupo de toggles
+./client/src/components/ui/toggle.tsx         Botao toggle
+./client/src/components/ui/tooltip.tsx        Dicas de ferramenta
 
-./client/src/pages/admin/AdminPainelPage.tsx           # Painel admin principal
-./client/src/pages/admin/GestaoEventosPage.tsx         # CRUD de eventos
-./client/src/pages/admin/GestaoInscricaoTimesPage.tsx  # Inscrições de times em eventos
-./client/src/pages/admin/GestaoConteudoEventoPage.tsx  # Posts/boletins do evento
-./client/src/pages/admin/GestaoTimesPage.tsx           # CRUD de times
-./client/src/pages/admin/GestaoJogosPage.tsx           # CRUD de jogos
-./client/src/pages/admin/GestaoAssociadosPage.tsx      # Gestão de associados
-./client/src/pages/admin/GestaoParceirosPage.tsx       # Gestão de parceiros
-./client/src/pages/admin/GestaoPlacarPage.tsx          # Gestão de placares
+================================================================================
+              FRONTEND - PAGINAS PUBLICAS (./client/src/pages/)
+================================================================================
 
---------------------------------------------------------------------------------
-                         CONTEXTO E HOOKS (./client/src/)
---------------------------------------------------------------------------------
+./client/src/pages/Home.tsx               Pagina inicial (/)
+./client/src/pages/Contact.tsx            Pagina de contato (/contato)
+./client/src/pages/LoginPage.tsx          Pagina de login (/login)
+./client/src/pages/CadastroPage.tsx       Pagina de cadastro (/cadastro)
+./client/src/pages/EsqueciSenhaPage.tsx   Esqueci minha senha (/esqueci-senha)
+./client/src/pages/RedefinirSenhaPage.tsx Redefinir senha (/redefinir-senha)
+./client/src/pages/PainelPage.tsx         Painel do usuario logado (/painel)
+./client/src/pages/EditarPerfilPage.tsx   Editar perfil (/editar-perfil)
+./client/src/pages/ParceirosPage.tsx      Pagina de parceiros (/parceiros)
+./client/src/pages/not-found.tsx          Pagina 404
 
-./client/src/context/AuthContext.tsx          # Contexto de autenticação global
-./client/src/hooks/use-toast.ts               # Hook para notificações toast
-./client/src/hooks/use-mobile.tsx             # Hook para detectar dispositivo móvel
+================================================================================
+          FRONTEND - PAGINAS ADMIN (./client/src/pages/admin/)
+================================================================================
 
---------------------------------------------------------------------------------
-                         UTILITÁRIOS (./client/src/lib/)
---------------------------------------------------------------------------------
+./client/src/pages/admin/AdminPainelPage.tsx           Painel admin (/admin)
+./client/src/pages/admin/GestaoEventosPage.tsx         CRUD eventos (/admin/eventos)
+./client/src/pages/admin/GestaoInscricaoTimesPage.tsx  Inscricoes times
+./client/src/pages/admin/GestaoConteudoEventoPage.tsx  Posts/boletins evento
+./client/src/pages/admin/GestaoTimesPage.tsx           CRUD times (/admin/times)
+./client/src/pages/admin/GestaoJogosPage.tsx           CRUD jogos (/admin/jogos)
+./client/src/pages/admin/GestaoAssociadosPage.tsx      Gestao associados
+./client/src/pages/admin/GestaoParceirosPage.tsx       Gestao parceiros
+./client/src/pages/admin/GestaoPlacarPage.tsx          Gestao placares
 
-./client/src/lib/queryClient.ts               # Configuração TanStack Query + apiRequest
-./client/src/lib/utils.ts                     # Funções utilitárias (cn, etc.)
+================================================================================
+                FRONTEND - CONTEXTO (./client/src/context/)
+================================================================================
+
+./client/src/context/AuthContext.tsx      Contexto de autenticacao global
+
+================================================================================
+                  FRONTEND - HOOKS (./client/src/hooks/)
+================================================================================
+
+./client/src/hooks/use-toast.ts           Hook para notificacoes toast
+./client/src/hooks/use-mobile.tsx         Hook para detectar dispositivo movel
+
+================================================================================
+                FRONTEND - UTILITARIOS (./client/src/lib/)
+================================================================================
+
+./client/src/lib/queryClient.ts           Configuracao TanStack Query + apiRequest
+./client/src/lib/utils.ts                 Funcoes utilitarias (cn, etc.)
 
 ================================================================================
                           BACKEND (./server/)
 ================================================================================
 
-./server/index.ts                 # Ponto de entrada do servidor Express
-./server/routes.ts                # Definição das rotas da API
-./server/storage.ts               # Interface de armazenamento (IStorage)
-./server/vite.ts                  # Integração Vite + Express (NÃO EDITAR)
+./server/index.ts             Ponto de entrada do servidor Express
+./server/routes.ts            Definicao das rotas da API
+./server/storage.ts           Interface de armazenamento (IStorage)
+./server/vite.ts              Integracao Vite + Express (NAO EDITAR)
 
 ================================================================================
-                       CÓDIGO COMPARTILHADO (./shared/)
+                    CODIGO COMPARTILHADO (./shared/)
 ================================================================================
 
-./shared/schema.ts                # Schemas Drizzle ORM + Zod (tipos e validação)
+./shared/schema.ts            Schemas Drizzle ORM + Zod (tipos e validacao)
+./shared/Footer.tsx           Componente Footer (legacy)
 
 ================================================================================
-                            ASSETS / IMAGENS
+                   ASSETS - IMAGENS DO CLIENTE (./client/src/assets/)
 ================================================================================
 
-ASSETS DO CLIENTE (./client/src/assets/):
-./client/src/assets/logo-amb.png              # Logo AMB (PNG)
-./client/src/assets/logo-amb.jpg              # Logo AMB (JPG)
-./client/src/assets/foto-time-amb.jpg         # Foto do time AMB
-./client/src/assets/banner_logo_campeonato_05.png  # Banner campeonato
-./client/src/assets/gav1.jpg                  # Imagem galeria 1
-./client/src/assets/gav2.jpg                  # Imagem galeria 2
-./client/src/assets/todas-as-nacoes.png       # Logo parceiro
+./client/src/assets/logo-amb.png                   Logo AMB (PNG)
+./client/src/assets/logo-amb.jpg                   Logo AMB (JPG)
+./client/src/assets/foto-time-amb.jpg              Foto do time AMB
+./client/src/assets/banner_logo_campeonato_05.png  Banner campeonato
+./client/src/assets/gav1.jpg                       Imagem galeria 1
+./client/src/assets/gav2.jpg                       Imagem galeria 2
+./client/src/assets/todas-as-nacoes.png            Logo parceiro
 
-IMAGENS GERADAS (./attached_assets/generated_images/):
+================================================================================
+             ASSETS - IMAGENS GERADAS (./attached_assets/generated_images/)
+================================================================================
+
 ./attached_assets/generated_images/About_section_office_space_b80c1f58.png
 ./attached_assets/generated_images/Service_consultation_imagery_a102d031.png
 ./attached_assets/generated_images/Team_success_imagery_1c422dd7.png
 ./attached_assets/generated_images/Technology_service_interface_69bd39b7.png
 
 ================================================================================
-                          DOCUMENTAÇÃO (./doc.amb/)
+                        DOCUMENTACAO (./doc.amb/)
 ================================================================================
 
-./doc.amb/raiz-amb.txt            # Este arquivo (estrutura do projeto)
+./doc.amb/raiz-amb.txt        Este arquivo (estrutura do projeto)
 
 ================================================================================
-                     ARQUIVOS DE REFERÊNCIA (OPCIONAIS)
+                         ROTAS DA APLICACAO
 ================================================================================
 
-./leiame-pastas.txt               # Documentação adicional de pastas
-./project-structure.txt           # Estrutura antiga do projeto
-./generate-tree.sh                # Script para gerar árvore de pastas
+PAGINAS PUBLICAS:
+  /                          Pagina inicial (Home)
+  /contato                   Formulario de contato
+  /login                     Login de usuarios
+  /cadastro                  Cadastro de novos usuarios
+  /esqueci-senha             Recuperacao de senha
+  /redefinir-senha           Redefinir senha
+  /parceiros                 Pagina de parceiros
+
+AREA DO USUARIO (requer autenticacao):
+  /painel                    Painel do usuario
+  /editar-perfil             Editar perfil
+
+AREA ADMINISTRATIVA (requer autenticacao admin):
+  /admin                     Painel administrativo
+  /admin/eventos             Gestao de eventos (CRUD)
+  /admin/eventos/inscricoes/:id   Inscricoes de times no evento
+  /admin/eventos/conteudo/:id     Posts e boletins do evento
+  /admin/times               Gestao de times
+  /admin/jogos               Gestao de jogos
+  /admin/associados          Gestao de associados
+  /admin/parceiros           Gestao de parceiros
+  /admin/placar              Gestao de placares
 
 ================================================================================
-                         ROTAS DA APLICAÇÃO
+                       ENDPOINTS DA API
 ================================================================================
 
-PÁGINAS PÚBLICAS:
-  /                          → Home (página inicial)
-  /contato                   → Formulário de contato
-  /login                     → Login de usuários
-  /cadastro                  → Cadastro de novos usuários
-  /esqueci-senha             → Recuperação de senha
-  /redefinir-senha           → Redefinir senha
-  /parceiros                 → Página de parceiros
-
-ÁREA DO USUÁRIO (requer autenticação):
-  /painel                    → Painel do usuário
-  /editar-perfil             → Editar perfil
-
-ÁREA ADMINISTRATIVA (requer autenticação admin):
-  /admin                     → Painel administrativo
-  /admin/eventos             → Gestão de eventos (CRUD)
-  /admin/eventos/inscricoes/:id → Inscrições de times no evento
-  /admin/eventos/conteudo/:id   → Posts e boletins do evento
-  /admin/times               → Gestão de times
-  /admin/jogos               → Gestão de jogos
-  /admin/associados          → Gestão de associados
-  /admin/parceiros           → Gestão de parceiros
-  /admin/placar              → Gestão de placares
+POST   /api/contact           Enviar mensagem de contato
+GET    /api/contact           Listar mensagens de contato
+GET    /api/contact/:id       Obter mensagem por ID
 
 ================================================================================
-                    ENDPOINTS DA API (./server/routes.ts)
+                         RESUMO DE ARQUIVOS
 ================================================================================
 
-POST   /api/contact           → Enviar mensagem de contato
-GET    /api/contact           → Listar mensagens de contato
-GET    /api/contact/:id       → Obter mensagem por ID
+Configuracao (raiz):          9 arquivos
+Frontend - Base:              3 arquivos
+Frontend - Componentes:      16 arquivos
+Frontend - UI Shadcn:        47 arquivos
+Frontend - Paginas:          19 arquivos
+Frontend - Context/Hooks:     3 arquivos
+Frontend - Lib:               2 arquivos
+Backend:                      4 arquivos
+Shared:                       2 arquivos
+Assets - Cliente:             7 arquivos
+Assets - Geradas:             4 arquivos
+Documentacao:                 1 arquivo
 
-(Demais endpoints são gerenciados pelo backend PHP externo no HostGator)
-
-================================================================================
-                       TECNOLOGIAS DO PROJETO
-================================================================================
-
-FRONTEND:
-  • React 18 + TypeScript
-  • Vite 5.x (build tool)
-  • React Router DOM 6.x (roteamento)
-  • TanStack Query v5 (gerenciamento de estado/cache)
-  • Tailwind CSS 3.x + Shadcn UI (estilização)
-  • React Hook Form + Zod (validação de formulários)
-  • Axios (requisições HTTP)
-  • Lucide React (ícones)
-  • Framer Motion (animações)
-  • Swiper/Embla (carrosséis)
-
-BACKEND:
-  • Express.js 4.x
-  • TypeScript
-  • Drizzle ORM
-  • PostgreSQL (Neon - banco de dados)
-  • Zod (validação de dados)
-
-INFRAESTRUTURA:
-  • Replit (hospedagem desenvolvimento)
-  • HostGator (backend PHP externo - produção)
+TOTAL DE ARQUIVOS:          117 arquivos
 
 ================================================================================
-                   TOTAL DE ARQUIVOS ESSENCIAIS
+                       PASTAS NECESSARIAS
 ================================================================================
 
-Configuração:        10 arquivos
-Frontend:            91 arquivos (.tsx, .ts, .css)
-Backend:              4 arquivos (.ts)
-Shared:               1 arquivo (.ts)
-Assets:              11 arquivos (imagens)
-Documentação:         1 arquivo
+./                            Raiz do projeto
+./attached_assets/            Assets anexados
+./attached_assets/generated_images/   Imagens geradas por IA
+./client/                     Frontend React
+./client/public/              Arquivos publicos estaticos
+./client/src/                 Codigo fonte do frontend
+./client/src/assets/          Imagens e recursos do cliente
+./client/src/components/      Componentes React reutilizaveis
+./client/src/components/ui/   Componentes Shadcn UI
+./client/src/context/         Contextos React (AuthContext)
+./client/src/hooks/           Hooks personalizados
+./client/src/lib/             Utilitarios e configuracoes
+./client/src/pages/           Paginas da aplicacao
+./client/src/pages/admin/     Paginas administrativas
+./doc.amb/                    Documentacao do projeto
+./server/                     Backend Express.js
+./shared/                     Codigo compartilhado (schemas)
 
-TOTAL:              118 arquivos essenciais
+TOTAL DE PASTAS:             16 pastas
 
 ================================================================================
                            FIM DO DOCUMENTO
