@@ -1,7 +1,7 @@
 import { ArrowRight, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import heroImage from '@assets/generated_images/Hero_office_collaboration_scene_bd9bbe45.png';
+import heroImage from '@assets/generated_images/About_section_office_space_b80c1f58.png';
 
 export function Hero() {
   const scrollToContact = () => {
