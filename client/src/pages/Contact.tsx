@@ -3,66 +3,104 @@
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
  *
- * Copyright (c) 2026 Marcos Barbosa @mbelitecoach
+ * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 10 de janeiro de 2026
- * Hora: 16:05
- * Versão: 2.0
+ * Data: 27 de outubro de 2025
+ * Hora: 23:10
+ * Versão: 1.2 (Atualizado com Texto Temático)
  *
- * Descrição: Página de Contato e Suporte ao Associado.
- * Implementação de design Elite com tipografia forte.
+ * Descrição: Página de Contato (/contato).
+ * ATUALIZADO para usar um subtítulo mais relevante para a AMB.
  *
  * ==========================================================
  */
-
-import React from "react";
-import { Mail, Phone, MapPin, MessageSquare } from "lucide-react";
-import ContactForm from "@/components/ContactForm";
+import { Navigation } from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
+import { ContactForm } from '@/components/ContactForm';
+import { Mail, Phone, MapPin, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom'; 
 
 export default function Contact() {
-  return (
-    <div className="min-h-screen bg-white">
-      <section className="bg-slate-900 py-20 px-6">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-black italic uppercase text-white tracking-tighter">
-            Fale com a <span className="text-orange-600">AMB</span>
-          </h1>
-          <p className="text-slate-400 mt-4 font-bold uppercase tracking-widest">
-            Suporte direto, sugestões e parcerias.
-          </p>
-        </div>
-      </section>
+  const contactInfo = [
+    { icon: MapPin, title: 'Endereço', content: 'R. Washington Luís, 111 - Dom Pedro, Manaus - AM, 69040-210' },
+    { icon: Phone, title: 'Telefone', content: '+55 (92) 99252-1345' },
+    { icon: Mail, title: 'Email', content: 'contato.ambamazonas@gmail.com' },
+    { icon: Clock, title: 'Horário de Atendimento', content: 'Seg - Sex: 9h às 18h' },
+  ];
+  const googleMapsUrl = 'https://maps.app.goo.gl/dgpghYqDmS9gbkHH9'; 
 
-      <section className="py-20 px-6 max-w-7xl mx-auto grid md:grid-cols-2 gap-16">
-        {/* INFORMAÇÕES DE CONTATO */}
-        <div className="space-y-12">
-          <div>
-            <h2 className="text-3xl font-black italic uppercase text-slate-900 mb-6">Canais Oficiais</h2>
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="bg-orange-100 p-3 rounded-xl text-orange-600"><Mail size={24} /></div>
-                <div>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">E-mail</p>
-                  <p className="font-bold text-slate-900">contato@ambamazonas.com.br</p>
-                </div>
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <main className="pt-16">
+        {/* Secção do Título (Subtítulo Modificado) */}
+        <section className="py-16 lg:py-20 bg-card">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 
+              className="text-4xl sm:text-5xl font-semibold font-accent text-foreground leading-tight mb-6"
+              data-testid="text-contact-title"
+            >
+              Entre em Contato 
+            </h1>
+            {/* 1. SUBSTITUI O SUBTÍTULO */}
+            <p 
+              className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed"
+              data-testid="text-contact-subtitle"
+            >
+              Tem dúvidas sobre a AMB? Quer saber mais sobre como se associar, 
+              nossas categorias ou próximos eventos? Envie sua mensagem!
+            </p>
+          </div>
+        </section>
+
+        {/* Secção Principal (Formulário e Infos - Mantida) */}
+        <section className="py-16 lg:py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
+              {/* Coluna do Formulário */}
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground mb-6">
+                  Envie sua Mensagem
+                </h2>
+                <ContactForm />
               </div>
-              <div className="flex items-center gap-4">
-                <div className="bg-slate-100 p-3 rounded-xl text-slate-900"><MessageSquare size={24} /></div>
-                <div>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">WhatsApp Suporte</p>
-                  <p className="font-bold text-slate-900">(92) 9XXXX-XXXX</p>
+
+              {/* Coluna das Informações */}
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground mb-6">
+                  Informações de Contato
+                </h2>
+                <div className="space-y-6">
+                  {contactInfo.map((info, index) => (
+                    <div key={index} className="flex gap-4" data-testid={`contact-info-${index}`}>
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                          <info.icon className="h-6 w-6" />
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground mb-1">{info.title}</h3>
+                        <p className="text-muted-foreground">{info.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Link do Mapa (Mantido) */}
+                <div className="mt-12 rounded-md bg-muted/30 p-8 text-center border border-border hover:shadow-md transition-shadow">
+                  <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="group" data-testid="link-google-maps">
+                    <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4 group-hover:text-primary transition-colors" />
+                    <p className="text-muted-foreground group-hover:text-primary transition-colors">
+                      Ver localização no Google Maps
+                    </p>
+                  </a>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* FORMULÁRIO */}
-        <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
-          <ContactForm />
-        </div>
-      </section>
+        </section>
+      </main>
+      <Footer />
     </div>
   );
 }
