@@ -168,7 +168,13 @@ export default function ParceirosPage() {
                     <CardContent className="p-6 flex flex-col h-full">
                       {parceiro.url_logo && (
                         <div className="w-full h-40 bg-muted rounded-md mb-4 flex items-center justify-center overflow-hidden">
-                          <img src={parceiro.url_logo} alt={parceiro.nome_parceiro} className="h-full w-full object-contain p-4" />
+                          
+                          <img 
+                            src={`https://www.ambamazonas.com.br${parceiro.url_logo}`} 
+                            alt={parceiro.nome_parceiro} 
+                            className="h-full w-full object-contain p-4" 
+                          />
+                          
                         </div>
                       )}
                       <div className="flex justify-between items-center mb-2">

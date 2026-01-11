@@ -27,6 +27,9 @@ import { Testimonials } from '@/components/Testimonials';
 import { ContactPreview } from '@/components/ContactPreview';
 import { Footer } from '@/components/Footer';
 
+// 1. IMPORTANTE: Importa a nova faixa de parceiros
+import { ParceirosCarrossel } from '@/components/ParceirosCarrossel'; 
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
@@ -37,6 +40,9 @@ export default function Home() {
 
         {/* 4. Renderiza o Placar (como planeado) */}
         <PlacarDestaque /> 
+
+        {/* 3. Faixa de Parceiros Ouro (Carrossel Infinito com WhatsApp) */}
+        <ParceirosCarrossel />
 
         <About />
         {/* {/* REMOVIDO E DELETADO DO SISTEMA <Services / > */ } 
