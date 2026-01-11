@@ -1,11 +1,12 @@
 /*
  * ==========================================================
  * MÓDULO: ParceirosPage.tsx
- * Versão: 15.0 (UX: Fechar Zoom ao Clicar na Imagem)
+ * Versão: 16.0 (Badges de Nível Visíveis e Ícones Premium)
  * ==========================================================
  * ATUALIZAÇÕES:
- * 1. ZOOM: Agora é possível fechar o modal clicando na própria imagem.
- * 2. UI: Cursor indicativo de ação na imagem ampliada.
+ * 1. VISUALIZAÇÃO: Adicionado 'relative' ao Card para fixar o ícone de nível.
+ * 2. ÍCONES: Novos ícones (Trophy, Shield, Medal) para Ouro/Prata/Bronze.
+ * 3. LAYOUT: Mantida a redução dos banners (h-28) e correções anteriores.
  * ==========================================================
  */
 
@@ -20,8 +21,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from "@/components/ui/dialog"; 
 import { 
-  Phone, Globe, Loader2, MapPin, Award, Shield, Gem, Search, 
-  Mail, ZoomIn, X 
+  Phone, Globe, Loader2, MapPin, Search, Mail, ZoomIn, X,
+  Trophy, Shield, Medal // Ícones importados para os níveis
 } from 'lucide-react';
 
 // --- CONFIGURAÇÃO ---
@@ -29,7 +30,6 @@ const API_PARCEIROS = 'https://www.ambamazonas.com.br/api/get_parceiros_publico.
 const API_CATEGORIAS = 'https://www.ambamazonas.com.br/api/get_categorias_parceiros.php';
 const DOMAIN_URL = 'https://www.ambamazonas.com.br';
 
-// Pesos para Ordenação
 const TIER_WEIGHT: Record<string, number> = {
   'ouro': 3, 'prata': 2, 'bronze': 1, 'pendente': 0, 'null': 0
 };
@@ -62,12 +62,10 @@ export default function ParceirosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Filtros & UI
   const [busca, setBusca] = useState('');
   const [categoriaSelecionada, setCategoriaSelecionada] = useState('todas');
   const [imagemZoom, setImagemZoom] = useState<string | null>(null);
 
-  // --- 1. CARREGAMENTO ---
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -94,7 +92,6 @@ export default function ParceirosPage() {
     fetchData();
   }, []);
 
-  // --- 2. HELPERS ---
   const getImageUrl = (url: string | null) => {
     if (!url || url === 'NULL' || url === '' || url === 'undefined') return null;
     let clean = url.replace(/['"]/g, '').trim();
@@ -112,7 +109,6 @@ export default function ParceirosPage() {
     return `https://wa.me/${clean.startsWith('55') ? clean : '55'+clean}`;
   };
 
-  // --- 3. ORDENAÇÃO E FILTRO ---
   const categoriasOrdenadas = useMemo(() => {
     const unicas = new Set(categoriasDB.map(c => c.nome.trim()));
     return Array.from(unicas).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
@@ -153,12 +149,33 @@ export default function ParceirosPage() {
     });
   }, [parceiros, busca, categoriaSelecionada]);
 
-  // Badge Visual
+  // --- BADGE DE NÍVEL (COM ÍCONES NOVOS) ---
   const NivelBadge = ({ tier }: { tier: string }) => {
     const t = (tier || '').toLowerCase();
-    if (t === 'ouro') return <div className="absolute top-2 right-2 bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-[10px] font-bold border border-yellow-200 shadow-sm flex items-center gap-1 z-10 pointer-events-none"><Award className="h-3 w-3" /> OURO</div>;
-    if (t === 'prata') return <div className="absolute top-2 right-2 bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold border border-slate-200 shadow-sm flex items-center gap-1 z-10 pointer-events-none"><Shield className="h-3 w-3" /> PRATA</div>;
-    if (t === 'bronze') return <div className="absolute top-2 right-2 bg-orange-50 text-orange-800 px-2 py-0.5 rounded-full text-[10px] font-bold border border-orange-100 shadow-sm flex items-center gap-1 z-10 pointer-events-none"><Gem className="h-3 w-3" /> BRONZE</div>;
+
+    // OURO: Troféu
+    if (t === 'ouro') return (
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 bg-yellow-100 text-yellow-800 border border-yellow-300 px-2.5 py-1 rounded-full shadow-sm pointer-events-none">
+            <Trophy className="h-3.5 w-3.5 text-yellow-700 fill-yellow-700" />
+            <span className="text-[10px] font-bold tracking-wide">OURO</span>
+        </div>
+    );
+
+    // PRATA: Escudo
+    if (t === 'prata') return (
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 bg-slate-100 text-slate-700 border border-slate-300 px-2.5 py-1 rounded-full shadow-sm pointer-events-none">
+            <Shield className="h-3.5 w-3.5 text-slate-500 fill-slate-300" />
+            <span className="text-[10px] font-bold tracking-wide">PRATA</span>
+        </div>
+    );
+
+    // BRONZE: Medalha
+    if (t === 'bronze') return (
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 bg-orange-50 text-orange-800 border border-orange-200 px-2.5 py-1 rounded-full shadow-sm pointer-events-none">
+            <Medal className="h-3.5 w-3.5 text-orange-700" />
+            <span className="text-[10px] font-bold tracking-wide">BRONZE</span>
+        </div>
+    );
     return null;
   };
 
@@ -177,7 +194,6 @@ export default function ParceirosPage() {
         <section className="py-12 bg-slate-50/50">
           <div className="max-w-7xl mx-auto px-4">
 
-            {/* Barra de Ferramentas */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 sticky top-20 z-20">
               <h2 className="text-lg font-semibold whitespace-nowrap">Parceiros ({parceirosProcessados.length})</h2>
 
@@ -219,10 +235,12 @@ export default function ParceirosPage() {
                 const whatsUrl = getWhatsAppLink(parceiro);
 
                 return (
-                  <Card key={parceiro.id} className={`group flex flex-col overflow-hidden bg-white border-slate-200 hover:shadow-xl transition-all duration-300 ${
+                  // ADICIONADO 'relative' PARA O ÍCONE APARECER
+                  <Card key={parceiro.id} className={`group relative flex flex-col overflow-hidden bg-white border-slate-200 hover:shadow-xl transition-all duration-300 ${
                     (nivel?.toLowerCase() === 'ouro') ? 'border-t-4 border-t-yellow-400' : ''
                   }`}>
 
+                    {/* Ícone de Nível (Badge) */}
                     <NivelBadge tier={nivel} />
 
                     {/* IMAGEM COM ZOOM */}
@@ -290,11 +308,9 @@ export default function ParceirosPage() {
         </section>
       </main>
 
-      {/* LIGHTBOX (MODAL DE ZOOM) */}
       <Dialog open={!!imagemZoom} onOpenChange={() => setImagemZoom(null)}>
         <DialogContent className="max-w-4xl bg-transparent border-none shadow-none flex justify-center items-center">
            <div className="relative">
-             {/* Botão Fechar no Topo */}
              <Button 
                 variant="secondary" 
                 size="icon" 
@@ -304,13 +320,12 @@ export default function ParceirosPage() {
                 <X className="h-6 w-6"/>
              </Button>
 
-             {/* Imagem Ampliada com Clique para Fechar */}
              {imagemZoom && (
                 <img 
                   src={imagemZoom} 
                   className="max-h-[85vh] max-w-[90vw] rounded-lg shadow-2xl bg-white object-contain cursor-pointer" 
                   alt="Zoom" 
-                  onClick={() => setImagemZoom(null)} // Clique na imagem fecha o modal
+                  onClick={() => setImagemZoom(null)} 
                   title="Clique para fechar"
                 />
              )}
