@@ -3,46 +3,49 @@
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
  *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 2 de novembro de 2025
- * Hora: 19:00
- * Versão: 1.2 (Corrige Erro 'edit is not defined')
- * Tarefa: 269
- *
- * Descrição: Nova página dedicada à Gestão de Parceiros.
- * CORRIGIDO: O erro de sintaxe ao renderizar o ícone de edição foi removido.
+ * Módulo: Gestão de Parceiros (CRUD Completo)
+ * Versão: 2.0 (Ver, Editar, Excluir, Alterar Logo)
+ * Descrição: Painel administrativo para controle total da rede de parceiros.
  *
  * ==========================================================
  */
+import { useEffect, useState, useRef } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext'; 
-import { useEffect, useState, useCallback } from 'react'; 
 import { useNavigate, Link } from 'react-router-dom'; 
-import { Button } from '@/components/ui/button'; 
-// 1. IMPORTADO ÍCONE 'Edit'
-import { Check, X, Loader2, ArrowLeft, Edit } from 'lucide-react'; 
 import axios from 'axios'; 
 import { useToast } from '@/hooks/use-toast';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
-// APIs de Parceiros
-const LISTAR_PARCEIROS_API_URL = 'https://www.ambamazonas.com.br/api/admin_listar_parceiros.php';
-const ATUALIZAR_PARCEIRO_API_URL = 'https://www.ambamazonas.com.br/api/admin_atualizar_parceiro.php';
+// Componentes UI (Shadcn/UI & Lucide)
+import { Button } from '@/components/ui/button'; 
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, ArrowLeft, Edit, Trash2, Eye, MapPin, Globe, Phone, Upload, Search } from 'lucide-react';
 
-// Interface (Parceiro)
+// URLs da API
+const API_LISTAR = 'https://www.ambamazonas.com.br/api/admin_listar_parceiros.php';
+const API_EDITAR = 'https://www.ambamazonas.com.br/api/admin_editar_parceiro.php';
+const API_EXCLUIR = 'https://www.ambamazonas.com.br/api/excluir_parceiro.php';
+const API_STATUS = 'https://www.ambamazonas.com.br/api/admin_atualizar_parceiro.php'; // Para trocas rápidas na tabela
+
+// Interface TypeScript Completa
 interface Parceiro {
-  id: number; nome_parceiro: string; categoria: string;
-  status: 'ativo' | 'inativo';
+  id: number;
+  nome_parceiro: string;
+  categoria: string;
+  descricao_beneficio: string;
+  status: 'ativo' | 'inativo' | 'pendente';
   partner_tier: 'ouro' | 'prata' | 'bronze' | 'pendente';
+  url_logo: string | null;
+  telefone_contato: string | null;
+  link_site: string | null;
+  endereco: string | null;
   data_cadastro: string;
 }
 
@@ -51,186 +54,378 @@ export default function GestaoParceirosPage() {
   const navigate = useNavigate(); 
   const { toast } = useToast();
 
+  // Estados de Dados
   const [parceiros, setParceiros] = useState<Parceiro[]>([]);
-  const [isLoadingParceiros, setIsLoadingParceiros] = useState(true);
-  const [erroParceiros, setErroParceiros] = useState<string | null>(null);
+  const [loadingData, setLoadingData] = useState(true);
+  const [busca, setBusca] = useState('');
 
-  // Efeito de Segurança (Mantido)
+  // Estados dos Modais
+  const [viewPartner, setViewPartner] = useState<Parceiro | null>(null);
+  const [editPartner, setEditPartner] = useState<Parceiro | null>(null); // Se não null, modal abre
+  const [deleteId, setDeleteId] = useState<number | null>(null); // Se não null, alerta abre
+
+  // Estados de Edição
+  const [isSaving, setIsSaving] = useState(false);
+  const [previewLogo, setPreviewLogo] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // --- 1. SEGURANÇA E CARREGAMENTO INICIAL ---
   useEffect(() => {
-    if (isAuthLoading) return; 
-    if (!isAuthenticated || (isAuthenticated && atleta?.role !== 'admin')) {
-      toast({ title: 'Acesso Negado', description: 'Você não tem permissão para ver esta página.', variant: 'destructive' });
-      navigate('/'); 
+    if (isAuthLoading) return;
+    if (!isAuthenticated || atleta?.role !== 'admin') {
+      navigate('/');
+      return;
     }
-  }, [isAuthenticated, atleta, isAuthLoading, navigate, toast]); 
-
-  // Handler de Fetch (busca apenas Parceiros)
-  const fetchParceiros = useCallback(async () => {
-    if (!isAuthLoading && isAuthenticated && atleta?.role === 'admin' && token) {
-      setIsLoadingParceiros(true);
-      setErroParceiros(null);
-      try {
-        const response = await axios.post(LISTAR_PARCEIROS_API_URL, { token: token });
-        if (response.data.status === 'sucesso') {
-          setParceiros(response.data.parceiros);
-        } else {
-          throw new Error(response.data.mensagem);
-        }
-      } catch (error: any) {
-        console.error("Erro ao buscar parceiros:", error);
-        let msg = error.response?.data?.mensagem || 'Não foi possível carregar a lista.';
-        setErroParceiros(msg);
-      } finally {
-        setIsLoadingParceiros(false);
-      }
-    }
+    fetchParceiros();
   }, [isAuthenticated, atleta, token, isAuthLoading]);
 
-  // Efeito de Dados (Chama o fetch)
-  useEffect(() => {
-    fetchParceiros();
-  }, [fetchParceiros]);
-
-  // Handler para Atualizar Parceiro (Status ou Nível)
-  const handleAtualizarParceiro = async (idParceiro: number, acao: { novo_tier?: string, novo_status?: string }) => {
-    if (!token) return;
+  const fetchParceiros = async () => {
+    if(!token) return;
+    setLoadingData(true);
     try {
-      const payload = { token: token, data: { id_parceiro: idParceiro, ...acao }};
-      const response = await axios.post(ATUALIZAR_PARCEIRO_API_URL, payload);
-
-      if (response.data.status === 'sucesso' || response.data.status === 'info') {
-        toast({ title: 'Sucesso!', description: response.data.mensagem });
-
-        // Atualiza a lista local (sem recarregar)
-        setParceiros(prev => prev.map(p => {
-          if (p.id === idParceiro) {
-            const parceiroAtualizado = { ...p };
-            if (acao.novo_tier) parceiroAtualizado.partner_tier = acao.novo_tier as any;
-            if (acao.novo_status) parceiroAtualizado.status = acao.novo_status as any;
-            return parceiroAtualizado;
-          }
-          return p;
-        }));
-      } else { throw new Error(response.data.mensagem); }
-    } catch (error: any) {
-      let msg = error.response?.data?.mensagem || 'Não foi possível atualizar o parceiro.';
-      toast({ title: 'Erro', description: msg, variant: 'destructive' });
+      const response = await axios.post(API_LISTAR, { token });
+      if (response.data.status === 'sucesso') {
+        setParceiros(response.data.parceiros);
+      }
+    } catch (error) {
+      console.error("Erro listagem:", error);
+      toast({ title: "Erro", description: "Falha ao carregar parceiros.", variant: "destructive" });
+    } finally {
+      setLoadingData(false);
     }
   };
 
-  // Estado de Carregamento
-  if (isAuthLoading || isLoadingParceiros) {
-     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="mr-2 h-8 w-8 animate-spin" />
-        <p className="text-muted-foreground">A carregar gestão de parceiros...</p>
-      </div>
-    );
+  // --- 2. FUNÇÃO: EDITAR PARCEIRO (Modal) ---
+  const handleOpenEdit = (p: Parceiro) => {
+    setEditPartner({ ...p }); // Copia o objeto para evitar mutação direta
+    // Prepara preview da logo existente
+    if (p.url_logo) {
+       setPreviewLogo(`https://www.ambamazonas.com.br${p.url_logo}`);
+    } else {
+       setPreviewLogo(null);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPreviewLogo(URL.createObjectURL(file));
+    }
+  };
+
+  const saveEdit = async () => {
+    if (!editPartner) return;
+    setIsSaving(true);
+
+    const formData = new FormData();
+    formData.append('id', editPartner.id.toString());
+    formData.append('nome_parceiro', editPartner.nome_parceiro);
+    formData.append('categoria', editPartner.categoria);
+    formData.append('descricao_beneficio', editPartner.descricao_beneficio || '');
+    formData.append('telefone_contato', editPartner.telefone_contato || '');
+    formData.append('link_site', editPartner.link_site || '');
+    formData.append('endereco', editPartner.endereco || '');
+    formData.append('partner_tier', editPartner.partner_tier);
+    formData.append('status', editPartner.status);
+
+    // Se houver arquivo novo
+    if (fileInputRef.current?.files?.[0]) {
+      formData.append('logo', fileInputRef.current.files[0]);
+    }
+
+    try {
+      const res = await axios.post(API_EDITAR, formData);
+
+      if (res.data.status === 'sucesso') {
+        toast({ title: "Sucesso", description: "Parceiro atualizado!" });
+        setEditPartner(null); // Fecha modal
+        fetchParceiros(); // Recarrega lista
+      } else {
+        throw new Error(res.data.mensagem);
+      }
+    } catch (error: any) {
+      toast({ title: "Erro ao salvar", description: error.message || "Tente novamente.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // --- 3. FUNÇÃO: ATUALIZAÇÃO RÁPIDA (Select na Tabela) ---
+  const handleQuickUpdate = async (id: number, field: 'novo_status' | 'novo_tier', value: string) => {
+    try {
+        const payload = { token, data: { id_parceiro: id, [field]: value } };
+        // Nota: O endpoint admin_atualizar_parceiro.php espera essa estrutura
+        await axios.post(API_STATUS, payload);
+
+        // Atualiza localmente para feedback instantâneo
+        setParceiros(prev => prev.map(p => {
+            if (p.id === id) {
+                return field === 'novo_status' ? { ...p, status: value as any } : { ...p, partner_tier: value as any };
+            }
+            return p;
+        }));
+        toast({ title: "Atualizado", description: "Alteração salva." });
+    } catch (error) {
+        toast({ title: "Erro", description: "Falha na atualização rápida.", variant: "destructive" });
+    }
+  };
+
+  // --- 4. FUNÇÃO: EXCLUIR ---
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      const res = await axios.post(API_EXCLUIR, JSON.stringify({ id: deleteId }));
+      if (res.data.status === 'sucesso') {
+        toast({ title: "Removido", description: "Parceiro excluído do sistema." });
+        setParceiros(prev => prev.filter(p => p.id !== deleteId));
+      } else {
+        throw new Error(res.data.mensagem);
+      }
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } finally {
+      setDeleteId(null);
+    }
+  };
+
+  // Filtro de Busca
+  const filtered = parceiros.filter(p => 
+    p.nome_parceiro.toLowerCase().includes(busca.toLowerCase()) ||
+    p.categoria.toLowerCase().includes(busca.toLowerCase())
+  );
+
+  if (isAuthLoading || loadingData) {
+     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin mr-2"/> Carregando...</div>;
   }
 
-  // Renderização
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <Navigation />
-      <main className="pt-16"> 
-        <section className="py-16 lg:py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Link para Voltar */}
-            <div className="mb-8">
-              <Link 
-                to="/admin/painel" 
-                className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar ao Painel de Administração
-              </Link>
-            </div>
+      <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
 
-            <h1 className="text-3xl font-semibold font-accent text-foreground mb-6">
-              Gestão de Parceiros ({parceiros.length})
-            </h1>
-
-            {/* Tabela de Parceiros (movida para cá) */}
-            <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-              {erroParceiros && <p className="text-red-600">{erroParceiros}</p>}
-              {!isLoadingParceiros && !erroParceiros && (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-border">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Parceiro</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Categoria</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status (Aprovação)</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Nível (Tier)</th>
-                        <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {parceiros.map((parc) => (
-                        <tr key={parc.id} className="hover:bg-muted/50 transition-colors">
-                          <td className="px-4 py-3 text-sm font-medium text-foreground">{parc.nome_parceiro}</td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">{parc.categoria}</td>
-                          <td className="px-4 py-3 text-sm">
-                            <Select 
-                              value={parc.status}
-                              onValueChange={(novoStatus) => handleAtualizarParceiro(parc.id, { novo_status: novoStatus })}
-                            >
-                              <SelectTrigger className={`w-[120px] h-8 text-xs ${parc.status === 'ativo' ? 'text-green-700 border-green-600/50' : 'text-red-700 border-red-600/50'}`}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="ativo">Ativo</SelectItem>
-                                <SelectItem value="inativo">Inativo</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            <Select 
-                              value={parc.partner_tier}
-                              onValueChange={(novoTier) => handleAtualizarParceiro(parc.id, { novo_tier: novoTier })}
-                            >
-                              <SelectTrigger className="w-[120px] h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pendente">Pendente</SelectItem>
-                                <SelectItem value="ouro">Ouro</SelectItem>
-                                <SelectItem value="prata">Prata</SelectItem>
-                                <SelectItem value="bronze">Bronze</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            {parc.partner_tier === 'pendente' && (
-                              <div className="flex justify-center gap-2">
-                                <Button variant="outline" size="icon" className="h-8 w-8 text-green-600"
-                                  onClick={() => handleAtualizarParceiro(parc.id, { novo_status: 'ativo', novo_tier: 'bronze' })}
-                                  title="Aprovar como Bronze">
-                                  <Check className="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" size="icon" className="h-8 w-8 text-red-600"
-                                  onClick={() => handleAtualizarParceiro(parc.id, { novo_status: 'inativo' })}
-                                  title="Rejeitar">
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            )}
-                            {/* 2. CORREÇÃO APLICADA (usando <Edit />) */}
-                            {parc.partner_tier !== 'pendente' && (
-                                <Button variant="outline" size="icon" className="h-8 w-8" title="Visualizar/Editar Parceiro (em breve)">
-                                   <Edit className="h-4 w-4" /> 
-                                </Button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+        {/* Header da Página */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+             <Link to="/admin/painel" className="flex items-center text-sm text-muted-foreground hover:text-primary mb-2">
+              <ArrowLeft className="mr-1 h-4 w-4" /> Voltar ao Painel
+            </Link>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Gestão de Parceiros</h1>
+            <p className="text-muted-foreground">Administre benefícios, níveis e aprovações.</p>
           </div>
-        </section>
+          <div className="relative w-full md:w-72">
+             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+             <Input 
+               placeholder="Buscar empresa..." 
+               className="pl-9 bg-white"
+               value={busca}
+               onChange={(e) => setBusca(e.target.value)}
+             />
+          </div>
+        </div>
+
+        {/* TABELA DE PARCEIROS */}
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Empresa</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Categoria</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Nível</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-200">
+                {filtered.map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 rounded bg-slate-100 flex items-center justify-center overflow-hidden border">
+                           {p.url_logo ? (
+                             <img src={`https://www.ambamazonas.com.br${p.url_logo}`} alt="" className="h-full w-full object-cover" />
+                           ) : (
+                             <span className="font-bold text-slate-400">{p.nome_parceiro.charAt(0)}</span>
+                           )}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-slate-900">{p.nome_parceiro}</div>
+                          <div className="text-xs text-slate-500 truncate max-w-[150px]">{p.link_site || 'Sem site'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      <Badge variant="outline" className="font-normal">{p.categoria}</Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                       <Select 
+                         value={p.status} 
+                         onValueChange={(val) => handleQuickUpdate(p.id, 'novo_status', val)}
+                       >
+                         <SelectTrigger className={`w-[110px] h-8 text-xs font-medium ${p.status === 'ativo' ? 'text-green-700 bg-green-50 border-green-200' : 'text-slate-700 bg-slate-50'}`}>
+                           <SelectValue />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="ativo">Ativo</SelectItem>
+                           <SelectItem value="pendente">Pendente</SelectItem>
+                           <SelectItem value="inativo">Inativo</SelectItem>
+                         </SelectContent>
+                       </Select>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                       <Select 
+                         value={p.partner_tier} 
+                         onValueChange={(val) => handleQuickUpdate(p.id, 'novo_tier', val)}
+                       >
+                         <SelectTrigger className="w-[110px] h-8 text-xs">
+                           <SelectValue />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="ouro">Ouro 🏆</SelectItem>
+                           <SelectItem value="prata">Prata 🛡️</SelectItem>
+                           <SelectItem value="bronze">Bronze 🥉</SelectItem>
+                           <SelectItem value="pendente">--</SelectItem>
+                         </SelectContent>
+                       </Select>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                       <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewPartner(p)} title="Ver Detalhes">
+                             <Eye className="h-4 w-4 text-slate-500" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(p)} title="Editar">
+                             <Edit className="h-4 w-4 text-blue-600" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-red-50" onClick={() => setDeleteId(p.id)} title="Excluir">
+                             <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                       </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* --- MODAL: VISUALIZAR --- */}
+        <Dialog open={!!viewPartner} onOpenChange={() => setViewPartner(null)}>
+           <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                 <DialogTitle>Detalhes da Empresa</DialogTitle>
+              </DialogHeader>
+              {viewPartner && (
+                 <div className="grid gap-6 py-4">
+                    <div className="flex items-center gap-4">
+                       <div className="h-20 w-20 bg-slate-100 rounded border flex items-center justify-center overflow-hidden">
+                          {viewPartner.url_logo ? <img src={`https://www.ambamazonas.com.br${viewPartner.url_logo}`} className="h-full w-full object-contain" /> : "Sem Logo"}
+                       </div>
+                       <div>
+                          <h3 className="text-xl font-bold">{viewPartner.nome_parceiro}</h3>
+                          <Badge className="mt-1">{viewPartner.categoria}</Badge>
+                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                       <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-slate-400"/> {viewPartner.telefone_contato || '-'}</div>
+                       <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-slate-400"/> <a href={viewPartner.link_site || '#'} className="text-blue-600 underline truncate">{viewPartner.link_site || '-'}</a></div>
+                       <div className="flex items-center gap-2 col-span-2"><MapPin className="h-4 w-4 text-slate-400"/> {viewPartner.endereco || 'Endereço não informado'}</div>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-md border text-sm">
+                       <p className="font-semibold text-slate-700 mb-1">Benefícios para Associados:</p>
+                       <p className="text-slate-600">{viewPartner.descricao_beneficio}</p>
+                    </div>
+                 </div>
+              )}
+           </DialogContent>
+        </Dialog>
+
+        {/* --- MODAL: EDITAR --- */}
+        <Dialog open={!!editPartner} onOpenChange={(open) => !open && setEditPartner(null)}>
+           <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                 <DialogTitle>Editar Parceiro</DialogTitle>
+                 <DialogDescription>Altere os dados cadastrais da empresa.</DialogDescription>
+              </DialogHeader>
+              {editPartner && (
+                 <div className="space-y-4 py-2">
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                          <Label>Nome da Empresa</Label>
+                          <Input value={editPartner.nome_parceiro} onChange={(e) => setEditPartner({...editPartner, nome_parceiro: e.target.value})} />
+                       </div>
+                       <div className="space-y-2">
+                          <Label>Categoria</Label>
+                          <Input value={editPartner.categoria} onChange={(e) => setEditPartner({...editPartner, categoria: e.target.value})} />
+                       </div>
+                    </div>
+                    <div className="space-y-2">
+                       <Label>Logo da Empresa</Label>
+                       <div className="flex items-center gap-4 border p-3 rounded bg-slate-50">
+                          {previewLogo && <img src={previewLogo} className="h-12 w-12 object-contain bg-white border" />}
+                          <Input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="cursor-pointer" />
+                       </div>
+                    </div>
+                    <div className="space-y-2">
+                       <Label>Benefício / Desconto</Label>
+                       <Textarea value={editPartner.descricao_beneficio} onChange={(e) => setEditPartner({...editPartner, descricao_beneficio: e.target.value})} rows={3} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                          <Label>Telefone / WhatsApp</Label>
+                          <Input value={editPartner.telefone_contato || ''} onChange={(e) => setEditPartner({...editPartner, telefone_contato: e.target.value})} />
+                       </div>
+                       <div className="space-y-2">
+                          <Label>Site / Instagram</Label>
+                          <Input value={editPartner.link_site || ''} onChange={(e) => setEditPartner({...editPartner, link_site: e.target.value})} />
+                       </div>
+                    </div>
+                    <div className="space-y-2">
+                       <Label>Endereço Completo</Label>
+                       <Input value={editPartner.endereco || ''} onChange={(e) => setEditPartner({...editPartner, endereco: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                          <Label>Status</Label>
+                          <Select value={editPartner.status} onValueChange={(val: any) => setEditPartner({...editPartner, status: val})}>
+                             <SelectTrigger><SelectValue/></SelectTrigger>
+                             <SelectContent><SelectItem value="ativo">Ativo</SelectItem><SelectItem value="inativo">Inativo</SelectItem></SelectContent>
+                          </Select>
+                       </div>
+                       <div className="space-y-2">
+                          <Label>Nível (Tier)</Label>
+                          <Select value={editPartner.partner_tier} onValueChange={(val: any) => setEditPartner({...editPartner, partner_tier: val})}>
+                             <SelectTrigger><SelectValue/></SelectTrigger>
+                             <SelectContent><SelectItem value="ouro">Ouro</SelectItem><SelectItem value="prata">Prata</SelectItem><SelectItem value="bronze">Bronze</SelectItem></SelectContent>
+                          </Select>
+                       </div>
+                    </div>
+                 </div>
+              )}
+              <DialogFooter>
+                 <Button variant="outline" onClick={() => setEditPartner(null)}>Cancelar</Button>
+                 <Button onClick={saveEdit} disabled={isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar Alterações
+                 </Button>
+              </DialogFooter>
+           </DialogContent>
+        </Dialog>
+
+        {/* --- ALERTA: EXCLUIR --- */}
+        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+           <AlertDialogContent>
+              <AlertDialogHeader>
+                 <AlertDialogTitle className="text-red-600">Excluir Parceiro?</AlertDialogTitle>
+                 <AlertDialogDescription>
+                    Esta ação removerá a empresa e sua logo do sistema permanentemente.
+                 </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                 <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Confirmar Exclusão</AlertDialogAction>
+              </AlertDialogFooter>
+           </AlertDialogContent>
+        </AlertDialog>
+
       </main>
       <Footer />
     </div>

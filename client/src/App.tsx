@@ -3,17 +3,9 @@
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
  *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 8 de novembro de 2025
- * Hora: 00:30
- * Versão: 2.5 (Adiciona Rota Seja Parceiro)
- * Tarefa: 305 (Módulo 29-D)
- *
- * Descrição: Componente raiz da aplicação, define as rotas.
- * ATUALIZADO: Inclui rota pública para novos parceiros.
- *
+ * Data: 10 de Janeiro de 2026
+ * Versão: 3.1 (Correção Final de Rotas)
+ * Descrição: Roteador principal. Agora inclui TODAS as páginas de admin.
  * ==========================================================
  */
 import { Routes, Route } from "react-router-dom"; 
@@ -30,7 +22,6 @@ import CadastroPage from "@/pages/CadastroPage";
 import EsqueciSenhaPage from "@/pages/EsqueciSenhaPage";
 import RedefinirSenhaPage from "@/pages/RedefinirSenhaPage";
 import ParceirosPage from "@/pages/ParceirosPage"; 
-// IMPORTAÇÃO NOVA
 import SejaParceiroPage from "@/pages/SejaParceiroPage";
 
 // Páginas Privadas (Associado)
@@ -48,6 +39,10 @@ import GestaoInscricaoTimesPage from "@/pages/admin/GestaoInscricaoTimesPage";
 import GestaoJogosPage from "@/pages/admin/GestaoJogosPage";
 import GestaoPlacarPage from "@/pages/admin/GestaoPlacarPage";
 
+// --- NOVAS IMPORTAÇÕES (BI & GESTÃO) ---
+import DiretoriaBIPage from "@/pages/admin/DiretoriaBIPage"; 
+import DiretoriaGestaoPage from "@/pages/admin/DiretoriaGestaoPage"; 
+
 function App() {
   return (
     <AuthProvider> 
@@ -63,8 +58,6 @@ function App() {
           <Route path="/esqueci-senha" element={<EsqueciSenhaPage />} />
           <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
           <Route path="/parceiros" element={<ParceirosPage />} />
-
-          {/* NOVA ROTA: SEJA PARCEIRO */}
           <Route path="/seja-parceiro" element={<SejaParceiroPage />} />
 
           {/* Rotas Privadas (Associado) */}
@@ -81,6 +74,13 @@ function App() {
           <Route path="/admin/eventos/inscricoes/:eventoId" element={<GestaoInscricaoTimesPage />} />
           <Route path="/admin/eventos/jogos/:eventoId" element={<GestaoJogosPage />} />
           <Route path="/admin/jogos/placar/:eventoId/:jogoId" element={<GestaoPlacarPage />} />
+
+          {/* --- ROTAS CORRIGIDAS --- */}
+          {/* 1. Módulo BI (Estratégico) */}
+          <Route path="/admin/diretoria" element={<DiretoriaBIPage />} />
+
+          {/* 2. Módulo Gestão (Operacional - O que estava dando 404) */}
+          <Route path="/admin/diretoria-gestao" element={<DiretoriaGestaoPage />} />
 
           {/* Rota 404 */}
           <Route path="*" element={<NotFound />} />

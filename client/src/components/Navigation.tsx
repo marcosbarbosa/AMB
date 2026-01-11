@@ -1,24 +1,12 @@
 /*
  * ==========================================================
- * PORTAL AMB DO AMAZONAS
- * ==========================================================
- *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 2 de novembro de 2025
- * Hora: 19:30
- * Versão: 1.5 (Adiciona Botão Seja Parceiro)
- * Tarefa: 265
- *
- * Descrição: Cabeçalho principal de navegação.
- * ATUALIZADO: Adicionado botão CTA "Quero ser Parceiro".
- *
+ * Componente: Navigation.tsx
+ * Versão: 1.6 (Correção Final do Botão Sobre)
+ * Descrição: Navbar com navegação inteligente para âncoras.
  * ==========================================================
  */
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-// IMPORTADO HANDSHAKE AQUI EM BAIXO
 import { Menu, X, User, Edit3, LogOut, LayoutDashboard, Lock, Handshake } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -36,16 +24,26 @@ export function Navigation() {
     { label: 'Contato', href: '/contato' },
   ];
 
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  // --- LÓGICA CORRIGIDA ---
+  const handleLinkClick = (e: React.MouseEvent<HTMLElement>, href: string) => {
+    // 1. Verifica se é um link âncora (começa com /#)
     if (href.startsWith('/#')) {
-      e.preventDefault();
-      const sectionId = href.substring(2);
-      const element = document.getElementById(sectionId);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        setIsMenuOpen(false);
+
+      // 2. Se JÁ estamos na Home (/), fazemos o scroll manual
+      if (location.pathname === '/') {
+        e.preventDefault(); // Impede de recarregar a página
+        const sectionId = href.substring(2); // Pega o id (ex: "sobre")
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
+      // 3. Se estamos em OUTRA página, NÃO usamos preventDefault().
+      // Deixamos o <Link> funcionar. Ele vai levar para a Home e o Home.tsx fará o scroll.
     }
+
+    // Fecha o menu mobile sempre que clicar
+    setIsMenuOpen(false);
   };
 
   const handleLogout = () => {
@@ -76,7 +74,7 @@ export function Navigation() {
               {navItems.map((item) => (
                 <Link key={item.href} to={item.href}>
                   <span
-                    onClick={(e: any) => item.href.startsWith('/#') ? scrollToSection(e, item.href) : undefined} 
+                    onClick={(e) => handleLinkClick(e, item.href)} 
                     data-testid={`link-nav-${item.label.toLowerCase()}`}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer inline-block ${
                       location.pathname === item.href || (item.href.startsWith('/#') && location.pathname === '/')
@@ -91,7 +89,6 @@ export function Navigation() {
             </div>
 
             {/* BOTÃO ESPECIAL: SEJA PARCEIRO (Desktop) */}
-            {/* Só mostramos se não for admin para não poluir, ou sempre, dependendo da tua estratégia */}
             <div className="hidden md:block">
                 <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white transition-all" size="sm" asChild>
                     <Link to="/seja-parceiro">
@@ -172,10 +169,7 @@ export function Navigation() {
             {navItems.map((item) => (
               <Link key={item.href} to={item.href}>
                 <span
-                  onClick={(e: any) => {
-                    if(item.href.startsWith('/#')) scrollToSection(e, item.href);
-                    setIsMenuOpen(false);
-                  }}
+                  onClick={(e) => handleLinkClick(e, item.href)}
                   className={`block px-4 py-3 rounded-md text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer ${
                     location.pathname === item.href || (item.href.startsWith('/#') && location.pathname === '/')
                       ? 'text-foreground bg-accent'

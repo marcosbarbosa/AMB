@@ -6,46 +6,64 @@
  * Copyright (c) 2026 Marcos Barbosa
  *
  * Data: 10 de janeiro de 2026
- * Tarefa: Remoção de Conteúdo Genérico
+ * Versão: 1.5 (Final Integrada)
  *
  * Descrição: Página Inicial (Home).
- * CORREÇÃO: Remoção do componente "Services" (Consultoria, etc)
- * que não condiz com o escopo esportivo do projeto.
+ * ATUALIZADO:
+ * 1. Inclui CarouselHero, Placar e ParceirosCarrossel.
+ * 2. Adiciona lógica para rolar até #sobre quando vindo de outra página.
  *
  * ==========================================================
  */
+import { useEffect } from 'react'; // NECESSÁRIO PARA O SCROLL
+import { useLocation } from 'react-router-dom'; // NECESSÁRIO PARA LER O #SOBRE
 import { Navigation } from '@/components/Navigation';
-// 1. CORREÇÃO: Importa o CarouselHero (o carrosel que sumiu)
 import { CarouselHero } from '@/components/CarouselHero'; 
-// 2. Importa o Placar
 import { PlacarDestaque } from '@/components/PlacarDestaque'; 
+import { ParceirosCarrossel } from '@/components/ParceirosCarrossel'; 
 import { About } from '@/components/About';
-import { Services } from '@/components/Services';
+// import { Services } from '@/components/Services'; // Removido
 import { Stats } from '@/components/Stats';
 import { CTABanner } from '@/components/CTABanner';
 import { Testimonials } from '@/components/Testimonials';
 import { ContactPreview } from '@/components/ContactPreview';
 import { Footer } from '@/components/Footer';
 
-// 1. IMPORTANTE: Importa a nova faixa de parceiros
-import { ParceirosCarrossel } from '@/components/ParceirosCarrossel'; 
-
 export default function Home() {
+  // 1. Captura o "hash" da URL (ex: #sobre)
+  const { hash } = useLocation();
+
+  // 2. Efeito que monitora o hash e rola a tela suavemente
+  useEffect(() => {
+    if (hash) {
+      // Pequeno atraso para garantir que os componentes carregaram
+      setTimeout(() => {
+        const element = document.querySelector(hash);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  }, [hash]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       <main>
-        {/* 3. CORREÇÃO: Renderiza o CarouselHero */}
+        {/* Banner Principal Rotativo */}
         <CarouselHero /> 
 
-        {/* 4. Renderiza o Placar (como planeado) */}
+        {/* Placar do Jogo */}
         <PlacarDestaque /> 
 
-        {/* 3. Faixa de Parceiros Ouro (Carrossel Infinito com WhatsApp) */}
+        {/* Faixa de Parceiros Ouro (Fundo Branco) */}
         <ParceirosCarrossel />
 
+        {/* Secção Quem Somos (Com id="sobre") */}
         <About />
-        {/* {/* REMOVIDO E DELETADO DO SISTEMA <Services / > */ } 
+
+        {/* <Services /> Removido do escopo */}
+
         <Stats />
         <CTABanner />
         <Testimonials />

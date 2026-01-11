@@ -6,13 +6,12 @@
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 2 de novembro de 2025
- * Hora: 23:05
- * Versão: 2.3 (Adiciona Módulo de Times)
- * Tarefa: 266-B
+ * Data: 10 de Janeiro de 2026
+ * Versão: 3.0 (Arquitetura Separada)
+ * Tarefa: 305 - Refatoração de UI/UX
  *
- * Descrição: Página principal do Painel de Admin (/admin/painel).
- * ATUALIZADO: Correção de link de parceiros e adição de botão de Times.
+ * Descrição: Painel Administrativo Principal (/admin/painel).
+ * ATUALIZADO: Separação dos módulos de "Gestão de Diretoria" e "BI".
  *
  * ==========================================================
  */
@@ -21,8 +20,8 @@ import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext'; 
 import { useEffect } from 'react'; 
 import { useNavigate, Link } from 'react-router-dom'; 
-// ADICIONEI "Shirt" AQUI NAS IMPORTAÇÕES PARA O ÍCONE DOS TIMES
-import { Loader2, Users, Handshake, CalendarDays, Newspaper, BarChart3, Edit3, Shirt } from 'lucide-react'; 
+// 1. ADICIONADO: Ícone 'Briefcase' para a gestão administrativa
+import { Loader2, Users, Handshake, CalendarDays, Newspaper, BarChart3, Edit3, Shirt, Briefcase } from 'lucide-react'; 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'; 
 import { toast } from '@/hooks/use-toast';
 
@@ -32,7 +31,7 @@ export default function AdminPainelPage() {
 
   // Efeito de Segurança (Mantido)
   useEffect(() => {
-    if (isAuthLoading) return; // Espera o "cérebro" carregar
+    if (isAuthLoading) return; 
 
     if (!isAuthenticated || (isAuthenticated && atleta?.role !== 'admin')) {
       toast({ title: 'Acesso Negado', description: 'Você não tem permissão para ver esta página.', variant: 'destructive' });
@@ -40,7 +39,7 @@ export default function AdminPainelPage() {
     }
   }, [isAuthenticated, atleta, isAuthLoading, navigate, toast]); 
 
-  // Estado de Carregamento (Mantido)
+  // Estado de Carregamento
   if (isAuthLoading || !atleta) {
      return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -58,7 +57,7 @@ export default function AdminPainelPage() {
     );
   }
 
-  // Lista de Módulos de Gestão (Atualizada)
+  // Lista de Módulos de Gestão (Refatorada para Separação de Conceitos)
   const adminModules = [
     {
       title: "Gestão de Associados",
@@ -71,7 +70,6 @@ export default function AdminPainelPage() {
       title: "Gestão de Parceiros",
       description: "Gerir níveis (Ouro, Prata) e status de parcerias.",
       icon: Handshake,
-      // CORRIGIDO: O link agora aponta para a rota certa de parceiros
       link: "/admin/parceiros", 
       testid: "admin-link-parceiros"
     },
@@ -82,32 +80,40 @@ export default function AdminPainelPage() {
       link: "/admin/eventos", 
       testid: "admin-link-eventos"
     },
+    // --- NOVO: MÓDULO OPERACIONAL (CADASTRO) ---
     {
-      title: "Diretoria e Contagem (BI)",
-      description: "Gerir membros da diretoria e ver estatísticas de acesso (Módulos 31/32).",
+      title: "Gestão da Diretoria",
+      description: "Cadastrar membros, cargos e gerir mandatos.",
+      icon: Briefcase, 
+      link: "/admin/diretoria-gestao", // Rota para a página de gestão
+      testid: "admin-link-diretoria-gestao"
+    },
+    // --- NOVO: MÓDULO ESTRATÉGICO (BI) ---
+    {
+      title: "Inteligência (BI)",
+      description: "Estatísticas, KPIs e gráficos de crescimento.",
       icon: BarChart3,
-      link: "/admin/diretoria-stats", 
-      testid: "admin-link-diretoria-stats"
+      link: "/admin/diretoria", // Rota para a página de gráficos
+      testid: "admin-link-bi"
     },
     {
       title: "Posts e Newsletters",
-      description: "Lançar posts de jogos (Placar) e newsletters semanais (Módulo 29/30).",
+      description: "Lançar posts de jogos e newsletters semanais.",
       icon: Newspaper,
       link: "/admin/posts-news", 
       testid: "admin-link-posts-news"
     },
     {
       title: "Gerir Categorias",
-      description: "Adicionar ou modificar categorias de idade (Ex: 60+).",
+      description: "Adicionar ou modificar categorias de idade.",
       icon: Edit3,
       link: "/admin/categorias", 
       testid: "admin-link-categorias"
     },
-    // NOVO MÓDULO ADICIONADO AQUI
     {
       title: "Gestão de Times",
       description: "Criar, editar e gerir as equipas do campeonato.",
-      icon: Shirt, // Ícone de camisa
+      icon: Shirt, 
       link: "/admin/times", 
       testid: "admin-link-times"
     },
@@ -137,11 +143,11 @@ export default function AdminPainelPage() {
               Módulos de Gestão
             </h2>
 
-            {/* Grid com os links para as novas páginas */}
+            {/* Grid com os links para os módulos */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {adminModules.map((mod) => (
                 <Link to={mod.link} key={mod.title} data-testid={mod.testid}>
-                  <Card className="h-full hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                  <Card className="h-full hover:shadow-lg hover:border-primary/50 transition-all duration-300 cursor-pointer">
                     <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
                       <div className="p-3 rounded-full bg-primary/10 text-primary">
                         <mod.icon className="h-6 w-6" />
