@@ -3,9 +3,10 @@
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
  *
- * Data: 10 de Janeiro de 2026
- * Versão: 3.1 (Correção Final de Rotas)
- * Descrição: Roteador principal. Agora inclui TODAS as páginas de admin.
+ * Data: 11 de Janeiro de 2026
+ * Versão: 3.2 (Inclusão do Módulo de Banners Institucionais)
+ * Descrição: Roteador principal. Adicionada a rota para
+ * gestão de campanhas rotativas da Home.
  * ==========================================================
  */
 import { Routes, Route } from "react-router-dom"; 
@@ -42,6 +43,7 @@ import GestaoPlacarPage from "@/pages/admin/GestaoPlacarPage";
 // --- NOVAS IMPORTAÇÕES (BI & GESTÃO) ---
 import DiretoriaBIPage from "@/pages/admin/DiretoriaBIPage"; 
 import DiretoriaGestaoPage from "@/pages/admin/DiretoriaGestaoPage"; 
+import GestaoBannersAMB from "@/pages/admin/GestaoBannersAMB"; // [NOVO]
 
 function App() {
   return (
@@ -68,6 +70,10 @@ function App() {
           <Route path="/admin/painel" element={<AdminPainelPage />} />
           <Route path="/admin/associados" element={<GestaoAssociadosPage />} />
           <Route path="/admin/parceiros" element={<GestaoParceirosPage />} />
+
+          {/* GESTÃO DE BANNERS INSTITUCIONAIS [NOVO] */}
+          <Route path="/admin/banners" element={<GestaoBannersAMB />} />
+
           <Route path="/admin/eventos" element={<GestaoEventosPage />} />
           <Route path="/admin/eventos/conteudo/:eventoId" element={<GestaoConteudoEventoPage />} />
           <Route path="/admin/times" element={<GestaoTimesPage />} />
@@ -75,11 +81,8 @@ function App() {
           <Route path="/admin/eventos/jogos/:eventoId" element={<GestaoJogosPage />} />
           <Route path="/admin/jogos/placar/:eventoId/:jogoId" element={<GestaoPlacarPage />} />
 
-          {/* --- ROTAS CORRIGIDAS --- */}
-          {/* 1. Módulo BI (Estratégico) */}
+          {/* Módulos Diretoria */}
           <Route path="/admin/diretoria" element={<DiretoriaBIPage />} />
-
-          {/* 2. Módulo Gestão (Operacional - O que estava dando 404) */}
           <Route path="/admin/diretoria-gestao" element={<DiretoriaGestaoPage />} />
 
           {/* Rota 404 */}

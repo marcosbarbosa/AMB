@@ -1,194 +1,189 @@
 /*
  * ==========================================================
- * PORTAL AMB DO AMAZONAS
- * ==========================================================
- *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 2 de novembro de 2025
- * Hora: 08:20
- * Versão: 1.2 (Refina UI dos Parceiros - Insight)
- * Tarefa: 256 (Módulo 28)
- *
- * Descrição: Componente "Parceiros em Destaque" para a Página Inicial.
- * ATUALIZADO para remover os títulos de secção ("Ouro", "Prata")
- * e adicionar o ícone de nível no card.
- *
+ * COMPONENTE: ParceirosDestaque.tsx
+ * Versão: 3.0 (Correção de Imagens + Hover de Banner Inteligente)
+ * Descrição: Exibe os parceiros Ouro na Home com logos corrigidas
+ * e efeito de hover que mostra o banner da campanha.
  * ==========================================================
  */
-import { useState, useEffect } from 'react';
+
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Card, CardContent } from '@/components/ui/card';
-import { Phone, Globe, Loader2, Award, Shield, Gem } from 'lucide-react'; // Importa Gem (Bronze)
-import { Link } from 'react-router-dom';
+import { MessageSquare, ZoomIn, X, ImageIcon } from 'lucide-react';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-const API_URL = 'https://www.ambamazonas.com.br/api/listar_parceiros_homepage.php';
+const API_PARCEIROS = 'https://www.ambamazonas.com.br/api/listar_parceiros_homepage.php'; // Usando a mesma API otimizada da Home
+const DOMAIN_URL = 'https://www.ambamazonas.com.br';
 
-interface ParceiroDestaque {
+interface ParceiroOuro {
   id: number;
   nome_parceiro: string;
-  categoria: string;
-  descricao_beneficio: string;
-  telefone_contato: string | null;
   url_logo: string | null;
-  link_site: string | null;
-  partner_tier: 'ouro' | 'prata';
+  url_banner: string | null;
+  whatsapp_contato: string | null;
+  partner_tier: string;
+  banner_fit_mode?: 'cover' | 'contain';
+  banner_fit_mobile?: 'cover' | 'contain';
+  banner_status?: string;
 }
 
-// (NOVO) Helper de Ícone (usado em ambos os componentes)
-export const NivelIcone = ({ tier }: { tier: string }) => {
-  if (tier === 'ouro') {
-    return <Award className="h-5 w-5 text-yellow-500" title="Parceiro Ouro" />;
-  }
-  if (tier === 'prata') {
-    return <Shield className="h-5 w-5 text-gray-400" title="Parceiro Prata" />;
-  }
-  if (tier === 'bronze') {
-    return <Gem className="h-5 w-5 text-yellow-800" title="Parceiro Bronze" />;
-  }
-  return null;
-};
-
 export function ParceirosDestaque() {
-  const [parceirosOuro, setParceirosOuro] = useState<ParceiroDestaque[]>([]);
-  const [parceirosPrata, setParceirosPrata] = useState<ParceiroDestaque[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
+  const [parceiros, setParceiros] = useState<ParceiroOuro[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [imagemZoom, setImagemZoom] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchParceirosDestaque = async () => {
-      setIsLoading(true);
-      setErro(null);
+    const fetchParceiros = async () => {
       try {
-        const response = await axios.get(API_URL);
-        if (response.data.status === 'sucesso') {
-          const parceiros: ParceiroDestaque[] = response.data.parceiros;
-          setParceirosOuro(parceiros.filter(p => p.partner_tier === 'ouro'));
-          setParceirosPrata(parceiros.filter(p => p.partner_tier === 'prata'));
-        } else {
-          throw new Error(response.data.mensagem || 'Erro ao buscar parceiros');
+        const res = await axios.get(`${API_PARCEIROS}?t=${Date.now()}`);
+        if (res.data.status === 'sucesso' && res.data.parceiros) {
+          // Filtra apenas Ouro Ativos com Banner Aprovado (Opcional: se quiser mostrar mesmo sem banner, remova a condição p.banner_status)
+          const ouros = res.data.parceiros.filter((p: any) => 
+            p.partner_tier === 'ouro' && p.banner_status === 'aprovado'
+          );
+          setParceiros(ouros);
         }
       } catch (error) {
-        console.error("Erro ao buscar parceiros em destaque:", error);
-        setErro('Não foi possível carregar a rede de parceiros.');
+        console.error("Erro ao carregar parceiros destaque:", error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-    fetchParceirosDestaque();
-  }, []); 
+    fetchParceiros();
+  }, []);
 
-  if (isLoading) {
-    return (
-      <section className="py-20 lg:py-24 bg-background text-center">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-      </section>
-    );
-  }
+  // Função Robusta de URL (Igual à da Page principal)
+  const getImageUrl = (url: string | null, type: 'logo' | 'banner' = 'logo') => {
+    if (!url || url === 'NULL') return null;
+    let clean = url.replace(/['"]/g, '').trim();
+    if (clean.startsWith('http')) return clean;
+    if (clean.startsWith('/')) return `${DOMAIN_URL}${clean}`;
 
-  if (erro) { return null; } // Não mostra nada se der erro
+    // Fallback inteligente para caminhos relativos antigos
+    const folder = type === 'logo' ? 'logos_parceiros' : 'banners_campanhas';
+    return `${DOMAIN_URL}/uploads/${folder}/${clean}`;
+  };
 
-  if (parceirosOuro.length === 0 && parceirosPrata.length === 0) {
-    return null; // Oculta a secção inteira
-  }
+  const zapLink = (num: string | null) => {
+    if (!num) return '#';
+    const clean = num.replace(/\D/g, '');
+    return `https://api.whatsapp.com/send?phone=55${clean}&text=Olá! Vi sua marca no Portal AMB.`;
+  };
+
+  if (loading) return null; // Ou um skeleton loader se preferir
+  if (parceiros.length === 0) return null;
 
   return (
-    <>
-      {/* ========================================================== */}
-      {/* SECÇÃO PARCEIROS OURO (Com Imagens/Cards)                 */}
-      {/* ========================================================== */}
-      {parceirosOuro.length > 0 && (
-        <section className="py-20 lg:py-24 bg-card border-y border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* 1. TÍTULO GENÉRICO (PODE SER REMOVIDO SE PREFERIR) */}
-            <div className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl font-semibold font-accent text-foreground leading-tight mb-4">
-                Nossos Parceiros em Destaque
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                Apoiadores que fortalecem nossa comunidade com benefícios premium.
-              </p>
-            </div>
+    <section className="py-12 bg-slate-50">
+      <div className="container mx-auto px-4">
+        <h2 className="text-2xl font-bold text-center mb-8 uppercase tracking-wider text-slate-800">Parcerias de Ouro</h2>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {parceirosOuro.map((parceiro) => (
-                <Card 
-                  key={parceiro.id} 
-                  className="border-card-border hover:shadow-lg transition-shadow duration-300 flex flex-col"
-                  data-testid={`parceiro-ouro-${parceiro.id}`}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 justify-center">
+          {parceiros.map((p) => {
+            const logoUrl = getImageUrl(p.url_logo, 'logo');
+            const bannerUrl = getImageUrl(p.url_banner, 'banner');
+
+            // Detecta mobile simples para decisão de renderização inicial
+            const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+            const fitMode = isMobile ? (p.banner_fit_mobile || 'cover') : (p.banner_fit_mode || 'cover');
+
+            return (
+              <Card 
+                key={p.id} 
+                className="group relative overflow-hidden border-slate-200 hover:shadow-xl transition-all duration-300 h-48 flex items-center justify-center bg-white cursor-pointer"
+                onClick={() => p.whatsapp_contato && window.open(zapLink(p.whatsapp_contato), '_blank')}
+              >
+                <CardContent className="p-4 w-full h-full flex items-center justify-center relative">
+
+                  {/* CAMADA 1: LOGO (Visível por padrão) */}
+                  <div className="absolute inset-0 flex items-center justify-center p-4 transition-opacity duration-300 group-hover:opacity-0">
+                    {logoUrl ? (
+                      <img 
+                        src={logoUrl} 
+                        alt={p.nome_parceiro} 
+                        className="max-h-full max-w-full object-contain filter grayscale group-hover:grayscale-0 transition-all"
+                        onError={(e) => {
+                           // Se a imagem falhar, esconde ela e mostra o texto
+                           (e.target as HTMLImageElement).style.display = 'none';
+                           (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+
+                    {/* Fallback Textual (Escondido por padrão, aparece se não tiver logo ou se ela quebrar) */}
+                    <div className={`hidden flex-col items-center justify-center text-slate-300 ${!logoUrl ? 'flex' : ''}`}>
+                       <ImageIcon className="h-8 w-8 mb-1" />
+                       <span className="text-[10px] text-center font-bold uppercase">{p.nome_parceiro}</span>
+                    </div>
+                  </div>
+
+                  {/* CAMADA 2: BANNER (Aparece no Hover) */}
+                  {bannerUrl && (
+                    <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center overflow-hidden">
+
+                      {/* Efeito Blur Backdrop (Apenas para modo Contain) */}
+                      {fitMode === 'contain' && (
+                        <div 
+                           className="absolute inset-0 bg-cover bg-center blur-md opacity-50 scale-110"
+                           style={{ backgroundImage: `url(${bannerUrl})` }}
+                        />
+                      )}
+
+                      {/* Imagem Principal do Banner */}
+                      <img 
+                        src={bannerUrl} 
+                        alt="Campanha" 
+                        className={`relative z-10 w-full h-full transition-transform duration-700 group-hover:scale-105 ${fitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
+                      />
+
+                      {/* Botão de Zoom na Campanha */}
+                      <button 
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           setImagemZoom(bannerUrl);
+                         }}
+                         className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/80 text-white rounded-full z-20 opacity-0 group-hover:opacity-100 transition-opacity"
+                         title="Ver Banner Completo"
+                      >
+                        <ZoomIn className="h-3 w-3" />
+                      </button>
+
+                      {/* Overlay CTA WhatsApp */}
+                      <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/90 to-transparent flex items-end justify-center z-20">
+                         <span className="text-[10px] text-white font-bold flex items-center gap-1">
+                           <MessageSquare className="h-3 w-3 text-green-400" /> Falar Agora
+                         </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Badge Ouro Flutuante (Sempre visível no canto, mas com destaque no hover) */}
+                  <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    <span className="bg-yellow-500 text-[8px] font-bold px-1.5 py-0.5 rounded text-black border border-yellow-300 shadow-sm">OURO</span>
+                  </div>
+
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* MODAL ZOOM GLOBAL */}
+      <Dialog open={!!imagemZoom} onOpenChange={() => setImagemZoom(null)}>
+        <DialogContent className="max-w-4xl bg-transparent border-none shadow-none p-0 flex justify-center items-center outline-none ring-0">
+            <div className="relative group">
+                <button 
+                    onClick={() => setImagemZoom(null)}
+                    className="absolute -top-12 right-0 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full transition-colors z-50"
                 >
-                  <CardContent className="p-6 flex flex-col h-full">
-                    {/* Imagem/Logo (Mantido) */}
-                    <div className="w-full h-40 bg-muted rounded-md mb-4 flex items-center justify-center">
-                      {parceiro.url_logo ? (
-                        <img src={parceiro.url_logo} alt={parceiro.nome_parceiro} className="h-full w-full object-contain p-4" />
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Logo em breve</span>
-                      )}
-                    </div>
-                    {/* Detalhes */}
-                    <div className="flex justify-between items-start mb-1">
-                      <h3 className="text-xl font-semibold text-foreground">{parceiro.nome_parceiro}</h3>
-                      {/* 2. ÍCONE DE NÍVEL AO LADO DO TÍTULO */}
-                      <NivelIcone tier={parceiro.partner_tier} /> 
-                    </div>
-                    <p className="text-sm font-medium text-primary mb-3">{parceiro.categoria}</p>
-                    <p className="text-muted-foreground leading-relaxed mb-4 flex-grow">
-                      "{parceiro.descricao_beneficio}"
-                    </p>
-                    {/* Contactos (Mantidos) */}
-                    <div className="flex items-center gap-4 mt-auto text-sm text-muted-foreground">
-                      {parceiro.telefone_contato && (
-                        <div className="flex items-center gap-1">
-                          <Phone className="h-4 w-4" />
-                          <span>{parceiro.telefone_contato}</span>
-                        </div>
-                      )}
-                      {parceiro.link_site && (
-                         <a href={parceiro.link_site} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
-                           <Globe className="h-4 w-4" />
-                           <span>Site</span>
-                         </a>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                <X className="h-6 w-6"/>
+                </button>
+                {imagemZoom && <img src={imagemZoom} className="max-h-[85vh] max-w-[95vw] rounded-xl shadow-2xl bg-white object-contain" alt="Zoom" />}
             </div>
-          </div>
-        </section>
-      )}
-
-      {/* ========================================================== */}
-      {/* SECÇÃO PARCEIROS PRATA (Apenas Texto - DISCRETA)           */}
-      {/* ========================================================== */}
-      {parceirosPrata.length > 0 && (
-        <section className="py-20 lg:py-24 bg-background">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-            {/* 3. TÍTULO E DESCRIÇÃO REMOVIDOS (Conforme solicitado) */}
-
-            {/* Lista textual */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-              {parceirosPrata.map((parceiro) => (
-                <div 
-                  key={parceiro.id} 
-                  className="border-b border-border pb-3"
-                  data-testid={`parceiro-prata-${parceiro.id}`}
-                >
-                   {/* 4. ÍCONE DE NÍVEL AO LADO DO TÍTULO */}
-                   <div className="flex items-center gap-2 mb-1">
-                     <h3 className="text-lg font-semibold text-foreground">{parceiro.nome_parceiro}</h3>
-                     <NivelIcone tier={parceiro.partner_tier} />
-                   </div>
-                   <p className="text-sm text-muted-foreground">{parceiro.telefone_contato || parceiro.categoria}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-    </>
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 }

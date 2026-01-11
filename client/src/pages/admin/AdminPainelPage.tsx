@@ -1,27 +1,31 @@
 /*
  * ==========================================================
+ * ARQUIVO: AdminPainelPage.tsx
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
  *
  * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
  * Todos os direitos reservados.
  *
- * Data: 10 de Janeiro de 2026
- * Versão: 3.0 (Arquitetura Separada)
- * Tarefa: 305 - Refatoração de UI/UX
+ * Data: 11 de Janeiro de 2026
+ * Versão: 3.1 (Inclusão do Módulo de Banners)
  *
  * Descrição: Painel Administrativo Principal (/admin/painel).
- * ATUALIZADO: Separação dos módulos de "Gestão de Diretoria" e "BI".
+ * ATUALIZADO: Adicionado card de acesso rápido para a
+ * Gestão de Banners Institucionais.
  *
  * ==========================================================
  */
+
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext'; 
 import { useEffect } from 'react'; 
 import { useNavigate, Link } from 'react-router-dom'; 
-// 1. ADICIONADO: Ícone 'Briefcase' para a gestão administrativa
-import { Loader2, Users, Handshake, CalendarDays, Newspaper, BarChart3, Edit3, Shirt, Briefcase } from 'lucide-react'; 
+import { 
+  Loader2, Users, Handshake, CalendarDays, Newspaper, BarChart3, 
+  Edit3, Shirt, Briefcase, Layout 
+} from 'lucide-react'; 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'; 
 import { toast } from '@/hooks/use-toast';
 
@@ -29,7 +33,7 @@ export default function AdminPainelPage() {
   const { isAuthenticated, atleta, isLoading: isAuthLoading } = useAuth(); 
   const navigate = useNavigate(); 
 
-  // Efeito de Segurança (Mantido)
+  // Efeito de Segurança
   useEffect(() => {
     if (isAuthLoading) return; 
 
@@ -57,7 +61,7 @@ export default function AdminPainelPage() {
     );
   }
 
-  // Lista de Módulos de Gestão (Refatorada para Separação de Conceitos)
+  // Lista de Módulos de Gestão
   const adminModules = [
     {
       title: "Gestão de Associados",
@@ -73,6 +77,14 @@ export default function AdminPainelPage() {
       link: "/admin/parceiros", 
       testid: "admin-link-parceiros"
     },
+    // --- NOVO CARD: GESTÃO DE BANNERS INSTITUCIONAIS ---
+    {
+      title: "Banners da Home",
+      description: "Gerenciar campanhas rotativas e avisos institucionais.",
+      icon: Layout,
+      link: "/admin/banners", 
+      testid: "admin-link-banners"
+    },
     {
       title: "Gestão de Eventos",
       description: "Criar, editar e apagar campeonatos.",
@@ -80,20 +92,18 @@ export default function AdminPainelPage() {
       link: "/admin/eventos", 
       testid: "admin-link-eventos"
     },
-    // --- NOVO: MÓDULO OPERACIONAL (CADASTRO) ---
     {
       title: "Gestão da Diretoria",
       description: "Cadastrar membros, cargos e gerir mandatos.",
       icon: Briefcase, 
-      link: "/admin/diretoria-gestao", // Rota para a página de gestão
+      link: "/admin/diretoria-gestao", 
       testid: "admin-link-diretoria-gestao"
     },
-    // --- NOVO: MÓDULO ESTRATÉGICO (BI) ---
     {
       title: "Inteligência (BI)",
       description: "Estatísticas, KPIs e gráficos de crescimento.",
       icon: BarChart3,
-      link: "/admin/diretoria", // Rota para a página de gráficos
+      link: "/admin/diretoria", 
       testid: "admin-link-bi"
     },
     {
@@ -147,9 +157,9 @@ export default function AdminPainelPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {adminModules.map((mod) => (
                 <Link to={mod.link} key={mod.title} data-testid={mod.testid}>
-                  <Card className="h-full hover:shadow-lg hover:border-primary/50 transition-all duration-300 cursor-pointer">
+                  <Card className="h-full hover:shadow-lg hover:border-primary/50 transition-all duration-300 cursor-pointer group">
                     <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-                      <div className="p-3 rounded-full bg-primary/10 text-primary">
+                      <div className="p-3 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
                         <mod.icon className="h-6 w-6" />
                       </div>
                       <CardTitle className="text-xl">{mod.title}</CardTitle>
