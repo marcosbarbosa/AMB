@@ -1,7 +1,7 @@
 /*
  * ==========================================================
  * MÓDULO: ParceirosPage.tsx
- * Versão: 27.0 (Correção Crítica: Imagens e Zoom)
+ * Versão: 29.0 (Ouro: Clique p/ Zoom | Prata: Estático s/ Lupa)
  * ==========================================================
  */
 
@@ -16,8 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from "@/components/ui/dialog"; 
 import { 
-  Phone, Globe, Loader2, MapPin, Search, 
-  ZoomIn, X, MessageSquare, ImageIcon
+  Globe, Loader2, MapPin, Search, 
+  X, MessageSquare, ImageIcon, List, LayoutGrid, Award, Shield, Medal
 } from 'lucide-react';
 
 const API_PARCEIROS = 'https://www.ambamazonas.com.br/api/get_parceiros_publico.php';
@@ -73,31 +73,33 @@ export default function ParceirosPage() {
     fetchData();
   }, []);
 
-  const filteredParceiros = useMemo(() => {
-    return parceiros
-      .filter(p => {
-        const matchesSearch = p.nome_parceiro.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            p.categoria.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCat = selectedCategory === 'todas' || p.categoria === selectedCategory;
-        return matchesSearch && matchesCat;
-      })
-      .sort((a, b) => (TIER_WEIGHT[b.partner_tier] || 0) - (TIER_WEIGHT[a.partner_tier] || 0));
+  // Filtros
+  const filteredBase = useMemo(() => {
+    return parceiros.filter(p => {
+      const matchesSearch = p.nome_parceiro.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          p.categoria.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCat = selectedCategory === 'todas' || p.categoria === selectedCategory;
+      return matchesSearch && matchesCat;
+    });
   }, [parceiros, searchTerm, selectedCategory]);
 
-  // Função Robusta de Tratamento de URL
+  // Grid (Ouro e Prata)
+  const gridPartners = useMemo(() => {
+    return filteredBase
+      .filter(p => p.partner_tier === 'ouro' || p.partner_tier === 'prata')
+      .sort((a, b) => (TIER_WEIGHT[b.partner_tier] || 0) - (TIER_WEIGHT[a.partner_tier] || 0));
+  }, [filteredBase]);
+
+  // Lista (Todos)
+  const listPartners = useMemo(() => {
+    return [...filteredBase].sort((a, b) => a.nome_parceiro.localeCompare(b.nome_parceiro));
+  }, [filteredBase]);
+
   const getImageUrl = (url: string | null, type: 'logo' | 'banner' = 'logo') => {
     if (!url || url === 'NULL') return null;
-
-    // Remove aspas e espaços extras
     let clean = url.replace(/['"]/g, '').trim();
-
-    // Se já for link completo, retorna
     if (clean.startsWith('http')) return clean;
-
-    // Se começar com barra, concatena domínio
     if (clean.startsWith('/')) return `${DOMAIN_URL}${clean}`;
-
-    // Se for apenas nome do arquivo, constrói o caminho
     const folder = type === 'logo' ? 'logos_parceiros' : 'banners_campanhas';
     return `${DOMAIN_URL}/uploads/${folder}/${clean}`;
   };
@@ -105,7 +107,14 @@ export default function ParceirosPage() {
   const zapLink = (num: string | null) => {
     if (!num) return '#';
     const clean = num.replace(/\D/g, '');
-    return `https://api.whatsapp.com/send?phone=55${clean}&text=Olá! Vi sua marca no Portal AMB.`;
+    return `https://api.whatsapp.com/send?phone=55${clean}&text=Olá! Sou associado da AMB e gostaria de saber mais sobre o benefício.`;
+  };
+
+  const TierIcon = ({ tier }: { tier: string }) => {
+    if (tier === 'ouro') return <Award className="h-4 w-4 text-yellow-500" />;
+    if (tier === 'prata') return <Shield className="h-4 w-4 text-slate-400" />;
+    if (tier === 'bronze') return <Medal className="h-4 w-4 text-orange-700" />;
+    return null;
   };
 
   return (
@@ -141,7 +150,13 @@ export default function ParceirosPage() {
           </div>
         </header>
 
-        <section className="container mx-auto px-4">
+        {/* GRID DESTAQUE */}
+        <section className="container mx-auto px-4 mb-16">
+          <div className="flex items-center gap-2 mb-6">
+             <LayoutGrid className="h-5 w-5 text-yellow-600" />
+             <h2 className="text-xl font-bold text-slate-800">Destaques da Rede</h2>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading ? (
               <div className="col-span-full flex flex-col items-center justify-center py-20 space-y-4">
@@ -149,110 +164,109 @@ export default function ParceirosPage() {
                 <p className="text-slate-500 font-medium">Carregando parceiros...</p>
               </div>
             ) : (
-              filteredParceiros.map((p) => {
+              gridPartners.map((p) => {
                 const logoUrl = getImageUrl(p.url_logo, 'logo');
                 const bannerUrl = getImageUrl(p.url_banner, 'banner');
+                const isOuro = p.partner_tier === 'ouro';
 
                 return (
                   <Card 
                     key={p.id} 
                     className={`relative overflow-hidden transition-all duration-300 group hover:shadow-xl border-slate-200 ${
-                      p.partner_tier === 'ouro' ? 'ring-2 ring-yellow-400/30' : ''
+                      isOuro ? 'ring-1 ring-yellow-400/50' : ''
                     }`}
                   >
                     <CardContent className="p-0">
-                      {/* ÁREA DA LOGO / BANNER HOVER */}
-                      <div className="relative h-48 bg-white flex items-center justify-center p-6 border-b border-slate-100 overflow-hidden">
+
+                      {/* ÁREA DE IMAGEM CLICÁVEL (Apenas para Ouro)
+                         Se for Ouro: Cursor de Zoom e onClick ativa o Zoom.
+                         Se for Prata: Cursor padrão, sem clique.
+                      */}
+                      <div 
+                        className={`relative h-48 bg-white flex items-center justify-center p-6 border-b border-slate-100 overflow-hidden 
+                          ${isOuro ? 'cursor-zoom-in' : 'cursor-default'}`}
+                        onClick={() => {
+                          if (isOuro) {
+                            if (bannerUrl) setImagemZoom(bannerUrl);
+                            else if (logoUrl) setImagemZoom(logoUrl);
+                          }
+                          // Se for Prata, não faz nada (sem zoom).
+                        }}
+                      >
 
                         {/* Logo Principal */}
                         {logoUrl ? (
                           <img 
                             src={logoUrl} 
                             alt={p.nome_parceiro}
-                            className="max-h-full max-w-full object-contain transition-all duration-500 group-hover:scale-110 group-hover:opacity-0"
+                            className={`max-h-full max-w-full object-contain transition-all duration-500 
+                              ${isOuro ? 'group-hover:scale-110 group-hover:opacity-0' : ''} 
+                            `}
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/placeholder-logo.png'; // Fallback se falhar
-                              (e.target as HTMLImageElement).classList.add('opacity-50');
+                              (e.target as HTMLImageElement).style.display = 'none';
+                              (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
                             }}
                           />
                         ) : (
-                          <ImageIcon className="h-12 w-12 text-slate-200" />
+                          <div className="flex flex-col items-center text-slate-300">
+                             <ImageIcon className="h-10 w-10 mb-2" />
+                             <span className="text-xs uppercase font-bold">{p.nome_parceiro}</span>
+                          </div>
                         )}
 
-                        {/* BANNER DE CAMPANHA (Aparece no Hover apenas para Ouro) */}
-                        {p.partner_tier === 'ouro' && bannerUrl && (
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-black">
+                        {/* Banner Hover (Apenas Ouro) */}
+                        {isOuro && bannerUrl && (
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-black flex items-center justify-center">
+                             {p.banner_fit_mode === 'contain' && (
+                                <div className="absolute inset-0 bg-cover bg-center blur-md opacity-50 scale-110" style={{ backgroundImage: `url(${bannerUrl})` }} />
+                             )}
                              <img 
                                 src={bannerUrl}
-                                className={`w-full h-full ${p.banner_fit_mode === 'contain' ? 'object-contain' : 'object-cover'}`}
+                                className={`relative z-10 w-full h-full ${p.banner_fit_mode === 'contain' ? 'object-contain' : 'object-cover'}`}
                                 alt={`Campanha ${p.nome_parceiro}`}
                              />
-                             <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
                           </div>
                         )}
 
                         {/* Selos de Nível */}
                         <div className="absolute top-3 right-3 z-10 pointer-events-none">
-                          {p.partner_tier === 'ouro' ? (
+                          {isOuro ? (
                             <Badge className="bg-yellow-500 text-black border-none shadow-sm">OURO 🏆</Badge>
-                          ) : p.partner_tier === 'prata' ? (
+                          ) : (
                             <Badge className="bg-slate-200 text-slate-600 border-none">PRATA</Badge>
-                          ) : null}
+                          )}
                         </div>
 
-                        {/* Botão de Zoom na Logo (AGORA FUNCIONA) */}
-                        {logoUrl && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation(); // Evita clique no card se houver link
-                              setImagemZoom(logoUrl);
-                            }}
-                            className="absolute bottom-3 right-3 p-2 bg-white/90 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-white z-20 cursor-pointer"
-                            title="Ampliar Logo"
-                          >
-                            <ZoomIn className="h-4 w-4 text-slate-600" />
-                          </button>
-                        )}
+                        {/* NOTA: Ícone de Lupa foi removido conforme solicitado. O clique na área faz a função. */}
                       </div>
 
-                      {/* CONTEÚDO INFORMATIVO */}
+                      {/* Info */}
                       <div className="p-5">
                         <div className="mb-2">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-yellow-600">{p.categoria}</span>
                           <h3 className="text-lg font-bold text-slate-800 leading-tight">{p.nome_parceiro}</h3>
                         </div>
-
                         <p className="text-sm text-slate-600 line-clamp-2 mb-4 h-10">
                           {p.descricao_beneficio || "Consulte os benefícios exclusivos para membros da AMB."}
                         </p>
-
-                        <div className="space-y-2 border-t border-slate-50 pt-4">
-                          {p.endereco && (
-                            <div className="flex items-start gap-2 text-[11px] text-slate-500">
-                              <MapPin className="h-3 w-3 mt-0.5 shrink-0 text-slate-400" />
-                              <span className="line-clamp-1">{p.endereco}</span>
-                            </div>
+                        <div className="flex items-center gap-3 pt-2 border-t border-slate-50 mt-4">
+                          {p.whatsapp_contato && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 h-9"
+                              asChild
+                            >
+                              <a href={zapLink(p.whatsapp_contato)} target="_blank" rel="noreferrer">
+                                <MessageSquare className="h-4 w-4 mr-2" /> WhatsApp
+                              </a>
+                            </Button>
                           )}
-
-                          <div className="flex items-center gap-3 pt-2">
-                            {p.whatsapp_contato && (
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="flex-1 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 h-9"
-                                asChild
-                              >
-                                <a href={zapLink(p.whatsapp_contato)} target="_blank" rel="noreferrer">
-                                  <MessageSquare className="h-4 w-4 mr-2" /> WhatsApp
-                                </a>
-                              </Button>
-                            )}
-                            {p.link_site && (
-                              <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 hover:text-slate-800" asChild>
-                                <a href={p.link_site} target="_blank" rel="noreferrer"><Globe className="h-4 w-4" /></a>
-                              </Button>
-                            )}
-                          </div>
+                          {p.link_site && (
+                            <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 hover:text-slate-800" asChild>
+                              <a href={p.link_site} target="_blank" rel="noreferrer"><Globe className="h-4 w-4" /></a>
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -262,25 +276,62 @@ export default function ParceirosPage() {
             )}
           </div>
         </section>
+
+        {/* LISTA GERAL */}
+        <section className="container mx-auto px-4">
+           <div className="flex items-center gap-2 mb-6 border-b border-slate-200 pb-4">
+             <List className="h-5 w-5 text-slate-500" />
+             <h2 className="text-xl font-bold text-slate-800">Lista Completa de Parceiros (A-Z)</h2>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+             <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                   <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200">
+                      <tr>
+                         <th className="px-6 py-4">Parceiro</th>
+                         <th className="px-6 py-4">Categoria</th>
+                         <th className="px-6 py-4">Benefício</th>
+                         <th className="px-6 py-4 text-right">Contato</th>
+                      </tr>
+                   </thead>
+                   <tbody className="divide-y divide-slate-100">
+                      {listPartners.map((p) => (
+                         <tr key={`list-${p.id}`} className="hover:bg-slate-50/80 transition-colors group">
+                            <td className="px-6 py-4">
+                               <div className="flex items-center gap-3">
+                                  <TierIcon tier={p.partner_tier} />
+                                  <span className="font-semibold text-slate-800">{p.nome_parceiro}</span>
+                               </div>
+                            </td>
+                            <td className="px-6 py-4 text-slate-600"><Badge variant="outline" className="font-normal bg-slate-50">{p.categoria}</Badge></td>
+                            <td className="px-6 py-4 text-slate-600 max-w-md truncate" title={p.descricao_beneficio}>{p.descricao_beneficio}</td>
+                            <td className="px-6 py-4 text-right">
+                               {p.whatsapp_contato ? (
+                                  <a href={zapLink(p.whatsapp_contato)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-green-600 font-medium hover:underline hover:text-green-700 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
+                                     <MessageSquare className="h-3.5 w-3.5" /> <span className="hidden sm:inline">WhatsApp</span>
+                                  </a>
+                               ) : <span className="text-slate-400 text-xs italic">Sem contato</span>}
+                            </td>
+                         </tr>
+                      ))}
+                   </tbody>
+                </table>
+             </div>
+          </div>
+        </section>
       </main>
 
-      {/* MODAL ZOOM (CORRIGIDO) */}
+      {/* MODAL ZOOM - CLIQUE NA IMAGEM PARA FECHAR */}
       <Dialog open={!!imagemZoom} onOpenChange={() => setImagemZoom(null)}>
         <DialogContent className="max-w-4xl bg-transparent border-none shadow-none flex justify-center items-center p-0 outline-none ring-0">
            <div className="relative group">
-             {/* Botão de Fechar mais visível */}
-             <button 
-                onClick={() => setImagemZoom(null)}
-                className="absolute -top-12 right-0 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full transition-colors z-50"
-             >
-               <X className="h-6 w-6"/>
-             </button>
-
+             <button onClick={() => setImagemZoom(null)} className="absolute -top-12 right-0 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full transition-colors z-50"><X className="h-6 w-6"/></button>
              {imagemZoom && (
                <img 
                  src={imagemZoom} 
-                 className="max-h-[85vh] max-w-[90vw] rounded-xl shadow-2xl bg-white object-contain" 
+                 className="max-h-[85vh] max-w-[90vw] rounded-xl shadow-2xl bg-white object-contain cursor-zoom-out" 
                  alt="Zoom Parceiro" 
+                 onClick={() => setImagemZoom(null)} 
                />
              )}
            </div>
