@@ -1,12 +1,11 @@
 /*
  * ==========================================================
- * PORTAL AMB DO AMAZONAS
+ * MÓDULO: GestaoParceirosPage.tsx (ADMIN)
+ * Versão: 6.0 (Correção Definitiva: Categorias Dinâmicas no CRUD)
  * ==========================================================
- *
- * Módulo: Gestão de Parceiros (CRUD Completo)
- * Versão: 2.0 (Ver, Editar, Excluir, Alterar Logo)
- * Descrição: Painel administrativo para controle total da rede de parceiros.
- *
+ * ATUALIZAÇÕES:
+ * 1. CATEGORIAS: Agora carrega do banco e usa <Select> na edição.
+ * 2. IMAGENS: Lógica de URL unificada com o site público.
  * ==========================================================
  */
 import { useEffect, useState, useRef } from 'react';
@@ -17,7 +16,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios'; 
 import { useToast } from '@/hooks/use-toast';
 
-// Componentes UI (Shadcn/UI & Lucide)
+// Componentes UI
 import { Button } from '@/components/ui/button'; 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,15 +25,16 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ArrowLeft, Edit, Trash2, Eye, MapPin, Globe, Phone, Upload, Search } from 'lucide-react';
+import { Loader2, ArrowLeft, Edit, Trash2, Eye, MapPin, Globe, Phone, Search } from 'lucide-react';
 
 // URLs da API
 const API_LISTAR = 'https://www.ambamazonas.com.br/api/admin_listar_parceiros.php';
 const API_EDITAR = 'https://www.ambamazonas.com.br/api/admin_editar_parceiro.php';
 const API_EXCLUIR = 'https://www.ambamazonas.com.br/api/excluir_parceiro.php';
-const API_STATUS = 'https://www.ambamazonas.com.br/api/admin_atualizar_parceiro.php'; // Para trocas rápidas na tabela
+const API_STATUS = 'https://www.ambamazonas.com.br/api/admin_atualizar_parceiro.php';
+const API_CATEGORIAS = 'https://www.ambamazonas.com.br/api/get_categorias_parceiros.php'; // NOVA API
+const DOMAIN_URL = 'https://www.ambamazonas.com.br';
 
-// Interface TypeScript Completa
 interface Parceiro {
   id: number;
   nome_parceiro: string;
@@ -49,6 +49,11 @@ interface Parceiro {
   data_cadastro: string;
 }
 
+interface Categoria {
+  id: number;
+  nome: string;
+}
+
 export default function GestaoParceirosPage() {
   const { isAuthenticated, atleta, token, isLoading: isAuthLoading } = useAuth(); 
   const navigate = useNavigate(); 
@@ -56,51 +61,72 @@ export default function GestaoParceirosPage() {
 
   // Estados de Dados
   const [parceiros, setParceiros] = useState<Parceiro[]>([]);
+  const [categoriasDB, setCategoriasDB] = useState<Categoria[]>([]); // Estado para categorias
   const [loadingData, setLoadingData] = useState(true);
   const [busca, setBusca] = useState('');
 
   // Estados dos Modais
   const [viewPartner, setViewPartner] = useState<Parceiro | null>(null);
-  const [editPartner, setEditPartner] = useState<Parceiro | null>(null); // Se não null, modal abre
-  const [deleteId, setDeleteId] = useState<number | null>(null); // Se não null, alerta abre
+  const [editPartner, setEditPartner] = useState<Parceiro | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   // Estados de Edição
   const [isSaving, setIsSaving] = useState(false);
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- 1. SEGURANÇA E CARREGAMENTO INICIAL ---
+  // --- 1. CARREGAMENTO INICIAL ---
   useEffect(() => {
     if (isAuthLoading) return;
     if (!isAuthenticated || atleta?.role !== 'admin') {
       navigate('/');
       return;
     }
-    fetchParceiros();
+    fetchDados();
   }, [isAuthenticated, atleta, token, isAuthLoading]);
 
-  const fetchParceiros = async () => {
+  const fetchDados = async () => {
     if(!token) return;
     setLoadingData(true);
     try {
-      const response = await axios.post(API_LISTAR, { token });
-      if (response.data.status === 'sucesso') {
-        setParceiros(response.data.parceiros);
+      const ts = new Date().getTime();
+
+      // Carrega Parceiros e Categorias em Paralelo
+      const [resParceiros, resCats] = await Promise.all([
+         axios.post(API_LISTAR, { token }),
+         axios.get(`${API_CATEGORIAS}?t=${ts}`)
+      ]);
+
+      if (resParceiros.data.status === 'sucesso') {
+        setParceiros(resParceiros.data.parceiros);
       }
+
+      if (resCats.data.status === 'sucesso') {
+        setCategoriasDB(resCats.data.dados || []);
+      }
+
     } catch (error) {
       console.error("Erro listagem:", error);
-      toast({ title: "Erro", description: "Falha ao carregar parceiros.", variant: "destructive" });
+      toast({ title: "Erro", description: "Falha ao carregar dados.", variant: "destructive" });
     } finally {
       setLoadingData(false);
     }
   };
 
-  // --- 2. FUNÇÃO: EDITAR PARCEIRO (Modal) ---
+  // --- HELPERS ---
+  const getImageUrl = (url: string | null) => {
+    if (!url || url === 'NULL' || url === '' || url === 'undefined') return null;
+    let clean = url.replace(/['"]/g, '').trim();
+    if (clean.startsWith('http')) return clean;
+    if (clean.startsWith('/')) return `${DOMAIN_URL}${clean}`;
+    return `${DOMAIN_URL}/uploads/logos_parceiros/${clean}`;
+  };
+
+  // --- 2. EDIÇÃO ---
   const handleOpenEdit = (p: Parceiro) => {
-    setEditPartner({ ...p }); // Copia o objeto para evitar mutação direta
-    // Prepara preview da logo existente
+    setEditPartner({ ...p });
     if (p.url_logo) {
-       setPreviewLogo(`https://www.ambamazonas.com.br${p.url_logo}`);
+       setPreviewLogo(getImageUrl(p.url_logo));
     } else {
        setPreviewLogo(null);
     }
@@ -118,9 +144,10 @@ export default function GestaoParceirosPage() {
     setIsSaving(true);
 
     const formData = new FormData();
+    // Preenche todos os campos
     formData.append('id', editPartner.id.toString());
     formData.append('nome_parceiro', editPartner.nome_parceiro);
-    formData.append('categoria', editPartner.categoria);
+    formData.append('categoria', editPartner.categoria); // Agora vem do Select
     formData.append('descricao_beneficio', editPartner.descricao_beneficio || '');
     formData.append('telefone_contato', editPartner.telefone_contato || '');
     formData.append('link_site', editPartner.link_site || '');
@@ -128,36 +155,32 @@ export default function GestaoParceirosPage() {
     formData.append('partner_tier', editPartner.partner_tier);
     formData.append('status', editPartner.status);
 
-    // Se houver arquivo novo
     if (fileInputRef.current?.files?.[0]) {
       formData.append('logo', fileInputRef.current.files[0]);
     }
 
     try {
       const res = await axios.post(API_EDITAR, formData);
-
       if (res.data.status === 'sucesso') {
         toast({ title: "Sucesso", description: "Parceiro atualizado!" });
-        setEditPartner(null); // Fecha modal
-        fetchParceiros(); // Recarrega lista
+        setEditPartner(null);
+        fetchDados(); // Recarrega para ver mudanças
       } else {
         throw new Error(res.data.mensagem);
       }
     } catch (error: any) {
-      toast({ title: "Erro ao salvar", description: error.message || "Tente novamente.", variant: "destructive" });
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
   };
 
-  // --- 3. FUNÇÃO: ATUALIZAÇÃO RÁPIDA (Select na Tabela) ---
+  // --- 3. ATUALIZAÇÃO RÁPIDA (Tabela) ---
   const handleQuickUpdate = async (id: number, field: 'novo_status' | 'novo_tier', value: string) => {
     try {
         const payload = { token, data: { id_parceiro: id, [field]: value } };
-        // Nota: O endpoint admin_atualizar_parceiro.php espera essa estrutura
         await axios.post(API_STATUS, payload);
 
-        // Atualiza localmente para feedback instantâneo
         setParceiros(prev => prev.map(p => {
             if (p.id === id) {
                 return field === 'novo_status' ? { ...p, status: value as any } : { ...p, partner_tier: value as any };
@@ -166,17 +189,17 @@ export default function GestaoParceirosPage() {
         }));
         toast({ title: "Atualizado", description: "Alteração salva." });
     } catch (error) {
-        toast({ title: "Erro", description: "Falha na atualização rápida.", variant: "destructive" });
+        toast({ title: "Erro", description: "Falha na atualização.", variant: "destructive" });
     }
   };
 
-  // --- 4. FUNÇÃO: EXCLUIR ---
+  // --- 4. EXCLUSÃO ---
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
       const res = await axios.post(API_EXCLUIR, JSON.stringify({ id: deleteId }));
       if (res.data.status === 'sucesso') {
-        toast({ title: "Removido", description: "Parceiro excluído do sistema." });
+        toast({ title: "Removido", description: "Parceiro excluído." });
         setParceiros(prev => prev.filter(p => p.id !== deleteId));
       } else {
         throw new Error(res.data.mensagem);
@@ -203,14 +226,12 @@ export default function GestaoParceirosPage() {
       <Navigation />
       <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
 
-        {/* Header da Página */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
              <Link to="/admin/painel" className="flex items-center text-sm text-muted-foreground hover:text-primary mb-2">
               <ArrowLeft className="mr-1 h-4 w-4" /> Voltar ao Painel
             </Link>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">Gestão de Parceiros</h1>
-            <p className="text-muted-foreground">Administre benefícios, níveis e aprovações.</p>
           </div>
           <div className="relative w-full md:w-72">
              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -223,7 +244,7 @@ export default function GestaoParceirosPage() {
           </div>
         </div>
 
-        {/* TABELA DE PARCEIROS */}
+        {/* TABELA */}
         <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200">
@@ -243,19 +264,18 @@ export default function GestaoParceirosPage() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 rounded bg-slate-100 flex items-center justify-center overflow-hidden border">
                            {p.url_logo ? (
-                             <img src={`https://www.ambamazonas.com.br${p.url_logo}`} alt="" className="h-full w-full object-cover" />
+                             <img src={getImageUrl(p.url_logo) || ''} alt="" className="h-full w-full object-cover" />
                            ) : (
                              <span className="font-bold text-slate-400">{p.nome_parceiro.charAt(0)}</span>
                            )}
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-slate-900">{p.nome_parceiro}</div>
-                          <div className="text-xs text-slate-500 truncate max-w-[150px]">{p.link_site || 'Sem site'}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      <Badge variant="outline" className="font-normal">{p.categoria}</Badge>
+                      <Badge variant="outline" className="font-normal capitalize">{p.categoria}</Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                        <Select 
@@ -308,38 +328,7 @@ export default function GestaoParceirosPage() {
           </div>
         </div>
 
-        {/* --- MODAL: VISUALIZAR --- */}
-        <Dialog open={!!viewPartner} onOpenChange={() => setViewPartner(null)}>
-           <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                 <DialogTitle>Detalhes da Empresa</DialogTitle>
-              </DialogHeader>
-              {viewPartner && (
-                 <div className="grid gap-6 py-4">
-                    <div className="flex items-center gap-4">
-                       <div className="h-20 w-20 bg-slate-100 rounded border flex items-center justify-center overflow-hidden">
-                          {viewPartner.url_logo ? <img src={`https://www.ambamazonas.com.br${viewPartner.url_logo}`} className="h-full w-full object-contain" /> : "Sem Logo"}
-                       </div>
-                       <div>
-                          <h3 className="text-xl font-bold">{viewPartner.nome_parceiro}</h3>
-                          <Badge className="mt-1">{viewPartner.categoria}</Badge>
-                       </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                       <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-slate-400"/> {viewPartner.telefone_contato || '-'}</div>
-                       <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-slate-400"/> <a href={viewPartner.link_site || '#'} className="text-blue-600 underline truncate">{viewPartner.link_site || '-'}</a></div>
-                       <div className="flex items-center gap-2 col-span-2"><MapPin className="h-4 w-4 text-slate-400"/> {viewPartner.endereco || 'Endereço não informado'}</div>
-                    </div>
-                    <div className="bg-slate-50 p-4 rounded-md border text-sm">
-                       <p className="font-semibold text-slate-700 mb-1">Benefícios para Associados:</p>
-                       <p className="text-slate-600">{viewPartner.descricao_beneficio}</p>
-                    </div>
-                 </div>
-              )}
-           </DialogContent>
-        </Dialog>
-
-        {/* --- MODAL: EDITAR --- */}
+        {/* --- MODAL EDITAR (COM SELECT DE CATEGORIAS) --- */}
         <Dialog open={!!editPartner} onOpenChange={(open) => !open && setEditPartner(null)}>
            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
@@ -355,9 +344,24 @@ export default function GestaoParceirosPage() {
                        </div>
                        <div className="space-y-2">
                           <Label>Categoria</Label>
-                          <Input value={editPartner.categoria} onChange={(e) => setEditPartner({...editPartner, categoria: e.target.value})} />
+                          {/* AQUI ESTÁ A MUDANÇA: SELECT DINÂMICO */}
+                          <Select 
+                             value={editPartner.categoria} 
+                             onValueChange={(val) => setEditPartner({...editPartner, categoria: val})}
+                          >
+                             <SelectTrigger>
+                               <SelectValue placeholder="Selecione..." />
+                             </SelectTrigger>
+                             <SelectContent>
+                               {categoriasDB.map((cat) => (
+                                  <SelectItem key={cat.id} value={cat.nome}>{cat.nome}</SelectItem>
+                               ))}
+                             </SelectContent>
+                          </Select>
                        </div>
                     </div>
+
+                    {/* Restante dos campos (mantido igual) */}
                     <div className="space-y-2">
                        <Label>Logo da Empresa</Label>
                        <div className="flex items-center gap-4 border p-3 rounded bg-slate-50">
@@ -410,21 +414,38 @@ export default function GestaoParceirosPage() {
            </DialogContent>
         </Dialog>
 
-        {/* --- ALERTA: EXCLUIR --- */}
+        {/* ALERTA EXCLUIR */}
         <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
            <AlertDialogContent>
               <AlertDialogHeader>
                  <AlertDialogTitle className="text-red-600">Excluir Parceiro?</AlertDialogTitle>
-                 <AlertDialogDescription>
-                    Esta ação removerá a empresa e sua logo do sistema permanentemente.
-                 </AlertDialogDescription>
+                 <AlertDialogDescription>Esta ação é irreversível.</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                 <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Confirmar Exclusão</AlertDialogAction>
+                 <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Excluir</AlertDialogAction>
               </AlertDialogFooter>
            </AlertDialogContent>
         </AlertDialog>
+
+        {/* MODAL VIEW (Mantido simples) */}
+        <Dialog open={!!viewPartner} onOpenChange={() => setViewPartner(null)}>
+           <DialogContent className="max-w-xl">
+              <DialogHeader><DialogTitle>{viewPartner?.nome_parceiro}</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                 <div className="flex justify-center p-4 bg-slate-50 border rounded">
+                    {viewPartner?.url_logo ? <img src={getImageUrl(viewPartner.url_logo)||''} className="h-32 object-contain"/> : 'Sem Logo'}
+                 </div>
+                 <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><strong>Categoria:</strong> {viewPartner?.categoria}</div>
+                    <div><strong>Nível:</strong> {viewPartner?.partner_tier}</div>
+                    <div><strong>Contato:</strong> {viewPartner?.telefone_contato}</div>
+                    <div><strong>Site:</strong> {viewPartner?.link_site}</div>
+                 </div>
+                 <div><strong>Benefício:</strong> {viewPartner?.descricao_beneficio}</div>
+              </div>
+           </DialogContent>
+        </Dialog>
 
       </main>
       <Footer />
