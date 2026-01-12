@@ -7,8 +7,8 @@
  */
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Linkedin, Mail, Quote } from 'lucide-react'; // Ícones decorativos
-import { cn } from '@/lib/utils'; // Utilitário do Shadcn (ou use string normal se não tiver)
+import { Quote } from 'lucide-react'; // Ícones decorativos
+import { cn } from '@/lib/utils'; 
 
 // Configuração da API
 const API_URL = 'https://www.ambamazonas.com.br/api/get_diretoria.php';
@@ -139,16 +139,6 @@ export function DiretoriaPremium() {
 
                     {/* Divisor Decorativo */}
                     <div className="w-10 h-1 bg-slate-100 rounded-full mb-6 group-hover:w-20 group-hover:bg-blue-200 transition-all duration-500"></div>
-
-                    {/* Ícones de Contato (Decorativos ou Funcionais) */}
-                    <div className="flex gap-4 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-100">
-                       <button className="p-2 rounded-full bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors">
-                          <Linkedin className="w-4 h-4" />
-                       </button>
-                       <button className="p-2 rounded-full bg-slate-50 hover:bg-orange-50 text-slate-400 hover:text-orange-600 transition-colors">
-                          <Mail className="w-4 h-4" />
-                       </button>
-                    </div>
 
                   </div>
                 </div>
