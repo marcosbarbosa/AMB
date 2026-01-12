@@ -1,7 +1,7 @@
 /*
  * ==========================================================
  * MÓDULO: ParceirosPage.tsx
- * Versão: 34.0 (Fix: Preview some instantaneamente ao sair do mouse)
+ * Versão: 35.0 (Com Rastreamento Real de Cliques - BI)
  * ==========================================================
  */
 
@@ -22,6 +22,7 @@ import {
 
 const API_PARCEIROS = 'https://www.ambamazonas.com.br/api/get_parceiros_publico.php';
 const API_CATEGORIAS = 'https://www.ambamazonas.com.br/api/get_categorias_parceiros.php';
+const API_TRACK = 'https://www.ambamazonas.com.br/api/track_parceiro.php'; // <--- API DO CONTADOR
 const DOMAIN_URL = 'https://www.ambamazonas.com.br';
 
 interface Parceiro {
@@ -37,7 +38,6 @@ interface Parceiro {
   endereco: string | null;
   url_banner?: string | null;
   banner_fit_mode?: 'cover' | 'contain';
-  banner_status?: string;
 }
 
 const TIER_WEIGHT: Record<string, number> = {
@@ -54,10 +54,7 @@ export default function ParceirosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('todas');
 
-  // Estado para Zoom (Modal Fullscreen)
   const [imagemZoom, setImagemZoom] = useState<string | null>(null);
-
-  // Estado para Preview Flutuante
   const [hoverPreview, setHoverPreview] = useState<{ url: string, fit: string } | null>(null);
 
   useEffect(() => {
@@ -77,6 +74,12 @@ export default function ParceirosPage() {
     };
     fetchData();
   }, []);
+
+  // --- FUNÇÃO QUE CONTA O CLIQUE ---
+  const trackClick = (id: number, tipo: 'whatsapp' | 'banner' | 'site') => {
+    // "Fire and forget" (Não espera resposta para não travar o usuário)
+    axios.post(API_TRACK, { id, tipo }).catch(err => console.error("Erro tracking", err));
+  };
 
   const filteredBase = useMemo(() => {
     return parceiros.filter(p => {
@@ -119,7 +122,6 @@ export default function ParceirosPage() {
     return null;
   };
 
-  // Handler para mostrar preview (Hover In)
   const handleMouseEnterRow = (p: Parceiro) => {
     if (p.partner_tier === 'ouro') {
         const bannerUrl = getImageUrl(p.url_banner, 'banner');
@@ -132,7 +134,6 @@ export default function ParceirosPage() {
     }
   };
 
-  // Handler para esconder preview (Hover Out)
   const handleMouseLeaveRow = () => {
     setHoverPreview(null);
   };
@@ -170,7 +171,7 @@ export default function ParceirosPage() {
           </div>
         </header>
 
-        {/* GRID DESTAQUE (Cards Superiores) */}
+        {/* GRID DESTAQUE */}
         <section className="container mx-auto px-4 mb-16">
           <div className="flex items-center gap-2 mb-6">
              <LayoutGrid className="h-5 w-5 text-yellow-600" />
@@ -217,7 +218,6 @@ export default function ParceirosPage() {
                             `}
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display = 'none';
-                              (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
                             }}
                           />
                         ) : (
@@ -259,14 +259,26 @@ export default function ParceirosPage() {
                         </p>
                         <div className="flex items-center gap-3 pt-2 border-t border-slate-50 mt-4">
                           {p.whatsapp_contato && (
-                            <Button variant="outline" size="sm" className="flex-1 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 h-9" asChild>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 h-9" 
+                                asChild
+                                onClick={() => trackClick(p.id, 'whatsapp')} // <--- RASTREAMENTO AQUI
+                            >
                               <a href={zapLink(p.whatsapp_contato)} target="_blank" rel="noreferrer">
                                 <MessageSquare className="h-4 w-4 mr-2" /> WhatsApp
                               </a>
                             </Button>
                           )}
                           {p.link_site && (
-                            <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 hover:text-slate-800" asChild>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-9 w-9 p-0 text-slate-400 hover:text-slate-800" 
+                                asChild
+                                onClick={() => trackClick(p.id, 'site')} // <--- RASTREAMENTO AQUI
+                            >
                               <a href={p.link_site} target="_blank" rel="noreferrer"><Globe className="h-4 w-4" /></a>
                             </Button>
                           )}
@@ -303,17 +315,17 @@ export default function ParceirosPage() {
                          return (
                            <tr key={`list-${p.id}`} className="hover:bg-slate-50/80 transition-colors group">
                               <td className="px-6 py-4">
-                                 {/* NOME INTERATIVO: HOVER MOSTRA / SAIR ESCONDE / CLIQUE ABRE */}
                                  <div 
                                     className={`flex items-center gap-3 w-fit ${isOuro ? 'cursor-zoom-in' : ''}`}
                                     onMouseEnter={() => handleMouseEnterRow(p)}
-                                    onMouseLeave={handleMouseLeaveRow} // CRUCIAL: Limpa o preview ao sair
+                                    onMouseLeave={handleMouseLeaveRow}
                                     onClick={() => {
                                         if (isOuro) {
                                             const bannerUrl = getImageUrl(p.url_banner, 'banner');
                                             if (bannerUrl) {
                                                 setImagemZoom(bannerUrl);
-                                                setHoverPreview(null); // Fecha o preview ao abrir o modal
+                                                setHoverPreview(null);
+                                                trackClick(p.id, 'banner'); // <--- RASTREAMENTO ZOOM
                                             }
                                         }
                                     }}
@@ -328,7 +340,13 @@ export default function ParceirosPage() {
                               <td className="px-6 py-4 text-slate-600 max-w-md truncate" title={p.descricao_beneficio}>{p.descricao_beneficio}</td>
                               <td className="px-6 py-4 text-right">
                                  {p.whatsapp_contato ? (
-                                    <a href={zapLink(p.whatsapp_contato)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-green-600 font-medium hover:underline hover:text-green-700 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
+                                    <a 
+                                        href={zapLink(p.whatsapp_contato)} 
+                                        target="_blank" 
+                                        rel="noreferrer" 
+                                        className="inline-flex items-center gap-1 text-green-600 font-medium hover:underline hover:text-green-700 bg-green-50 px-3 py-1.5 rounded-full border border-green-100"
+                                        onClick={() => trackClick(p.id, 'whatsapp')} // <--- RASTREAMENTO AQUI
+                                    >
                                        <MessageSquare className="h-3.5 w-3.5" /> <span className="hidden sm:inline">WhatsApp</span>
                                     </a>
                                  ) : <span className="text-slate-400 text-xs italic">Sem contato</span>}
@@ -343,14 +361,10 @@ export default function ParceirosPage() {
         </section>
       </main>
 
-      {/* CARD FLUTUANTE DE PREVIEW (Apenas Visual, não bloqueia clique) */}
+      {/* CARD FLUTUANTE DE PREVIEW (VISUAL) */}
       {hoverPreview && (
-         <div 
-            className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" // pointer-events-none garante que o mouse "vaze" e não trave
-         >
-            <div 
-              className="bg-black rounded-xl shadow-2xl border border-white/20 overflow-hidden w-[400px] animate-in fade-in zoom-in-95 duration-200"
-            >
+         <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div className="bg-black rounded-xl shadow-2xl border border-white/20 overflow-hidden w-[400px] animate-in fade-in zoom-in-95 duration-200">
                 <div className="relative w-full aspect-video flex items-center justify-center bg-black">
                     {hoverPreview.fit === 'contain' && (
                         <div className="absolute inset-0 bg-cover bg-center blur-sm opacity-50" style={{ backgroundImage: `url(${hoverPreview.url})` }} />
@@ -358,11 +372,8 @@ export default function ParceirosPage() {
                     <img 
                       src={hoverPreview.url} 
                       className={`relative z-10 w-full h-full ${hoverPreview.fit === 'contain' ? 'object-contain' : 'object-cover'}`}
-                      alt="Preview Campanha"
+                      alt="Preview"
                     />
-                    <div className="absolute top-2 right-2 flex gap-1">
-                        <Badge className="bg-white/20 backdrop-blur-md text-white border-none"><Maximize2 className="h-3 w-3 mr-1" /> Clique p/ Ampliar</Badge>
-                    </div>
                     <div className="absolute bottom-2 left-2">
                          <Badge className="bg-yellow-500 text-black text-[10px] h-5 border-none">OURO</Badge>
                     </div>
@@ -371,7 +382,6 @@ export default function ParceirosPage() {
          </div>
       )}
 
-      {/* MODAL ZOOM FULLSCREEN */}
       <Dialog open={!!imagemZoom} onOpenChange={() => setImagemZoom(null)}>
         <DialogContent className="max-w-4xl bg-transparent border-none shadow-none flex justify-center items-center p-0 outline-none ring-0">
            <div className="relative group">
