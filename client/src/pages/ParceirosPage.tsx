@@ -1,7 +1,7 @@
 /*
  * ==========================================================
  * MÓDULO: ParceirosPage.tsx
- * Versão: 29.0 (Ouro: Clique p/ Zoom | Prata: Estático s/ Lupa)
+ * Versão: 33.0 (Clique no Nome da Lista Expande Banner)
  * ==========================================================
  */
 
@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from "@/components/ui/dialog"; 
 import { 
   Globe, Loader2, MapPin, Search, 
-  X, MessageSquare, ImageIcon, List, LayoutGrid, Award, Shield, Medal
+  X, MessageSquare, ImageIcon, List, LayoutGrid, Award, Shield, Medal, Maximize2
 } from 'lucide-react';
 
 const API_PARCEIROS = 'https://www.ambamazonas.com.br/api/get_parceiros_publico.php';
@@ -53,7 +53,12 @@ export default function ParceirosPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('todas');
+
+  // Estado para Zoom (Modal Fullscreen)
   const [imagemZoom, setImagemZoom] = useState<string | null>(null);
+
+  // Estado para Preview Flutuante
+  const [hoverPreview, setHoverPreview] = useState<{ url: string, fit: string } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,7 +78,6 @@ export default function ParceirosPage() {
     fetchData();
   }, []);
 
-  // Filtros
   const filteredBase = useMemo(() => {
     return parceiros.filter(p => {
       const matchesSearch = p.nome_parceiro.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -83,14 +87,12 @@ export default function ParceirosPage() {
     });
   }, [parceiros, searchTerm, selectedCategory]);
 
-  // Grid (Ouro e Prata)
   const gridPartners = useMemo(() => {
     return filteredBase
       .filter(p => p.partner_tier === 'ouro' || p.partner_tier === 'prata')
       .sort((a, b) => (TIER_WEIGHT[b.partner_tier] || 0) - (TIER_WEIGHT[a.partner_tier] || 0));
   }, [filteredBase]);
 
-  // Lista (Todos)
   const listPartners = useMemo(() => {
     return [...filteredBase].sort((a, b) => a.nome_parceiro.localeCompare(b.nome_parceiro));
   }, [filteredBase]);
@@ -117,8 +119,20 @@ export default function ParceirosPage() {
     return null;
   };
 
+  const handleMouseEnterRow = (p: Parceiro) => {
+    if (p.partner_tier === 'ouro') {
+        const bannerUrl = getImageUrl(p.url_banner, 'banner');
+        if (bannerUrl) {
+            setHoverPreview({
+                url: bannerUrl,
+                fit: p.banner_fit_mode || 'cover'
+            });
+        }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col relative">
       <Navigation />
 
       <main className="flex-grow pt-24 pb-12">
@@ -178,10 +192,6 @@ export default function ParceirosPage() {
                   >
                     <CardContent className="p-0">
 
-                      {/* ÁREA DE IMAGEM CLICÁVEL (Apenas para Ouro)
-                         Se for Ouro: Cursor de Zoom e onClick ativa o Zoom.
-                         Se for Prata: Cursor padrão, sem clique.
-                      */}
                       <div 
                         className={`relative h-48 bg-white flex items-center justify-center p-6 border-b border-slate-100 overflow-hidden 
                           ${isOuro ? 'cursor-zoom-in' : 'cursor-default'}`}
@@ -190,11 +200,8 @@ export default function ParceirosPage() {
                             if (bannerUrl) setImagemZoom(bannerUrl);
                             else if (logoUrl) setImagemZoom(logoUrl);
                           }
-                          // Se for Prata, não faz nada (sem zoom).
                         }}
                       >
-
-                        {/* Logo Principal */}
                         {logoUrl ? (
                           <img 
                             src={logoUrl} 
@@ -214,7 +221,6 @@ export default function ParceirosPage() {
                           </div>
                         )}
 
-                        {/* Banner Hover (Apenas Ouro) */}
                         {isOuro && bannerUrl && (
                           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-black flex items-center justify-center">
                              {p.banner_fit_mode === 'contain' && (
@@ -228,7 +234,6 @@ export default function ParceirosPage() {
                           </div>
                         )}
 
-                        {/* Selos de Nível */}
                         <div className="absolute top-3 right-3 z-10 pointer-events-none">
                           {isOuro ? (
                             <Badge className="bg-yellow-500 text-black border-none shadow-sm">OURO 🏆</Badge>
@@ -236,11 +241,8 @@ export default function ParceirosPage() {
                             <Badge className="bg-slate-200 text-slate-600 border-none">PRATA</Badge>
                           )}
                         </div>
-
-                        {/* NOTA: Ícone de Lupa foi removido conforme solicitado. O clique na área faz a função. */}
                       </div>
 
-                      {/* Info */}
                       <div className="p-5">
                         <div className="mb-2">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-yellow-600">{p.categoria}</span>
@@ -278,7 +280,7 @@ export default function ParceirosPage() {
         </section>
 
         {/* LISTA GERAL */}
-        <section className="container mx-auto px-4">
+        <section className="container mx-auto px-4 relative">
            <div className="flex items-center gap-2 mb-6 border-b border-slate-200 pb-4">
              <List className="h-5 w-5 text-slate-500" />
              <h2 className="text-xl font-bold text-slate-800">Lista Completa de Parceiros (A-Z)</h2>
@@ -295,25 +297,44 @@ export default function ParceirosPage() {
                       </tr>
                    </thead>
                    <tbody className="divide-y divide-slate-100">
-                      {listPartners.map((p) => (
-                         <tr key={`list-${p.id}`} className="hover:bg-slate-50/80 transition-colors group">
-                            <td className="px-6 py-4">
-                               <div className="flex items-center gap-3">
-                                  <TierIcon tier={p.partner_tier} />
-                                  <span className="font-semibold text-slate-800">{p.nome_parceiro}</span>
-                               </div>
-                            </td>
-                            <td className="px-6 py-4 text-slate-600"><Badge variant="outline" className="font-normal bg-slate-50">{p.categoria}</Badge></td>
-                            <td className="px-6 py-4 text-slate-600 max-w-md truncate" title={p.descricao_beneficio}>{p.descricao_beneficio}</td>
-                            <td className="px-6 py-4 text-right">
-                               {p.whatsapp_contato ? (
-                                  <a href={zapLink(p.whatsapp_contato)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-green-600 font-medium hover:underline hover:text-green-700 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
-                                     <MessageSquare className="h-3.5 w-3.5" /> <span className="hidden sm:inline">WhatsApp</span>
-                                  </a>
-                               ) : <span className="text-slate-400 text-xs italic">Sem contato</span>}
-                            </td>
-                         </tr>
-                      ))}
+                      {listPartners.map((p) => {
+                         const isOuro = p.partner_tier === 'ouro';
+                         return (
+                           <tr key={`list-${p.id}`} className="hover:bg-slate-50/80 transition-colors group">
+                              <td className="px-6 py-4">
+                                 {/* NOME INTERATIVO: HOVER + CLIQUE */}
+                                 <div 
+                                    className={`flex items-center gap-3 w-fit ${isOuro ? 'cursor-zoom-in' : ''}`}
+                                    onMouseEnter={() => handleMouseEnterRow(p)}
+                                    // Adicionado onClick para abrir zoom diretamente do nome
+                                    onClick={() => {
+                                        if (isOuro) {
+                                            const bannerUrl = getImageUrl(p.url_banner, 'banner');
+                                            if (bannerUrl) {
+                                                setImagemZoom(bannerUrl);
+                                                setHoverPreview(null); // Fecha o preview se abrir o zoom
+                                            }
+                                        }
+                                    }}
+                                 >
+                                    <TierIcon tier={p.partner_tier} />
+                                    <span className={`font-semibold ${isOuro ? 'text-yellow-700' : 'text-slate-800'}`}>
+                                        {p.nome_parceiro}
+                                    </span>
+                                 </div>
+                              </td>
+                              <td className="px-6 py-4 text-slate-600"><Badge variant="outline" className="font-normal bg-slate-50">{p.categoria}</Badge></td>
+                              <td className="px-6 py-4 text-slate-600 max-w-md truncate" title={p.descricao_beneficio}>{p.descricao_beneficio}</td>
+                              <td className="px-6 py-4 text-right">
+                                 {p.whatsapp_contato ? (
+                                    <a href={zapLink(p.whatsapp_contato)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-green-600 font-medium hover:underline hover:text-green-700 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
+                                       <MessageSquare className="h-3.5 w-3.5" /> <span className="hidden sm:inline">WhatsApp</span>
+                                    </a>
+                                 ) : <span className="text-slate-400 text-xs italic">Sem contato</span>}
+                              </td>
+                           </tr>
+                         );
+                      })}
                    </tbody>
                 </table>
              </div>
@@ -321,7 +342,41 @@ export default function ParceirosPage() {
         </section>
       </main>
 
-      {/* MODAL ZOOM - CLIQUE NA IMAGEM PARA FECHAR */}
+      {/* OVERLAY DE PREVIEW INTERATIVO */}
+      {hoverPreview && (
+         <div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/5" 
+            onClick={() => setHoverPreview(null)}
+         >
+            <div 
+              className="bg-black rounded-xl shadow-2xl border border-white/20 overflow-hidden w-[400px] animate-in fade-in zoom-in-95 duration-200 cursor-zoom-in relative"
+              onClick={(e) => {
+                e.stopPropagation(); 
+                setImagemZoom(hoverPreview.url); 
+                setHoverPreview(null); 
+              }}
+            >
+                <div className="relative w-full aspect-video flex items-center justify-center bg-black pointer-events-none">
+                    {hoverPreview.fit === 'contain' && (
+                        <div className="absolute inset-0 bg-cover bg-center blur-sm opacity-50" style={{ backgroundImage: `url(${hoverPreview.url})` }} />
+                    )}
+                    <img 
+                      src={hoverPreview.url} 
+                      className={`relative z-10 w-full h-full ${hoverPreview.fit === 'contain' ? 'object-contain' : 'object-cover'}`}
+                      alt="Preview Campanha"
+                    />
+                    <div className="absolute top-2 right-2 flex gap-1">
+                        <Badge className="bg-white/20 backdrop-blur-md text-white border-none"><Maximize2 className="h-3 w-3 mr-1" /> Expandir</Badge>
+                    </div>
+                    <div className="absolute bottom-2 left-2">
+                         <Badge className="bg-yellow-500 text-black text-[10px] h-5 border-none">OURO</Badge>
+                    </div>
+                </div>
+            </div>
+         </div>
+      )}
+
+      {/* MODAL ZOOM FULLSCREEN */}
       <Dialog open={!!imagemZoom} onOpenChange={() => setImagemZoom(null)}>
         <DialogContent className="max-w-4xl bg-transparent border-none shadow-none flex justify-center items-center p-0 outline-none ring-0">
            <div className="relative group">
