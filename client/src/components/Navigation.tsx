@@ -1,8 +1,9 @@
 /*
  * ==========================================================
- * Componente: Navigation.tsx
- * Versão: 1.6 (Correção Final do Botão Sobre)
- * Descrição: Navbar com navegação inteligente para âncoras.
+ * ARQUIVO: Navigation.tsx
+ * DATA: 12 de Janeiro de 2026
+ * HORA: 15:30
+ * FUNÇÃO: Navbar com Proteção contra Erro 'split' de Undefined.
  * ==========================================================
  */
 import { useState } from 'react';
@@ -24,25 +25,17 @@ export function Navigation() {
     { label: 'Contato', href: '/contato' },
   ];
 
-  // --- LÓGICA CORRIGIDA ---
   const handleLinkClick = (e: React.MouseEvent<HTMLElement>, href: string) => {
-    // 1. Verifica se é um link âncora (começa com /#)
     if (href.startsWith('/#')) {
-
-      // 2. Se JÁ estamos na Home (/), fazemos o scroll manual
       if (location.pathname === '/') {
-        e.preventDefault(); // Impede de recarregar a página
-        const sectionId = href.substring(2); // Pega o id (ex: "sobre")
+        e.preventDefault();
+        const sectionId = href.substring(2);
         const element = document.getElementById(sectionId);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }
-      // 3. Se estamos em OUTRA página, NÃO usamos preventDefault().
-      // Deixamos o <Link> funcionar. Ele vai levar para a Home e o Home.tsx fará o scroll.
     }
-
-    // Fecha o menu mobile sempre que clicar
     setIsMenuOpen(false);
   };
 
@@ -55,7 +48,6 @@ export function Navigation() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
             <img 
               src={ambLogo} 
@@ -69,7 +61,6 @@ export function Navigation() {
           </Link>
 
           <div className="flex items-center gap-4">
-            {/* Navegação principal (Desktop) */}
             <div className="hidden md:flex items-center space-x-1">
               {navItems.map((item) => (
                 <Link key={item.href} to={item.href}>
@@ -88,7 +79,6 @@ export function Navigation() {
               ))}
             </div>
 
-            {/* BOTÃO ESPECIAL: SEJA PARCEIRO (Desktop) */}
             <div className="hidden md:block">
                 <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white transition-all" size="sm" asChild>
                     <Link to="/seja-parceiro">
@@ -98,16 +88,14 @@ export function Navigation() {
                 </Button>
             </div>
 
-            {/* BLOCO LÓGICO DE ACESSO */}
             <div className="flex items-center gap-2">
               {isAuthenticated && atleta ? (
-                // ****** SE ESTIVER LOGADO ******
                 <div className="flex items-center gap-2">
+                  {/* CORREÇÃO AQUI: Verificação opcional para evitar o erro fatal 'split' de undefined */}
                   <span className="text-sm text-muted-foreground hidden lg:inline">
-                    Olá, {atleta.nome_completo.split(' ')[0]} 
+                    Olá, {atleta?.nome_completo ? atleta.nome_completo.split(' ')[0] : 'Associado'} 
                   </span>
 
-                  {/* ÍCONE DE ADMIN */}
                   {atleta.role === 'admin' && (
                     <Button variant="ghost" size="icon" asChild title="Acesso Admin" data-testid="link-admin-panel">
                       <Link to="/admin/painel">
@@ -116,7 +104,6 @@ export function Navigation() {
                     </Button>
                   )}
 
-                  {/* BOTÃO MEU PAINEL */}
                   <Button variant="outline" asChild size="sm"> 
                     <Link to="/painel">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -124,13 +111,11 @@ export function Navigation() {
                     </Link>
                   </Button>
 
-                  {/* BOTÃO LOGOUT */}
                   <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair" data-testid="button-logout">
                     <LogOut className="h-5 w-5 text-destructive hover:text-destructive/80" /> 
                   </Button>
                 </div>
               ) : (
-                // ****** SE NÃO ESTIVER LOGADO ******
                 <>
                   <Button variant="ghost" asChild size="sm"> 
                     <Link to="/login">
@@ -148,7 +133,6 @@ export function Navigation() {
               )}
             </div>
 
-            {/* Botão do Menu Mobile */}
             <Button
               variant="ghost"
               size="icon"
@@ -162,7 +146,6 @@ export function Navigation() {
         </div>
       </div>
 
-      {/* Menu Mobile */}
       {isMenuOpen && (
         <div className="md:hidden bg-background border-t border-border" data-testid="mobile-menu">
           <div className="px-4 pt-4 pb-6 space-y-2"> 
@@ -181,7 +164,6 @@ export function Navigation() {
               </Link>
             ))}
 
-            {/* LINK SEJA PARCEIRO NO MOBILE */}
             <Link to="/seja-parceiro">
                 <span 
                     onClick={() => setIsMenuOpen(false)}
@@ -194,7 +176,6 @@ export function Navigation() {
 
             <hr className="border-border my-4" />
 
-            {/* Links de Ação Mobile */}
             {isAuthenticated && atleta ? (
               <>
                 <div className="px-4 py-2 text-sm text-foreground">
