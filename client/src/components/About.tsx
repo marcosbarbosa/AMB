@@ -3,17 +3,20 @@
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
  * Componente: About.tsx
- * Versão: 3.7 (Correção: URL do Mapa Padrão Google)
+ * Versão: 4.0 (Botão "Nossa História" Ativo)
  * ==========================================================
  */
 
 import { Users, Trophy, HeartHandshake, MapPin, ArrowRight } from 'lucide-react'; 
+import { useNavigate } from 'react-router-dom'; // <--- Importante para a navegação
 import { DiretoriaPremium } from '@/components/DiretoriaPremium'; 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 export function About() {
+  const navigate = useNavigate(); // <--- Função que troca de página
+
   const destaquesAMB = [
     {
       icon: HeartHandshake, 
@@ -32,18 +35,10 @@ export function About() {
     },
   ];
 
-  /* CONFIGURAÇÃO DE LINKS
-     1. Mapa: R. Washington Luís, 111 - Dom Pedro
-     2. Estatuto: PDF na pasta docs-oficiais
-  */
-
-  // Mapa (Link direto e seguro do Google Maps Embed)
-  // Usando encodeURIComponent para garantir que espaços e acentos não quebrem o mapa
+  /* CONFIGURAÇÃO DE LINKS */
   const ENDERECO = "R. Washington Luís, 111 - Dom Pedro, Manaus - AM, 69040-210";
   const MAP_EMBED_URL = `https://maps.google.com/maps?q=${encodeURIComponent(ENDERECO)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
   const MAP_EXTERNAL_LINK = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ENDERECO)}`;
-
-  // Estatuto (PDF)
   const ESTATUTO_URL = "https://www.ambamazonas.com.br/uploads/docs-oficiais/NOVOESTATUTOAMB-AM.pdf";
 
   return (
@@ -83,11 +78,13 @@ export function About() {
 
               <div className="pt-4 flex flex-col sm:flex-row gap-4">
 
-                 {/* BOTÃO NOSSA HISTÓRIA (COMENTADO)
-                 <Button className="bg-blue-700 hover:bg-blue-800 text-white shadow-lg shadow-blue-900/20 h-12 px-8 text-md">
+                 {/* BOTÃO NOSSA HISTÓRIA (ATIVADO) */}
+                 <Button 
+                    onClick={() => navigate('/sobre')}
+                    className="bg-blue-700 hover:bg-blue-800 text-white shadow-lg shadow-blue-900/20 h-12 px-8 text-md"
+                 >
                    Nossa História
                  </Button>
-                 */}
 
                  {/* BOTÃO ESTATUTO */}
                  <Button 
@@ -100,7 +97,7 @@ export function About() {
               </div>
             </div>
 
-            {/* --- COLUNA DO MAPA (CORRIGIDA) --- */}
+            {/* --- COLUNA DO MAPA --- */}
             <div className="relative group perspective-1000">
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-yellow-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
 

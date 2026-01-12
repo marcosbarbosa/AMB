@@ -9,10 +9,10 @@
  * gestão de campanhas rotativas da Home.
  * ==========================================================
  */
-import { Routes, Route } from "react-router-dom"; 
+import { Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "./context/AuthContext"; 
+import { AuthProvider } from "./context/AuthContext";
 
 // Páginas Públicas
 import Home from "@/pages/Home";
@@ -22,38 +22,40 @@ import LoginPage from "@/pages/LoginPage";
 import CadastroPage from "@/pages/CadastroPage";
 import EsqueciSenhaPage from "@/pages/EsqueciSenhaPage";
 import RedefinirSenhaPage from "@/pages/RedefinirSenhaPage";
-import ParceirosPage from "@/pages/ParceirosPage"; 
+import ParceirosPage from "@/pages/ParceirosPage";
 import SejaParceiroPage from "@/pages/SejaParceiroPage";
+import SobrePage from "./pages/SobrePage";
 
 // Páginas Privadas (Associado)
 import PainelPage from "@/pages/PainelPage";
-import EditarPerfilPage from "@/pages/EditarPerfilPage"; 
+import EditarPerfilPage from "@/pages/EditarPerfilPage";
 
 // Páginas Privadas (Admin)
-import AdminPainelPage from "@/pages/admin/AdminPainelPage"; 
-import GestaoAssociadosPage from "@/pages/admin/GestaoAssociadosPage"; 
+import AdminPainelPage from "@/pages/admin/AdminPainelPage";
+import GestaoAssociadosPage from "@/pages/admin/GestaoAssociadosPage";
 import GestaoParceirosPage from "@/pages/admin/GestaoParceirosPage";
-import GestaoEventosPage from "@/pages/admin/GestaoEventosPage"; 
-import GestaoConteudoEventoPage from "@/pages/admin/GestaoConteudoEventoPage"; 
+import GestaoEventosPage from "@/pages/admin/GestaoEventosPage";
+import GestaoConteudoEventoPage from "@/pages/admin/GestaoConteudoEventoPage";
 import GestaoTimesPage from "@/pages/admin/GestaoTimesPage";
 import GestaoInscricaoTimesPage from "@/pages/admin/GestaoInscricaoTimesPage";
 import GestaoJogosPage from "@/pages/admin/GestaoJogosPage";
 import GestaoPlacarPage from "@/pages/admin/GestaoPlacarPage";
 
 // --- NOVAS IMPORTAÇÕES (BI & GESTÃO) ---
-import DiretoriaBIPage from "@/pages/admin/DiretoriaBIPage"; 
-import DiretoriaGestaoPage from "@/pages/admin/DiretoriaGestaoPage"; 
+import DiretoriaBIPage from "@/pages/admin/DiretoriaBIPage";
+import DiretoriaGestaoPage from "@/pages/admin/DiretoriaGestaoPage";
 import GestaoBannersAMB from "@/pages/admin/GestaoBannersAMB"; // [NOVO]
 
 function App() {
   return (
-    <AuthProvider> 
+    <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Routes>
           {/* Rotas Públicas */}
           <Route path="/" element={<Home />} />
-          <Route path="/sobre" element={<Home />} /> 
+          {/* < Route path="/sobre" element={<Home />} /> */}
+          <Route path="/sobre" element={<SobrePage />} />
           <Route path="/contato" element={<Contact />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cadastro" element={<CadastroPage />} />
@@ -75,15 +77,30 @@ function App() {
           <Route path="/admin/banners" element={<GestaoBannersAMB />} />
 
           <Route path="/admin/eventos" element={<GestaoEventosPage />} />
-          <Route path="/admin/eventos/conteudo/:eventoId" element={<GestaoConteudoEventoPage />} />
+          <Route
+            path="/admin/eventos/conteudo/:eventoId"
+            element={<GestaoConteudoEventoPage />}
+          />
           <Route path="/admin/times" element={<GestaoTimesPage />} />
-          <Route path="/admin/eventos/inscricoes/:eventoId" element={<GestaoInscricaoTimesPage />} />
-          <Route path="/admin/eventos/jogos/:eventoId" element={<GestaoJogosPage />} />
-          <Route path="/admin/jogos/placar/:eventoId/:jogoId" element={<GestaoPlacarPage />} />
+          <Route
+            path="/admin/eventos/inscricoes/:eventoId"
+            element={<GestaoInscricaoTimesPage />}
+          />
+          <Route
+            path="/admin/eventos/jogos/:eventoId"
+            element={<GestaoJogosPage />}
+          />
+          <Route
+            path="/admin/jogos/placar/:eventoId/:jogoId"
+            element={<GestaoPlacarPage />}
+          />
 
           {/* Módulos Diretoria */}
           <Route path="/admin/diretoria" element={<DiretoriaBIPage />} />
-          <Route path="/admin/diretoria-gestao" element={<DiretoriaGestaoPage />} />
+          <Route
+            path="/admin/diretoria-gestao"
+            element={<DiretoriaGestaoPage />}
+          />
 
           {/* Rota 404 */}
           <Route path="*" element={<NotFound />} />
