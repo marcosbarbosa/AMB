@@ -1,7 +1,7 @@
 /*
  * ==========================================================
  * MÓDULO: ParceirosPage.tsx
- * Versão: 33.0 (Clique no Nome da Lista Expande Banner)
+ * Versão: 34.0 (Fix: Preview some instantaneamente ao sair do mouse)
  * ==========================================================
  */
 
@@ -16,8 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from "@/components/ui/dialog"; 
 import { 
-  Globe, Loader2, MapPin, Search, 
-  X, MessageSquare, ImageIcon, List, LayoutGrid, Award, Shield, Medal, Maximize2
+  Globe, Loader2, Search, X, MessageSquare, ImageIcon, 
+  List, LayoutGrid, Award, Shield, Medal, Maximize2
 } from 'lucide-react';
 
 const API_PARCEIROS = 'https://www.ambamazonas.com.br/api/get_parceiros_publico.php';
@@ -119,6 +119,7 @@ export default function ParceirosPage() {
     return null;
   };
 
+  // Handler para mostrar preview (Hover In)
   const handleMouseEnterRow = (p: Parceiro) => {
     if (p.partner_tier === 'ouro') {
         const bannerUrl = getImageUrl(p.url_banner, 'banner');
@@ -129,6 +130,11 @@ export default function ParceirosPage() {
             });
         }
     }
+  };
+
+  // Handler para esconder preview (Hover Out)
+  const handleMouseLeaveRow = () => {
+    setHoverPreview(null);
   };
 
   return (
@@ -164,7 +170,7 @@ export default function ParceirosPage() {
           </div>
         </header>
 
-        {/* GRID DESTAQUE */}
+        {/* GRID DESTAQUE (Cards Superiores) */}
         <section className="container mx-auto px-4 mb-16">
           <div className="flex items-center gap-2 mb-6">
              <LayoutGrid className="h-5 w-5 text-yellow-600" />
@@ -253,12 +259,7 @@ export default function ParceirosPage() {
                         </p>
                         <div className="flex items-center gap-3 pt-2 border-t border-slate-50 mt-4">
                           {p.whatsapp_contato && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="flex-1 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 h-9"
-                              asChild
-                            >
+                            <Button variant="outline" size="sm" className="flex-1 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 h-9" asChild>
                               <a href={zapLink(p.whatsapp_contato)} target="_blank" rel="noreferrer">
                                 <MessageSquare className="h-4 w-4 mr-2" /> WhatsApp
                               </a>
@@ -302,17 +303,17 @@ export default function ParceirosPage() {
                          return (
                            <tr key={`list-${p.id}`} className="hover:bg-slate-50/80 transition-colors group">
                               <td className="px-6 py-4">
-                                 {/* NOME INTERATIVO: HOVER + CLIQUE */}
+                                 {/* NOME INTERATIVO: HOVER MOSTRA / SAIR ESCONDE / CLIQUE ABRE */}
                                  <div 
                                     className={`flex items-center gap-3 w-fit ${isOuro ? 'cursor-zoom-in' : ''}`}
                                     onMouseEnter={() => handleMouseEnterRow(p)}
-                                    // Adicionado onClick para abrir zoom diretamente do nome
+                                    onMouseLeave={handleMouseLeaveRow} // CRUCIAL: Limpa o preview ao sair
                                     onClick={() => {
                                         if (isOuro) {
                                             const bannerUrl = getImageUrl(p.url_banner, 'banner');
                                             if (bannerUrl) {
                                                 setImagemZoom(bannerUrl);
-                                                setHoverPreview(null); // Fecha o preview se abrir o zoom
+                                                setHoverPreview(null); // Fecha o preview ao abrir o modal
                                             }
                                         }
                                     }}
@@ -342,21 +343,15 @@ export default function ParceirosPage() {
         </section>
       </main>
 
-      {/* OVERLAY DE PREVIEW INTERATIVO */}
+      {/* CARD FLUTUANTE DE PREVIEW (Apenas Visual, não bloqueia clique) */}
       {hoverPreview && (
          <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/5" 
-            onClick={() => setHoverPreview(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" // pointer-events-none garante que o mouse "vaze" e não trave
          >
             <div 
-              className="bg-black rounded-xl shadow-2xl border border-white/20 overflow-hidden w-[400px] animate-in fade-in zoom-in-95 duration-200 cursor-zoom-in relative"
-              onClick={(e) => {
-                e.stopPropagation(); 
-                setImagemZoom(hoverPreview.url); 
-                setHoverPreview(null); 
-              }}
+              className="bg-black rounded-xl shadow-2xl border border-white/20 overflow-hidden w-[400px] animate-in fade-in zoom-in-95 duration-200"
             >
-                <div className="relative w-full aspect-video flex items-center justify-center bg-black pointer-events-none">
+                <div className="relative w-full aspect-video flex items-center justify-center bg-black">
                     {hoverPreview.fit === 'contain' && (
                         <div className="absolute inset-0 bg-cover bg-center blur-sm opacity-50" style={{ backgroundImage: `url(${hoverPreview.url})` }} />
                     )}
@@ -366,7 +361,7 @@ export default function ParceirosPage() {
                       alt="Preview Campanha"
                     />
                     <div className="absolute top-2 right-2 flex gap-1">
-                        <Badge className="bg-white/20 backdrop-blur-md text-white border-none"><Maximize2 className="h-3 w-3 mr-1" /> Expandir</Badge>
+                        <Badge className="bg-white/20 backdrop-blur-md text-white border-none"><Maximize2 className="h-3 w-3 mr-1" /> Clique p/ Ampliar</Badge>
                     </div>
                     <div className="absolute bottom-2 left-2">
                          <Badge className="bg-yellow-500 text-black text-[10px] h-5 border-none">OURO</Badge>
