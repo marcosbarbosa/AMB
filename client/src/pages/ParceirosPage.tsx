@@ -1,403 +1,260 @@
 /*
  * ==========================================================
- * MÓDULO: ParceirosPage.tsx
- * Versão: 35.0 (Com Rastreamento Real de Cliques - BI)
+ * PORTAL AMB DO AMAZONAS
+ * ==========================================================
+ *
+ * Copyright (c) 2026 Marcos Barbosa @mbelitecoach
+ * Todos os direitos reservados.
+ *
+ * Data: 14 de Janeiro de 2026
+ * Hora: 14:15
+ * Versão: 3.0 (Adição da Exclusão)
+ *
+ * Descrição: Gestão de Parceiros (Listagem, Edição e EXCLUSÃO).
+ * CORREÇÃO: Adicionado botão de lixeira conectado ao excluir_parceiro.php.
+ *
  * ==========================================================
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from "@/components/ui/dialog"; 
+import { useToast } from '@/hooks/use-toast';
 import { 
-  Globe, Loader2, Search, X, MessageSquare, ImageIcon, 
-  List, LayoutGrid, Award, Shield, Medal, Maximize2
+  Loader2, 
+  Search, 
+  Plus, 
+  Pencil, 
+  Eye, 
+  Trash2, // <--- O ícone que faltava
+  TrendingUp, 
+  Users 
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-const API_PARCEIROS = 'https://www.ambamazonas.com.br/api/get_parceiros_publico.php';
-const API_CATEGORIAS = 'https://www.ambamazonas.com.br/api/get_categorias_parceiros.php';
-const API_TRACK = 'https://www.ambamazonas.com.br/api/track_parceiro.php'; // <--- API DO CONTADOR
-const DOMAIN_URL = 'https://www.ambamazonas.com.br';
-
+// Interface para tipagem segura
 interface Parceiro {
   id: number;
   nome_parceiro: string;
   categoria: string;
-  descricao_beneficio: string;
-  telefone_contato: string;
-  whatsapp_contato: string | null;
-  url_logo: string | null;
-  link_site: string | null;
-  partner_tier: 'ouro' | 'prata' | 'bronze' | 'comum';
-  endereco: string | null;
-  url_banner?: string | null;
-  banner_fit_mode?: 'cover' | 'contain';
+  partner_tier: 'ouro' | 'prata' | 'bronze' | 'pendente';
+  status: 'ativo' | 'inativo' | 'pendente';
+  url_logo: string;
+  clicks_whatsapp?: number;
+  clicks_banner?: number;
+  banner_status?: string;
 }
 
-const TIER_WEIGHT: Record<string, number> = {
-  'ouro': 4, 
-  'prata': 3, 
-  'bronze': 2, 
-  'comum': 1
-};
+export default function GestaoParceiros() {
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-export default function ParceirosPage() {
   const [parceiros, setParceiros] = useState<Parceiro[]>([]);
-  const [categorias, setCategorias] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('todas');
 
-  const [imagemZoom, setImagemZoom] = useState<string | null>(null);
-  const [hoverPreview, setHoverPreview] = useState<{ url: string, fit: string } | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [resP, resC] = await Promise.all([
-          axios.get(`${API_PARCEIROS}?t=${Date.now()}`),
-          axios.get(`${API_CATEGORIAS}?t=${Date.now()}`)
-        ]);
-        if (resP.data.status === 'sucesso') setParceiros(resP.data.dados || []);
-        if (resC.data.status === 'sucesso') setCategorias(resC.data.dados.map((c: any) => c.nome) || []);
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-      } finally {
-        setLoading(false);
+  // 1. CARREGAR DADOS
+  const fetchParceiros = async () => {
+    try {
+      const response = await axios.get('https://www.ambamazonas.com.br/api/listar_parceiros.php');
+      if (response.data.status === 'sucesso') {
+        setParceiros(response.data.parceiros);
       }
-    };
-    fetchData();
-  }, []);
-
-  // --- FUNÇÃO QUE CONTA O CLIQUE ---
-  const trackClick = (id: number, tipo: 'whatsapp' | 'banner' | 'site') => {
-    // "Fire and forget" (Não espera resposta para não travar o usuário)
-    axios.post(API_TRACK, { id, tipo }).catch(err => console.error("Erro tracking", err));
-  };
-
-  const filteredBase = useMemo(() => {
-    return parceiros.filter(p => {
-      const matchesSearch = p.nome_parceiro.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.categoria.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCat = selectedCategory === 'todas' || p.categoria === selectedCategory;
-      return matchesSearch && matchesCat;
-    });
-  }, [parceiros, searchTerm, selectedCategory]);
-
-  const gridPartners = useMemo(() => {
-    return filteredBase
-      .filter(p => p.partner_tier === 'ouro' || p.partner_tier === 'prata')
-      .sort((a, b) => (TIER_WEIGHT[b.partner_tier] || 0) - (TIER_WEIGHT[a.partner_tier] || 0));
-  }, [filteredBase]);
-
-  const listPartners = useMemo(() => {
-    return [...filteredBase].sort((a, b) => a.nome_parceiro.localeCompare(b.nome_parceiro));
-  }, [filteredBase]);
-
-  const getImageUrl = (url: string | null, type: 'logo' | 'banner' = 'logo') => {
-    if (!url || url === 'NULL') return null;
-    let clean = url.replace(/['"]/g, '').trim();
-    if (clean.startsWith('http')) return clean;
-    if (clean.startsWith('/')) return `${DOMAIN_URL}${clean}`;
-    const folder = type === 'logo' ? 'logos_parceiros' : 'banners_campanhas';
-    return `${DOMAIN_URL}/uploads/${folder}/${clean}`;
-  };
-
-  const zapLink = (num: string | null) => {
-    if (!num) return '#';
-    const clean = num.replace(/\D/g, '');
-    return `https://api.whatsapp.com/send?phone=55${clean}&text=Olá! Sou associado da AMB e gostaria de saber mais sobre o benefício.`;
-  };
-
-  const TierIcon = ({ tier }: { tier: string }) => {
-    if (tier === 'ouro') return <Award className="h-4 w-4 text-yellow-500" />;
-    if (tier === 'prata') return <Shield className="h-4 w-4 text-slate-400" />;
-    if (tier === 'bronze') return <Medal className="h-4 w-4 text-orange-700" />;
-    return null;
-  };
-
-  const handleMouseEnterRow = (p: Parceiro) => {
-    if (p.partner_tier === 'ouro') {
-        const bannerUrl = getImageUrl(p.url_banner, 'banner');
-        if (bannerUrl) {
-            setHoverPreview({
-                url: bannerUrl,
-                fit: p.banner_fit_mode || 'cover'
-            });
-        }
+    } catch (error) {
+      console.error("Erro ao carregar parceiros", error);
+      toast({ title: "Erro", description: "Falha ao listar parceiros.", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleMouseLeaveRow = () => {
-    setHoverPreview(null);
+  useEffect(() => {
+    fetchParceiros();
+  }, []);
+
+  // 2. FUNÇÃO DE EXCLUSÃO (O QUE FALTAVA)
+  const handleDelete = async (id: number, nome: string) => {
+    if (!confirm(`Tem certeza que deseja EXCLUIR o parceiro "${nome}"?\nEssa ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    try {
+      // Chama o arquivo backend que já analisamos
+      const response = await axios.post('https://www.ambamazonas.com.br/api/excluir_parceiro.php', { id });
+
+      if (response.data.status === 'sucesso') {
+        toast({ title: "Sucesso", description: "Parceiro removido com sucesso." });
+        // Atualiza a lista localmente sem recarregar a página
+        setParceiros(prev => prev.filter(p => p.id !== id));
+      } else {
+        toast({ title: "Erro", description: response.data.mensagem, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Erro", description: "Falha de conexão ao excluir.", variant: "destructive" });
+    }
+  };
+
+  // Filtro de busca
+  const filteredParceiros = parceiros.filter(p => 
+    p.nome_parceiro.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getTierColor = (tier: string) => {
+    switch(tier) {
+      case 'ouro': return 'bg-yellow-500 text-black hover:bg-yellow-600';
+      case 'prata': return 'bg-slate-300 text-slate-800 hover:bg-slate-400';
+      case 'bronze': return 'bg-orange-700 text-white hover:bg-orange-800';
+      default: return 'bg-slate-100 text-slate-500';
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col relative">
+    <div className="min-h-screen bg-slate-50">
       <Navigation />
 
-      <main className="flex-grow pt-24 pb-12">
-        <header className="container mx-auto px-4 mb-10 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">Rede de Vantagens AMB</h1>
-          <p className="text-slate-600 max-w-2xl mx-auto mb-8">Conheça as empresas que apoiam o esporte amazonense e aproveite benefícios exclusivos.</p>
-
-          <div className="flex flex-col md:flex-row gap-4 max-w-4xl mx-auto bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-            <div className="relative flex-grow">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input 
-                placeholder="Buscar parceiro ou serviço..." 
-                className="pl-10 border-slate-200 focus:ring-yellow-500"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full md:w-[220px] border-slate-200">
-                <SelectValue placeholder="Todas Categorias" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas Categorias</SelectItem>
-                {categorias.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <main className="max-w-7xl mx-auto px-4 pt-28 pb-12">
+        {/* Cabeçalho e Stats */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Gestão de Parceiros</h1>
+            <p className="text-slate-500">Controle de contratos, banners e métricas.</p>
           </div>
-        </header>
+          <Button onClick={() => navigate('/admin/parceiros/novo')} className="bg-green-600 hover:bg-green-700">
+            <Plus className="mr-2 h-4 w-4" /> Novo Parceiro
+          </Button>
+        </div>
 
-        {/* GRID DESTAQUE */}
-        <section className="container mx-auto px-4 mb-16">
-          <div className="flex items-center gap-2 mb-6">
-             <LayoutGrid className="h-5 w-5 text-yellow-600" />
-             <h2 className="text-xl font-bold text-slate-800">Destaques da Rede</h2>
+        {/* Barra de Ferramentas */}
+        <div className="flex gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <Input 
+              placeholder="Buscar parceiro..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-10 bg-white"
+            />
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {loading ? (
-              <div className="col-span-full flex flex-col items-center justify-center py-20 space-y-4">
-                <Loader2 className="h-10 w-10 text-yellow-500 animate-spin" />
-                <p className="text-slate-500 font-medium">Carregando parceiros...</p>
-              </div>
-            ) : (
-              gridPartners.map((p) => {
-                const logoUrl = getImageUrl(p.url_logo, 'logo');
-                const bannerUrl = getImageUrl(p.url_banner, 'banner');
-                const isOuro = p.partner_tier === 'ouro';
-
-                return (
-                  <Card 
-                    key={p.id} 
-                    className={`relative overflow-hidden transition-all duration-300 group hover:shadow-xl border-slate-200 ${
-                      isOuro ? 'ring-1 ring-yellow-400/50' : ''
-                    }`}
-                  >
-                    <CardContent className="p-0">
-
-                      <div 
-                        className={`relative h-48 bg-white flex items-center justify-center p-6 border-b border-slate-100 overflow-hidden 
-                          ${isOuro ? 'cursor-zoom-in' : 'cursor-default'}`}
-                        onClick={() => {
-                          if (isOuro) {
-                            if (bannerUrl) setImagemZoom(bannerUrl);
-                            else if (logoUrl) setImagemZoom(logoUrl);
-                          }
-                        }}
-                      >
-                        {logoUrl ? (
-                          <img 
-                            src={logoUrl} 
-                            alt={p.nome_parceiro}
-                            className={`max-h-full max-w-full object-contain transition-all duration-500 
-                              ${isOuro ? 'group-hover:scale-110 group-hover:opacity-0' : ''} 
-                            `}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center text-slate-300">
-                             <ImageIcon className="h-10 w-10 mb-2" />
-                             <span className="text-xs uppercase font-bold">{p.nome_parceiro}</span>
+        {/* Tabela de Listagem */}
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="w-[300px]">EMPRESA</TableHead>
+                  <TableHead>NÍVEL</TableHead>
+                  <TableHead>CLIQUES ZAP</TableHead>
+                  <TableHead>STATUS BANNER</TableHead>
+                  <TableHead className="text-right">AÇÕES</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8">
+                      <Loader2 className="animate-spin h-8 w-8 mx-auto text-primary" />
+                    </TableCell>
+                  </TableRow>
+                ) : filteredParceiros.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                      Nenhum parceiro encontrado.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredParceiros.map((parceiro) => (
+                    <TableRow key={parceiro.id} className="hover:bg-slate-50/50">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-slate-100 overflow-hidden border border-slate-200">
+                            {parceiro.url_logo ? (
+                              <img src={`https://www.ambamazonas.com.br${parceiro.url_logo}`} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <Users className="h-5 w-5 m-2.5 text-slate-400" />
+                            )}
                           </div>
-                        )}
-
-                        {isOuro && bannerUrl && (
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-black flex items-center justify-center">
-                             {p.banner_fit_mode === 'contain' && (
-                                <div className="absolute inset-0 bg-cover bg-center blur-md opacity-50 scale-110" style={{ backgroundImage: `url(${bannerUrl})` }} />
-                             )}
-                             <img 
-                                src={bannerUrl}
-                                className={`relative z-10 w-full h-full ${p.banner_fit_mode === 'contain' ? 'object-contain' : 'object-cover'}`}
-                                alt={`Campanha ${p.nome_parceiro}`}
-                             />
+                          <div>
+                            <p className="font-bold text-slate-900">{parceiro.nome_parceiro}</p>
+                            <p className="text-xs text-slate-500 uppercase">{parceiro.categoria || 'Geral'}</p>
                           </div>
-                        )}
-
-                        <div className="absolute top-3 right-3 z-10 pointer-events-none">
-                          {isOuro ? (
-                            <Badge className="bg-yellow-500 text-black border-none shadow-sm">OURO 🏆</Badge>
-                          ) : (
-                            <Badge className="bg-slate-200 text-slate-600 border-none">PRATA</Badge>
-                          )}
                         </div>
-                      </div>
+                      </TableCell>
 
-                      <div className="p-5">
-                        <div className="mb-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-yellow-600">{p.categoria}</span>
-                          <h3 className="text-lg font-bold text-slate-800 leading-tight">{p.nome_parceiro}</h3>
-                        </div>
-                        <p className="text-sm text-slate-600 line-clamp-2 mb-4 h-10">
-                          {p.descricao_beneficio || "Consulte os benefícios exclusivos para membros da AMB."}
-                        </p>
-                        <div className="flex items-center gap-3 pt-2 border-t border-slate-50 mt-4">
-                          {p.whatsapp_contato && (
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="flex-1 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 h-9" 
-                                asChild
-                                onClick={() => trackClick(p.id, 'whatsapp')} // <--- RASTREAMENTO AQUI
-                            >
-                              <a href={zapLink(p.whatsapp_contato)} target="_blank" rel="noreferrer">
-                                <MessageSquare className="h-4 w-4 mr-2" /> WhatsApp
-                              </a>
-                            </Button>
-                          )}
-                          {p.link_site && (
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-9 w-9 p-0 text-slate-400 hover:text-slate-800" 
-                                asChild
-                                onClick={() => trackClick(p.id, 'site')} // <--- RASTREAMENTO AQUI
-                            >
-                              <a href={p.link_site} target="_blank" rel="noreferrer"><Globe className="h-4 w-4" /></a>
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </div>
-        </section>
+                      <TableCell>
+                        <Badge className={`${getTierColor(parceiro.partner_tier)} uppercase border-none`}>
+                          {parceiro.partner_tier}
+                        </Badge>
+                      </TableCell>
 
-        {/* LISTA GERAL */}
-        <section className="container mx-auto px-4 relative">
-           <div className="flex items-center gap-2 mb-6 border-b border-slate-200 pb-4">
-             <List className="h-5 w-5 text-slate-500" />
-             <h2 className="text-xl font-bold text-slate-800">Lista Completa de Parceiros (A-Z)</h2>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-             <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                   <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200">
-                      <tr>
-                         <th className="px-6 py-4">Parceiro</th>
-                         <th className="px-6 py-4">Categoria</th>
-                         <th className="px-6 py-4">Benefício</th>
-                         <th className="px-6 py-4 text-right">Contato</th>
-                      </tr>
-                   </thead>
-                   <tbody className="divide-y divide-slate-100">
-                      {listPartners.map((p) => {
-                         const isOuro = p.partner_tier === 'ouro';
-                         return (
-                           <tr key={`list-${p.id}`} className="hover:bg-slate-50/80 transition-colors group">
-                              <td className="px-6 py-4">
-                                 <div 
-                                    className={`flex items-center gap-3 w-fit ${isOuro ? 'cursor-zoom-in' : ''}`}
-                                    onMouseEnter={() => handleMouseEnterRow(p)}
-                                    onMouseLeave={handleMouseLeaveRow}
-                                    onClick={() => {
-                                        if (isOuro) {
-                                            const bannerUrl = getImageUrl(p.url_banner, 'banner');
-                                            if (bannerUrl) {
-                                                setImagemZoom(bannerUrl);
-                                                setHoverPreview(null);
-                                                trackClick(p.id, 'banner'); // <--- RASTREAMENTO ZOOM
-                                            }
-                                        }
-                                    }}
-                                 >
-                                    <TierIcon tier={p.partner_tier} />
-                                    <span className={`font-semibold ${isOuro ? 'text-yellow-700' : 'text-slate-800'}`}>
-                                        {p.nome_parceiro}
-                                    </span>
-                                 </div>
-                              </td>
-                              <td className="px-6 py-4 text-slate-600"><Badge variant="outline" className="font-normal bg-slate-50">{p.categoria}</Badge></td>
-                              <td className="px-6 py-4 text-slate-600 max-w-md truncate" title={p.descricao_beneficio}>{p.descricao_beneficio}</td>
-                              <td className="px-6 py-4 text-right">
-                                 {p.whatsapp_contato ? (
-                                    <a 
-                                        href={zapLink(p.whatsapp_contato)} 
-                                        target="_blank" 
-                                        rel="noreferrer" 
-                                        className="inline-flex items-center gap-1 text-green-600 font-medium hover:underline hover:text-green-700 bg-green-50 px-3 py-1.5 rounded-full border border-green-100"
-                                        onClick={() => trackClick(p.id, 'whatsapp')} // <--- RASTREAMENTO AQUI
-                                    >
-                                       <MessageSquare className="h-3.5 w-3.5" /> <span className="hidden sm:inline">WhatsApp</span>
-                                    </a>
-                                 ) : <span className="text-slate-400 text-xs italic">Sem contato</span>}
-                              </td>
-                           </tr>
-                         );
-                      })}
-                   </tbody>
-                </table>
-             </div>
-          </div>
-        </section>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-green-600 bg-green-50 w-fit px-2 py-1 rounded-md font-mono text-xs font-bold">
+                          <TrendingUp className="h-3 w-3" />
+                          {parceiro.clicks_whatsapp || 0}
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="flex flex-col items-center w-fit">
+                          <div className={`h-2.5 w-2.5 rounded-full mb-1 ${
+                            parceiro.banner_status === 'aprovado' ? 'bg-green-500' : 
+                            parceiro.banner_status === 'pendente' ? 'bg-yellow-500' : 'bg-slate-300'
+                          }`} />
+                          <span className="text-[10px] text-slate-500 lowercase">
+                            {parceiro.banner_status || 'sem banner'}
+                          </span>
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-slate-400 hover:text-primary"
+                            onClick={() => navigate(`/admin/parceiros/editar/${parceiro.id}`)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+
+                          {/* BOTÃO DE EXCLUSÃO NOVO */}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => handleDelete(parceiro.id, parceiro.nome_parceiro)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </main>
-
-      {/* CARD FLUTUANTE DE PREVIEW (VISUAL) */}
-      {hoverPreview && (
-         <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-            <div className="bg-black rounded-xl shadow-2xl border border-white/20 overflow-hidden w-[400px] animate-in fade-in zoom-in-95 duration-200">
-                <div className="relative w-full aspect-video flex items-center justify-center bg-black">
-                    {hoverPreview.fit === 'contain' && (
-                        <div className="absolute inset-0 bg-cover bg-center blur-sm opacity-50" style={{ backgroundImage: `url(${hoverPreview.url})` }} />
-                    )}
-                    <img 
-                      src={hoverPreview.url} 
-                      className={`relative z-10 w-full h-full ${hoverPreview.fit === 'contain' ? 'object-contain' : 'object-cover'}`}
-                      alt="Preview"
-                    />
-                    <div className="absolute bottom-2 left-2">
-                         <Badge className="bg-yellow-500 text-black text-[10px] h-5 border-none">OURO</Badge>
-                    </div>
-                </div>
-            </div>
-         </div>
-      )}
-
-      <Dialog open={!!imagemZoom} onOpenChange={() => setImagemZoom(null)}>
-        <DialogContent className="max-w-4xl bg-transparent border-none shadow-none flex justify-center items-center p-0 outline-none ring-0">
-           <div className="relative group">
-             <button onClick={() => setImagemZoom(null)} className="absolute -top-12 right-0 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full transition-colors z-50"><X className="h-6 w-6"/></button>
-             {imagemZoom && (
-               <img 
-                 src={imagemZoom} 
-                 className="max-h-[85vh] max-w-[90vw] rounded-xl shadow-2xl bg-white object-contain cursor-zoom-out" 
-                 alt="Zoom Parceiro" 
-                 onClick={() => setImagemZoom(null)} 
-               />
-             )}
-           </div>
-        </DialogContent>
-      </Dialog>
-
       <Footer />
     </div>
   );

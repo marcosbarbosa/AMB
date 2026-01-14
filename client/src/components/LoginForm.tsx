@@ -1,30 +1,26 @@
 /*
  * ==========================================================
+ * ARQUIVO: LoginForm.tsx
  * PORTAL AMB DO AMAZONAS
  * ==========================================================
- *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 27 de outubro de 2025
- * Hora: 23:12
- * Versão: 1.2 (Refatoração de Terminologia)
- *
- * Descrição: Formulário de login do associado.
- * ATUALIZADO para usar a terminologia "Associado" nos logs e comentários.
- *
+ * STATUS: Versão Estável 6.5 - "Momento Sublime"
+ * DATA: 14 de Janeiro de 2026
+ * FUNÇÃO: Formulário de login sincronizado com a API PHP (user/password).
+ * CORREÇÃO: Mapeamento de 'senha' para 'password' e 'user' para 'atleta'.
  * ==========================================================
  */
+
 import { useState } from 'react';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react'; // Ícones
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
+// URL direta da API de produção
 const API_URL = 'https://www.ambamazonas.com.br/api/login.php';
 
 export function LoginForm() {
@@ -38,38 +34,43 @@ export function LoginForm() {
     event.preventDefault();
     setIsSubmitting(true);
 
-    const payload = { email, senha };
+    // CORREÇÃO 1: O PHP espera 'password', não 'senha'
+    const payload = { 
+      email, 
+      password: senha 
+    };
 
     try {
       const response = await axios.post(API_URL, payload);
-      // 1. O backend ainda retorna um objeto 'atleta', vamos manter isso internamente
-      // mas a interface do utilizador dirá 'associado'.
-      const { atleta, token } = response.data; 
+
+      // CORREÇÃO 2: O PHP retorna 'user', mas o AuthContext espera 'atleta'
+      // Mapeamos a resposta 'user' para a variável 'atleta'
+      const { user, token } = response.data; 
+      const atleta = user; 
 
       toast({
         title: 'Login bem-sucedido!',
         description: `Bem-vindo de volta, ${atleta.nome_completo}!`,
+        duration: 3000,
       });
 
-      // 2. Chama a função login do AuthContext (que armazena 'atletaInfo')
+      // 3. Efetiva o login no contexto global
       login(atleta, token);
 
-      // console.log('Login do associado com sucesso:', atleta); // Log atualizado
-      // console.log('Token recebido:', token);
-
-      // Ação futura: Redirecionar para o Painel do Associado
-      // window.location.href = '/painel'; 
-
     } catch (error: any) {
-      console.error("Erro ao fazer login do associado:", error); // Log atualizado
+      console.error("Erro ao fazer login:", error);
 
       let mensagemErro = 'Não foi possível conectar ao servidor.';
-      if (error.response?.data?.mensagem) {
-        mensagemErro = error.response.data.mensagem;
+
+      // Tratamento robusto de erros vindos do PHP
+      if (error.response?.data?.message) {
+        mensagemErro = error.response.data.message; // Padrão novo 'message'
+      } else if (error.response?.data?.mensagem) {
+        mensagemErro = error.response.data.mensagem; // Padrão antigo 'mensagem'
       }
 
       toast({
-        title: 'Erro no Login',
+        title: 'Falha no acesso',
         description: mensagemErro,
         variant: 'destructive',
       });
@@ -90,6 +91,7 @@ export function LoginForm() {
           required 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className="h-12"
         />
       </div>
 
@@ -103,6 +105,7 @@ export function LoginForm() {
           required 
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
+          className="h-12"
         />
       </div>
 
@@ -114,16 +117,16 @@ export function LoginForm() {
 
       <Button 
         type="submit" 
-        className="w-full h-12 text-base"
+        className="w-full h-12 text-base font-bold shadow-md hover:shadow-lg transition-all"
         disabled={isSubmitting}
       >
-        {isSubmitting ? 'Entrando...' : 'Entrar'}
-        <LogIn className="ml-2 h-4 w-4" />
+        {isSubmitting ? 'Verificando...' : 'Entrar no Portal'}
+        {!isSubmitting && <LogIn className="ml-2 h-4 w-4" />}
       </Button>
 
-      <div className="text-center text-muted-foreground text-sm">
+      <div className="text-center text-muted-foreground text-sm pt-2">
         Não tem uma conta?{' '}
-        <Link to="/cadastro" className="text-primary hover:underline font-medium">
+        <Link to="/cadastro" className="text-primary hover:underline font-bold">
           Cadastre-se aqui
         </Link>
       </div>

@@ -1,12 +1,11 @@
 /*
  * ==========================================================
- * PORTAL AMB DO AMAZONAS
- * ==========================================================
- *
- * Data: 11 de Janeiro de 2026
- * Versão: 3.2 (Inclusão do Módulo de Banners Institucionais)
- * Descrição: Roteador principal. Adicionada a rota para
- * gestão de campanhas rotativas da Home.
+ * PROJETO: Portal AMB Amazonas (Basquete Master)
+ * STATUS: Versão Estável 6.5 - "Momento Sublime"
+ * DATA: 12 de Janeiro de 2026
+ * ARQUIVO: App.tsx
+ * CAMINHO: client/src/App.tsx
+ * FUNÇÃO: Roteador principal com nova rota de Transparência.
  * ==========================================================
  */
 import { Routes, Route } from "react-router-dom";
@@ -25,6 +24,7 @@ import RedefinirSenhaPage from "@/pages/RedefinirSenhaPage";
 import ParceirosPage from "@/pages/ParceirosPage";
 import SejaParceiroPage from "@/pages/SejaParceiroPage";
 import SobrePage from "./pages/SobrePage";
+import PrestacaoContasPage from "@/pages/PrestacaoContasPage"; //
 
 // Páginas Privadas (Associado)
 import PainelPage from "@/pages/PainelPage";
@@ -40,11 +40,10 @@ import GestaoTimesPage from "@/pages/admin/GestaoTimesPage";
 import GestaoInscricaoTimesPage from "@/pages/admin/GestaoInscricaoTimesPage";
 import GestaoJogosPage from "@/pages/admin/GestaoJogosPage";
 import GestaoPlacarPage from "@/pages/admin/GestaoPlacarPage";
-
-// --- NOVAS IMPORTAÇÕES (BI & GESTÃO) ---
 import DiretoriaBIPage from "@/pages/admin/DiretoriaBIPage";
 import DiretoriaGestaoPage from "@/pages/admin/DiretoriaGestaoPage";
-import GestaoBannersAMB from "@/pages/admin/GestaoBannersAMB"; // [NOVO]
+import GestaoBannersAMB from "@/pages/admin/GestaoBannersAMB";
+import GestaoTransparencia from "@/pages/admin/GestaoTransparencia"; //
 
 function App() {
   return (
@@ -52,9 +51,8 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Routes>
-          {/* Rotas Públicas */}
+          {/* --- ROTAS PÚBLICAS --- */}
           <Route path="/" element={<Home />} />
-          {/* < Route path="/sobre" element={<Home />} /> */}
           <Route path="/sobre" element={<SobrePage />} />
           <Route path="/contato" element={<Contact />} />
           <Route path="/login" element={<LoginPage />} />
@@ -63,46 +61,32 @@ function App() {
           <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
           <Route path="/parceiros" element={<ParceirosPage />} />
           <Route path="/seja-parceiro" element={<SejaParceiroPage />} />
+          <Route path="/transparencia" element={<PrestacaoContasPage />} /> {/* */}
 
-          {/* Rotas Privadas (Associado) */}
+          {/* --- ROTAS DO ASSOCIADO (PROTEGIDAS) --- */}
           <Route path="/painel" element={<PainelPage />} />
           <Route path="/painel/editar" element={<EditarPerfilPage />} />
 
-          {/* Rotas Privadas (Admin) */}
+          {/* --- ROTAS ADMINISTRATIVAS --- */}
           <Route path="/admin/painel" element={<AdminPainelPage />} />
           <Route path="/admin/associados" element={<GestaoAssociadosPage />} />
           <Route path="/admin/parceiros" element={<GestaoParceirosPage />} />
-
-          {/* GESTÃO DE BANNERS INSTITUCIONAIS [NOVO] */}
           <Route path="/admin/banners" element={<GestaoBannersAMB />} />
+          <Route path="/admin/transparencia" element={<GestaoTransparencia />} /> {/* */}
 
+          {/* Gestão de Torneios e Jogos */}
           <Route path="/admin/eventos" element={<GestaoEventosPage />} />
-          <Route
-            path="/admin/eventos/conteudo/:eventoId"
-            element={<GestaoConteudoEventoPage />}
-          />
+          <Route path="/admin/eventos/conteudo/:eventoId" element={<GestaoConteudoEventoPage />} />
           <Route path="/admin/times" element={<GestaoTimesPage />} />
-          <Route
-            path="/admin/eventos/inscricoes/:eventoId"
-            element={<GestaoInscricaoTimesPage />}
-          />
-          <Route
-            path="/admin/eventos/jogos/:eventoId"
-            element={<GestaoJogosPage />}
-          />
-          <Route
-            path="/admin/jogos/placar/:eventoId/:jogoId"
-            element={<GestaoPlacarPage />}
-          />
+          <Route path="/admin/eventos/inscricoes/:eventoId" element={<GestaoInscricaoTimesPage />} />
+          <Route path="/admin/eventos/jogos/:eventoId" element={<GestaoJogosPage />} />
+          <Route path="/admin/jogos/placar/:eventoId/:jogoId" element={<GestaoPlacarPage />} />
 
-          {/* Módulos Diretoria */}
+          {/* Business Intelligence e Gestão Estratégica */}
           <Route path="/admin/diretoria" element={<DiretoriaBIPage />} />
-          <Route
-            path="/admin/diretoria-gestao"
-            element={<DiretoriaGestaoPage />}
-          />
+          <Route path="/admin/diretoria-gestao" element={<DiretoriaGestaoPage />} />
 
-          {/* Rota 404 */}
+          {/* --- ROTA DE ERRO --- */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>

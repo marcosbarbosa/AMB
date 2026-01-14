@@ -1,10 +1,21 @@
 /*
  * ==========================================================
- * MÓDULO: GestaoParceirosPage.tsx (ADMIN - VERSÃO CEO)
- * Descrição: Gestão completa com BI (Business Intelligence)
- * e métricas de conversão para estratégias AIDA.
+ * PORTAL AMB DO AMAZONAS
+ * ==========================================================
+ *
+ * Copyright (c) 2026 Marcos Barbosa @mbelitecoach
+ * Todos os direitos reservados.
+ *
+ * Data: 14 de Janeiro de 2026
+ * Hora: 14:45
+ * Versão: 4.0 (Suite Completa: CRUD + BI + View Mode)
+ *
+ * Descrição: Gestão de Parceiros com visualização detalhada,
+ * edição segura e exclusão definitiva.
+ *
  * ==========================================================
  */
+
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
@@ -19,16 +30,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; 
 import { 
   Loader2, Edit, Eye, Search, X, Camera, Layout, FileText, 
-  BarChart3, MousePointerClick, TrendingUp, Trophy
+  BarChart3, MousePointerClick, TrendingUp, Trophy, Trash2, MapPin, Phone, Globe, ExternalLink
 } from 'lucide-react';
 
 const API_LISTAR = 'https://www.ambamazonas.com.br/api/admin_listar_parceiros.php';
 const API_EDITAR = 'https://www.ambamazonas.com.br/api/admin_editar_parceiro.php';
+const API_EXCLUIR = 'https://www.ambamazonas.com.br/api/excluir_parceiro.php';
 const API_CATEGORIAS = 'https://www.ambamazonas.com.br/api/get_categorias_parceiros.php';
 const DOMAIN_URL = 'https://www.ambamazonas.com.br';
 
@@ -49,10 +61,10 @@ interface Parceiro {
   link_site?: string | null;
   telefone_contato: string | null;
   endereco: string | null;
-  // --- CAMPOS DE BI (INTELIGÊNCIA) ---
-  views_total?: number;    // Quantas vezes apareceu na tela
-  clicks_whatsapp?: number; // Quantos clicaram no "Falar Agora"
-  clicks_banner?: number;   // Quantos clicaram no Banner da Home
+  // BI
+  views_total?: number;    
+  clicks_whatsapp?: number; 
+  clicks_banner?: number;   
 }
 
 export default function GestaoParceirosPage() {
@@ -65,9 +77,9 @@ export default function GestaoParceirosPage() {
   const [busca, setBusca] = useState('');
   const [orderBy, setOrderBy] = useState<'nome' | 'cliques'>('nome');
 
+  // Estados de Modais
   const [viewPartner, setViewPartner] = useState<Parceiro | null>(null);
   const [editPartner, setEditPartner] = useState<Parceiro | null>(null);
-  const [imagemZoom, setImagemZoom] = useState<string | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
@@ -94,8 +106,7 @@ export default function GestaoParceirosPage() {
          axios.post(API_LISTAR, { token }),
          axios.get(`${API_CATEGORIAS}?t=${ts}`)
       ]);
-      
-      // Se a API retornar dados, usamos. Se não, populamos com 0 para não quebrar o BI.
+
       if (resParceiros.data.status === 'sucesso') {
         const dadosFormatados = resParceiros.data.parceiros.map((p: any) => ({
             ...p,
@@ -120,12 +131,32 @@ export default function GestaoParceirosPage() {
     return `${DOMAIN_URL}/uploads/${path}/${clean}`;
   };
 
-  // --- CÁLCULOS DE BI ---
+  // --- DELETE FUNCTION ---
+  const handleDelete = async (id: number, nome: string) => {
+    if (!confirm(`ATENÇÃO: Tem certeza que deseja EXCLUIR "${nome}"?\n\nEsta ação apagará o parceiro e todo o histórico de cliques/BI.`)) {
+        return;
+    }
+
+    try {
+        const response = await axios.post(API_EXCLUIR, { id }); 
+
+        if (response.data.status === 'sucesso') {
+            toast({ title: "Sucesso", description: "Parceiro removido!" });
+            setParceiros(prev => prev.filter(p => p.id !== id));
+        } else {
+            toast({ title: "Erro", description: response.data.mensagem, variant: "destructive" });
+        }
+    } catch (error) {
+        toast({ title: "Erro", description: "Falha ao conectar com o servidor.", variant: "destructive" });
+    }
+  };
+
+  // --- BI CALCS ---
   const stats = useMemo(() => {
     const totalParceiros = parceiros.length;
     const totalCliquesZap = parceiros.reduce((acc, p) => acc + (p.clicks_whatsapp || 0), 0);
     const parceiroTop = [...parceiros].sort((a, b) => (b.clicks_whatsapp || 0) - (a.clicks_whatsapp || 0))[0];
-    
+
     return { totalParceiros, totalCliquesZap, parceiroTop };
   }, [parceiros]);
 
@@ -184,7 +215,6 @@ export default function GestaoParceirosPage() {
     formData.append('link_site', editPartner.link_site || '');
     formData.append('endereco', editPartner.endereco || '');
 
-    // Dados de Banner
     formData.append('banner_status', editPartner.banner_status || 'pendente');
     formData.append('banner_fit_mode', editPartner.banner_fit_mode || 'cover');
     formData.append('banner_fit_mobile', editPartner.banner_fit_mobile || 'cover');
@@ -213,7 +243,7 @@ export default function GestaoParceirosPage() {
       <Navigation />
       <main className="pt-24 pb-16 px-4 max-w-7xl mx-auto">
 
-        {/* --- DASHBOARD DE BI (NOVOS INDICADORES) --- */}
+        {/* --- KPI DASHBOARD --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card className="bg-white border-l-4 border-l-blue-500 shadow-sm">
                 <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-slate-500 uppercase">Parceiros Ativos</CardTitle></CardHeader>
@@ -240,7 +270,7 @@ export default function GestaoParceirosPage() {
             </Card>
         </div>
 
-        {/* HEADER DA PÁGINA */}
+        {/* --- HEADER DA LISTAGEM --- */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Gestão de Parceiros</h1>
@@ -261,7 +291,7 @@ export default function GestaoParceirosPage() {
           </div>
         </div>
 
-        {/* TABELA DE DADOS */}
+        {/* --- TABELA --- */}
         <div className="bg-white rounded-xl border shadow-sm overflow-hidden mb-8">
             {loadingData ? (
                 <div className="p-8 text-center text-slate-500">
@@ -314,6 +344,7 @@ export default function GestaoParceirosPage() {
                                 <td className="px-6 py-4 text-right whitespace-nowrap">
                                     <Button variant="ghost" size="icon" onClick={() => setViewPartner(p)} title="Ver Detalhes"><Eye className="h-4 w-4 text-slate-500" /></Button>
                                     <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(p)} title="Editar"><Edit className="h-4 w-4 text-blue-600" /></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id, p.nome_parceiro)} title="Excluir" className="hover:bg-red-50 hover:text-red-600 text-slate-400"><Trash2 className="h-4 w-4" /></Button>
                                 </td>
                             </tr>
                         ))}
@@ -323,7 +354,99 @@ export default function GestaoParceirosPage() {
             )}
         </div>
 
-        {/* MODAL EDITAR (COMPLETO) */}
+        {/* =======================
+            MODAL DE VISUALIZAÇÃO (NOVO)
+           ======================= */}
+        <Dialog open={!!viewPartner} onOpenChange={() => setViewPartner(null)}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-slate-500" /> Detalhes do Parceiro
+                    </DialogTitle>
+                </DialogHeader>
+                {viewPartner && (
+                    <div className="space-y-6 py-2">
+                        {/* Topo: Logo e Nome */}
+                        <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <div className="h-16 w-16 bg-white rounded-lg border flex items-center justify-center overflow-hidden">
+                                {viewPartner.url_logo ? <img src={getImageUrl(viewPartner.url_logo)!} className="h-full w-full object-contain p-1"/> : <span className="text-2xl font-bold">{viewPartner.nome_parceiro[0]}</span>}
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-900">{viewPartner.nome_parceiro}</h3>
+                                <div className="flex gap-2 mt-1">
+                                    <Badge variant="secondary" className="uppercase text-[10px]">{viewPartner.categoria}</Badge>
+                                    <Badge className={`${viewPartner.partner_tier === 'ouro' ? 'bg-yellow-500 text-black' : 'bg-slate-200 text-slate-600'} uppercase text-[10px]`}>{viewPartner.partner_tier}</Badge>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Infos de Contato */}
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="space-y-1">
+                                <Label className="text-xs text-slate-400 uppercase">Contato</Label>
+                                <div className="flex items-center gap-2 text-slate-700">
+                                    <Phone className="h-3 w-3 text-green-600" /> 
+                                    {viewPartner.whatsapp_contato || viewPartner.telefone_contato || 'Não informado'}
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-xs text-slate-400 uppercase">Website</Label>
+                                <div className="flex items-center gap-2 text-slate-700">
+                                    <Globe className="h-3 w-3 text-blue-600" /> 
+                                    {viewPartner.link_site ? <a href={viewPartner.link_site} target="_blank" className="hover:underline truncate w-full">{viewPartner.link_site}</a> : 'Não informado'}
+                                </div>
+                            </div>
+                            <div className="col-span-2 space-y-1">
+                                <Label className="text-xs text-slate-400 uppercase">Endereço</Label>
+                                <div className="flex items-center gap-2 text-slate-700">
+                                    <MapPin className="h-3 w-3 text-red-500" /> 
+                                    {viewPartner.endereco || 'Não informado'}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Banner e Métricas */}
+                        {viewPartner.partner_tier === 'ouro' && (
+                            <div className="space-y-3 pt-2 border-t">
+                                <Label className="text-xs text-slate-400 uppercase">Banner Publicitário</Label>
+                                {viewPartner.url_banner ? (
+                                    <div className="rounded-lg overflow-hidden border aspect-[16/5] bg-slate-900 relative">
+                                        <img src={getImageUrl(viewPartner.url_banner, 'banners_campanhas')!} className="w-full h-full object-cover" />
+                                        <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm">
+                                            Status: {viewPartner.banner_status?.toUpperCase()}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-sm text-slate-400 italic bg-slate-50 p-4 rounded border text-center">Nenhum banner cadastrado para este parceiro Ouro.</div>
+                                )}
+
+                                <div className="grid grid-cols-3 gap-3 mt-2">
+                                    <div className="bg-green-50 p-2 rounded text-center border border-green-100">
+                                        <div className="text-lg font-bold text-green-700">{viewPartner.clicks_whatsapp || 0}</div>
+                                        <div className="text-[10px] text-green-600 uppercase font-bold">Cliques Zap</div>
+                                    </div>
+                                    <div className="bg-blue-50 p-2 rounded text-center border border-blue-100">
+                                        <div className="text-lg font-bold text-blue-700">{viewPartner.clicks_banner || 0}</div>
+                                        <div className="text-[10px] text-blue-600 uppercase font-bold">Cliques Banner</div>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded text-center border border-slate-100">
+                                        <div className="text-lg font-bold text-slate-700">{viewPartner.views_total || 0}</div>
+                                        <div className="text-[10px] text-slate-500 uppercase font-bold">Impressões</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+                <DialogFooter>
+                    <Button onClick={() => setViewPartner(null)}>Fechar</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        {/* =======================
+            MODAL DE EDIÇÃO
+           ======================= */}
         <Dialog open={!!editPartner} onOpenChange={() => setEditPartner(null)}>
            <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
               <DialogHeader>
@@ -332,7 +455,6 @@ export default function GestaoParceirosPage() {
                 </DialogTitle>
               </DialogHeader>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 py-4">
-                 
                  {/* LADO ESQUERDO: DADOS */}
                  <div className="space-y-5">
                     <div className="flex gap-4 items-center bg-slate-50 p-4 rounded-lg border">
@@ -345,15 +467,15 @@ export default function GestaoParceirosPage() {
                             <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => handleFileChange(e, 'logo')} />
                         </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                         <Label>Nome da Empresa</Label>
                         <Input value={editPartner?.nome_parceiro} onChange={e => setEditPartner(p => p ? {...p, nome_parceiro: e.target.value} : null)} />
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-green-600">WhatsApp (Números)</Label>
+                            <Label className="text-xs font-bold text-green-600">WhatsApp</Label>
                             <Input placeholder="559299..." value={editPartner?.whatsapp_contato || ''} onChange={e => setEditPartner(p => p ? {...p, whatsapp_contato: e.target.value} : null)} />
                         </div>
                         <div className="space-y-2">
@@ -366,13 +488,12 @@ export default function GestaoParceirosPage() {
                         <div className="space-y-2"><Label>Plano</Label><Select value={editPartner?.partner_tier} onValueChange={v => setEditPartner(p => p ? {...p, partner_tier: v as any} : null)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ouro">Ouro 🏆</SelectItem><SelectItem value="prata">Prata</SelectItem><SelectItem value="bronze">Bronze</SelectItem></SelectContent></Select></div>
                         <div className="space-y-2"><Label>Status</Label><Select value={editPartner?.status} onValueChange={v => setEditPartner(p => p ? {...p, status: v as any} : null)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ativo">Ativo</SelectItem><SelectItem value="inativo">Inativo</SelectItem></SelectContent></Select></div>
                     </div>
-                    
+
                     <div className="space-y-2"><Label>Benefício / Desconto</Label><Textarea rows={3} value={editPartner?.descricao_beneficio} onChange={e => setEditPartner(p => p ? {...p, descricao_beneficio: e.target.value} : null)} /></div>
                  </div>
 
                  {/* LADO DIREITO: BANNER & BI */}
                  <div className="space-y-6">
-                    {/* CARTÃO DE MÉTRICAS INDIVIDUAIS */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-center">
                             <div className="text-2xl font-bold text-blue-700">{editPartner?.views_total || 0}</div>
@@ -384,13 +505,12 @@ export default function GestaoParceirosPage() {
                         </div>
                     </div>
 
-                    {/* EDITOR DE BANNER */}
                     <div className="bg-slate-900 text-white p-5 rounded-xl space-y-4 shadow-xl border border-slate-800">
                         <div className="flex justify-between items-center"><Label className="text-slate-400 font-bold text-[10px] uppercase">Banner da Home</Label><Badge className="bg-yellow-500 text-black border-none text-[10px]">Área Vip</Badge></div>
 
                         <div className="space-y-2">
                              <div className="flex justify-between items-center"><Label className="text-[10px] text-slate-500 uppercase">Ajuste Desktop</Label><RadioGroup value={editPartner?.banner_fit_mode} onValueChange={v => setEditPartner(p => p ? {...p, banner_fit_mode: v as any} : null)} className="flex gap-2"><div className="flex items-center space-x-1"><RadioGroupItem value="cover" id="dc" className="text-yellow-500 border-slate-600"/><Label htmlFor="dc" className="text-[10px] cursor-pointer">Expandir</Label></div><div className="flex items-center space-x-1"><RadioGroupItem value="contain" id="dt" className="text-yellow-500 border-slate-600"/><Label htmlFor="dt" className="text-[10px] cursor-pointer">Inteiro</Label></div></RadioGroup></div>
-                             
+
                              <div className={`aspect-[16/5] w-full rounded border border-slate-700 overflow-hidden relative ${editPartner?.banner_fit_mode === 'contain' ? 'bg-black' : 'bg-slate-800'}`}>
                                  {previewBanner ? <img src={previewBanner} className={`w-full h-full ${editPartner?.banner_fit_mode === 'cover' ? 'object-cover' : 'object-contain'}`} /> : <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600"><BarChart3 className="h-8 w-8 mb-2 opacity-50"/><span className="text-[10px]">Sem Banner</span></div>}
                              </div>
