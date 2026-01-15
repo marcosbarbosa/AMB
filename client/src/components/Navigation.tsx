@@ -1,17 +1,13 @@
 /*
  * ==========================================================
- * PROJETO: Portal AMB Amazonas (Basquete Master)
+ * PROJETO: Portal AMB Amazonas
  * ARQUIVO: Navigation.tsx
- * CAMINHO: client/src/components/Navigation.tsx
- * DATA: 15 de Janeiro de 2026
- * HORA: 14:20
- * FUNÇÃO: Navbar com link 'Eventos' adicionado.
- * VERSÃO: 7.1 Prime
+ * VERSÃO: 7.0 Prime (Menu Limpo)
  * ==========================================================
  */
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Edit3, LogOut, LayoutDashboard, Lock, Handshake, CalendarDays } from 'lucide-react'; 
+import { Menu, X, User, Edit3, LogOut, LayoutDashboard, Lock } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import ambLogo from '../assets/logo-amb.png'; 
@@ -21,11 +17,9 @@ export function Navigation() {
   const location = useLocation();
   const { isAuthenticated, atleta, logout } = useAuth();
 
-  // ATUALIZAÇÃO: 'Eventos' inserido na ordem solicitada
   const navItems = [
     { label: 'Início', href: '/' },
     { label: 'Sobre', href: '/#sobre' },
-    { label: 'Eventos', href: '/eventos' }, // NOVO LINK
     { label: 'Transparência', href: '/transparencia' }, 
     { label: 'Parceiros', href: '/parceiros' }, 
     { label: 'Contato', href: '/contato' },
@@ -74,7 +68,6 @@ export function Navigation() {
                 <Link key={item.href} to={item.href}>
                   <span
                     onClick={(e) => handleLinkClick(e, item.href)} 
-                    data-testid={`link-nav-${item.label.toLowerCase()}`}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer inline-block ${
                       location.pathname === item.href || (item.href.startsWith('/#') && location.pathname === '/')
                         ? 'text-foreground'
@@ -87,15 +80,7 @@ export function Navigation() {
               ))}
             </div>
 
-            {/* BOTÃO ESPECIAL: SEJA PARCEIRO */}
-            <div className="hidden md:block">
-                <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white transition-all" size="sm" asChild>
-                    <Link to="/seja-parceiro">
-                        <Handshake className="mr-2 h-4 w-4" />
-                        Quero ser Parceiro
-                    </Link>
-                </Button>
-            </div>
+            {/* BOTÃO "QUERO SER PARCEIRO" REMOVIDO DAQUI (Agora está na página de parceiros) */}
 
             {/* BLOCO LÓGICO DE ACESSO */}
             <div className="flex items-center gap-2">
@@ -106,7 +91,7 @@ export function Navigation() {
                   </span>
 
                   {atleta.role === 'admin' && (
-                    <Button variant="ghost" size="icon" asChild title="Acesso Admin" data-testid="link-admin-panel">
+                    <Button variant="ghost" size="icon" asChild title="Acesso Admin">
                       <Link to="/admin/painel">
                         <Lock className="h-5 w-5 text-yellow-600 hover:text-yellow-700 transition-colors" />
                       </Link>
@@ -120,7 +105,7 @@ export function Navigation() {
                     </Link>
                   </Button>
 
-                  <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair" data-testid="button-logout">
+                  <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair">
                     <LogOut className="h-5 w-5 text-destructive hover:text-destructive/80" /> 
                   </Button>
                 </div>
@@ -148,7 +133,6 @@ export function Navigation() {
               size="icon"
               className="md:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              data-testid="button-menu-toggle"
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -158,7 +142,7 @@ export function Navigation() {
 
       {/* Menu Mobile */}
       {isMenuOpen && (
-        <div className="md:hidden bg-background border-t border-border" data-testid="mobile-menu">
+        <div className="md:hidden bg-background border-t border-border">
           <div className="px-4 pt-4 pb-6 space-y-2"> 
             {navItems.map((item) => (
               <Link key={item.href} to={item.href}>
@@ -174,16 +158,6 @@ export function Navigation() {
                 </span>
               </Link>
             ))}
-
-            <Link to="/seja-parceiro">
-                <span 
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center px-4 py-3 rounded-md text-base font-medium text-primary bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer"
-                >
-                    <Handshake className="mr-2 h-5 w-5" />
-                    Quero ser Parceiro
-                </span>
-            </Link>
 
             <hr className="border-border my-4" />
 
@@ -213,7 +187,6 @@ export function Navigation() {
                   variant="ghost" 
                   className="w-full justify-start text-destructive" 
                   onClick={handleLogout}
-                  data-testid="button-logout-mobile"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair
