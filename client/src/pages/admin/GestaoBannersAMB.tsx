@@ -1,9 +1,9 @@
 /*
  * ==========================================================
- * PORTAL AMB DO AMAZONAS
- * ARQUIVO: GestaoBannersAMB.tsx
+ * PROJETO: Portal AMB Amazonas
+ * ARQUIVO: client/src/pages/admin/GestaoBannersAMB.tsx
  * FUNÇÃO: Gestão de Banners Institucionais (Rotativos da Home)
- * VERSÃO: 2.0 Prime
+ * VERSÃO: 3.0 Prime (Exclusão Corrigida)
  * ==========================================================
  */
 
@@ -17,7 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
@@ -80,17 +80,36 @@ export default function GestaoBannersAMB() {
         throw new Error(res.data.mensagem);
       }
     } catch (e: any) {
-      toast({ title: "Erro", description: e.message || "Erro de conexão.", variant: "destructive" });
+      const msg = e.response?.data?.mensagem || e.message || "Erro desconhecido.";
+      toast({ title: "Erro ao Salvar", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
+  // --- FUNÇÃO DE EXCLUSÃO CORRIGIDA ---
   const handleDelete = async (id: number) => {
-      if(!confirm("Excluir este banner?")) return;
-      // Implementar endpoint de exclusão ou usar um genérico
-      // await axios.post(...) - Deixo como exercício ou implemento se pedir
-      alert("Implementar endpoint de exclusão: admin_excluir_banner.php"); 
+      if(!confirm("Tem certeza que deseja excluir este banner permanentemente?")) return;
+
+      try {
+          // Chama o endpoint real de exclusão
+          const res = await axios.post(`${API_BASE}/admin_excluir_banner.php`, { 
+              id: id,
+              token: token // Envia o token para validação de segurança
+          });
+
+          if (res.data.status === 'sucesso') {
+              toast({ title: "Sucesso", description: "Banner removido.", className: "bg-green-600 text-white" });
+              // Remove da lista visualmente
+              setBanners(prev => prev.filter(b => b.id !== id));
+          } else {
+              throw new Error(res.data.mensagem);
+          }
+      } catch (error: any) {
+          console.error(error);
+          const msg = error.response?.data?.mensagem || "Erro ao excluir.";
+          toast({ title: "Erro", description: msg, variant: "destructive" });
+      }
   };
 
   const openNew = () => {

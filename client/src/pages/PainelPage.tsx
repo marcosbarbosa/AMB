@@ -1,34 +1,21 @@
 /*
  * ==========================================================
  * PORTAL AMB DO AMAZONAS
- * ==========================================================
- *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 1 de novembro de 2025
- * Hora: 19:00
- * Versão: 1.3 (Lista Eventos)
- *
- * Descrição: Página do Painel do Associado (/painel).
- * ATUALIZADO para buscar (fetch) e exibir a lista de eventos
- * do endpoint api/listar_eventos.php (Módulo 21).
- *
+ * ARQUIVO: PainelPage.tsx
+ * VERSÃO: 1.4 Prime (Blindagem contra Crash de Status)
  * ==========================================================
  */
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext'; 
-import { useEffect, useState } from 'react'; // 1. Importa useState
+import { useEffect, useState } from 'react'; 
 import { useNavigate, Link } from 'react-router-dom'; 
 import { Button } from '@/components/ui/button'; 
-import { Edit, CalendarDays, Loader2 } from 'lucide-react'; // 2. Importa ícones
-import axios from 'axios'; // 3. Importa axios para buscar eventos
+import { Edit, CalendarDays, Loader2 } from 'lucide-react'; 
+import axios from 'axios'; 
 
-// 4. ***** ATENÇÃO: VERIFIQUE O URL DO SEU BACKEND REAL *****
 const EVENTOS_API_URL = 'https://www.ambamazonas.com.br/api/listar_eventos.php';
 
-// 5. Define a interface (formato) de um Evento (baseado no PHP)
 interface Evento {
   id: number;
   nome_evento: string;
@@ -42,21 +29,17 @@ export default function PainelPage() {
   const { isAuthenticated, atleta } = useAuth();
   const navigate = useNavigate(); 
 
-  // 6. Define estados para guardar os eventos e o status de carregamento
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [isLoadingEventos, setIsLoadingEventos] = useState(true);
   const [erroEventos, setErroEventos] = useState<string | null>(null);
 
-  // 7. Efeito de Autenticação (Mantido)
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login'); 
     }
   }, [isAuthenticated, navigate]); 
 
-  // 8. NOVO EFEITO: Buscar eventos quando a página carregar
   useEffect(() => {
-    // Só busca eventos se o usuário estiver logado
     if (isAuthenticated) {
       const fetchEventos = async () => {
         setIsLoadingEventos(true);
@@ -78,9 +61,8 @@ export default function PainelPage() {
 
       fetchEventos();
     }
-  }, [isAuthenticated]); // Depende da autenticação
+  }, [isAuthenticated]); 
 
-  // "A carregar..." (Mantido)
   if (!isAuthenticated || !atleta) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -89,7 +71,6 @@ export default function PainelPage() {
     );
   }
 
-  // 9. Função para formatar data (Bônus)
   const formatarData = (data: string | null) => {
     if (!data) return 'Data a definir';
     try {
@@ -97,10 +78,10 @@ export default function PainelPage() {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
-        timeZone: 'UTC', // Garante que a data não mude por fuso horário
+        timeZone: 'UTC', 
       });
     } catch (e) {
-      return data; // Retorna a data original se a formatação falhar
+      return data; 
     }
   };
 
@@ -108,7 +89,7 @@ export default function PainelPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="pt-16"> 
-        {/* Secção de Boas-Vindas (Mantida) */}
+        {/* Secção de Boas-Vindas */}
         <section className="py-16 lg:py-20 bg-card">
            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
              <h1 className="text-3xl font-semibold font-accent text-foreground mb-4">
@@ -120,7 +101,6 @@ export default function PainelPage() {
            </div>
         </section>
 
-        {/* 10. DIVIDINDO O PAINEL EM DUAS COLUNAS (em telas grandes) */}
         <section className="py-16 lg:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-3 gap-12">
 
@@ -137,7 +117,7 @@ export default function PainelPage() {
                   </Link>
                 </Button>
               </div>
-              {/* Informações (mantidas) */}
+
               <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
                 <p><strong>Nome:</strong> {atleta.nome_completo}</p>
                 <p><strong>Email:</strong> {atleta.email}</p>
@@ -147,7 +127,8 @@ export default function PainelPage() {
                     atleta.status_cadastro === 'rejeitado' ? 'text-red-600' :
                     'text-yellow-600' 
                   }`}>
-                    {atleta.status_cadastro.toUpperCase()}
+                    {/* --- A CORREÇÃO DE BLINDAGEM ESTÁ AQUI EMBAIXO --- */}
+                    {atleta?.status_cadastro ? atleta.status_cadastro.toUpperCase() : 'AGUARDANDO...'}
                   </span>
                 </p>
                 <p><strong>Categoria Atual (calculada):</strong> {atleta.categoria_atual || 'Não definida'}</p>
@@ -160,7 +141,7 @@ export default function PainelPage() {
                 Próximos Eventos
               </h2>
               <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
-                {/* Lógica de exibição de Eventos */}
+
                 {isLoadingEventos && (
                   <div className="flex items-center justify-center text-muted-foreground">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -183,7 +164,6 @@ export default function PainelPage() {
                           Início: {formatarData(evento.data_inicio)}
                         </p>
                         <p className="text-sm text-muted-foreground mt-2">{evento.descricao}</p>
-                        {/* TODO: Adicionar botão "Inscrever-se" */}
                       </li>
                     ))}
                   </ul>

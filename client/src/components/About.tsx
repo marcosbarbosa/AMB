@@ -1,21 +1,77 @@
 /*
  * ==========================================================
  * PORTAL AMB DO AMAZONAS
- * ==========================================================
- * Componente: About.tsx
- * Versão: 4.0 (Botão "Nossa História" Ativo)
+ * ARQUIVO: About.tsx
+ * CAMINHO: client/src/components/About.tsx
+ * DATA: 15 de Janeiro de 2026
+ * HORA: 21:30
+ * FUNÇÃO: Componente "Nossa História" com Botão de Estatuto Dinâmico
+ * VERSÃO: 6.0 Prime (Integrated with New Transparencia API)
  * ==========================================================
  */
 
-import { Users, Trophy, HeartHandshake, MapPin, ArrowRight } from 'lucide-react'; 
-import { useNavigate } from 'react-router-dom'; // <--- Importante para a navegação
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Users, Trophy, HeartHandshake, MapPin, ArrowRight, FileText, Download, Loader2 } from 'lucide-react'; 
+import { useNavigate } from 'react-router-dom';
 import { DiretoriaPremium } from '@/components/DiretoriaPremium'; 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from '@/hooks/use-toast';
+
+const API_BASE = 'https://www.ambamazonas.com.br/api';
 
 export function About() {
-  const navigate = useNavigate(); // <--- Função que troca de página
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Estados para Lógica do Estatuto
+  const [estatutos, setEstatutos] = useState<any[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Busca os estatutos ao carregar a página (silenciosamente)
+  useEffect(() => {
+    const fetchEstatutos = async () => {
+      try {
+        // Busca APENAS documentos do tipo 'estatuto' usando a nova API pública
+        const res = await axios.get(`${API_BASE}/listar_documentos_publico.php?tipo=estatuto`);
+        if (res.data.status === 'sucesso') {
+          setEstatutos(res.data.documentos);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar estatutos:", error);
+      } finally {
+        setLoadingDocs(false);
+      }
+    };
+    fetchEstatutos();
+  }, []);
+
+  // Ação Inteligente do Botão "Ver Estatuto"
+  const handleVerEstatuto = () => {
+    if (loadingDocs) return;
+
+    if (estatutos.length === 0) {
+      toast({ 
+        title: "Em Atualização", 
+        description: "O documento do Estatuto está sendo atualizado pela diretoria.", 
+        variant: "default" 
+      });
+    } else if (estatutos.length === 1) {
+      // Se só tem um, abre direto (tratando URL relativa ou absoluta)
+      const url = estatutos[0].url_arquivo.startsWith('http') 
+        ? estatutos[0].url_arquivo 
+        : `https://www.ambamazonas.com.br${estatutos[0].url_arquivo}`;
+
+      window.open(url, '_blank');
+    } else {
+      // Se tem mais de um (ex: 2022 e 2025), abre o modal para escolha
+      setIsModalOpen(true);
+    }
+  };
 
   const destaquesAMB = [
     {
@@ -35,11 +91,10 @@ export function About() {
     },
   ];
 
-  /* CONFIGURAÇÃO DE LINKS */
+  /* CONFIGURAÇÃO DE LINKS MAPA */
   const ENDERECO = "R. Washington Luís, 111 - Dom Pedro, Manaus - AM, 69040-210";
   const MAP_EMBED_URL = `https://maps.google.com/maps?q=${encodeURIComponent(ENDERECO)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
   const MAP_EXTERNAL_LINK = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ENDERECO)}`;
-  const ESTATUTO_URL = "https://www.ambamazonas.com.br/uploads/docs-oficiais/NOVOESTATUTOAMB-AM.pdf";
 
   return (
     <>
@@ -78,7 +133,7 @@ export function About() {
 
               <div className="pt-4 flex flex-col sm:flex-row gap-4">
 
-                 {/* BOTÃO NOSSA HISTÓRIA (ATIVADO) */}
+                 {/* BOTÃO NOSSA HISTÓRIA */}
                  <Button 
                     onClick={() => navigate('/sobre')}
                     className="bg-blue-700 hover:bg-blue-800 text-white shadow-lg shadow-blue-900/20 h-12 px-8 text-md"
@@ -86,13 +141,23 @@ export function About() {
                    Nossa História
                  </Button>
 
-                 {/* BOTÃO ESTATUTO */}
+                 {/* BOTÃO ESTATUTO (DINÂMICO) */}
                  <Button 
                     variant="outline" 
-                    className="border-slate-300 text-slate-700 hover:bg-white hover:text-blue-700 h-12 px-8 text-md"
-                    onClick={() => window.open(ESTATUTO_URL, '_blank')}
+                    className="border-slate-300 text-slate-700 hover:bg-white hover:text-blue-700 h-12 px-8 text-md relative transition-all"
+                    onClick={handleVerEstatuto}
+                    disabled={loadingDocs}
                  >
-                   Ver Estatuto <ArrowRight className="ml-2 h-4 w-4" />
+                   {loadingDocs ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Ver Estatuto'} 
+                   {!loadingDocs && <ArrowRight className="ml-2 h-4 w-4" />}
+
+                   {/* Indicador visual (Bolinha verde pulsando) se houver estatuto disponível */}
+                   {!loadingDocs && estatutos.length > 0 && (
+                       <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                         <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                       </span>
+                   )}
                  </Button>
               </div>
             </div>
@@ -172,6 +237,40 @@ export function About() {
 
       {/* --- MANTIDO: GALERIA DA DIRETORIA --- */}
       <DiretoriaPremium />
+
+      {/* --- MODAL PARA SELEÇÃO DE ESTATUTO (Se tiver múltiplos) --- */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-md bg-white border border-slate-200">
+            <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-slate-800">
+                    <FileText className="h-5 w-5 text-blue-600"/> Documentos Oficiais
+                </DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-3">
+                <p className="text-sm text-slate-500 mb-4">Selecione a versão do Estatuto que deseja visualizar:</p>
+                {estatutos.map(doc => (
+                    <div 
+                        key={doc.id} 
+                        className="flex items-center justify-between p-3 border border-slate-100 rounded-lg hover:bg-slate-50 hover:border-blue-200 transition-all cursor-pointer group" 
+                        onClick={() => {
+                            const url = doc.url_arquivo.startsWith('http') 
+                                ? doc.url_arquivo 
+                                : `https://www.ambamazonas.com.br${doc.url_arquivo}`;
+                            window.open(url, '_blank');
+                        }}
+                    >
+                        <div>
+                            <h4 className="font-bold text-slate-800 text-sm group-hover:text-blue-700">{doc.titulo}</h4>
+                            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full mt-1 inline-block">Ano: {doc.ano_referencia}</span>
+                        </div>
+                        <Button size="sm" variant="ghost" className="text-blue-600 bg-blue-50 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                            <Download className="h-4 w-4"/>
+                        </Button>
+                    </div>
+                ))}
+            </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
