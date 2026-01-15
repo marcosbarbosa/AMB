@@ -1,8 +1,11 @@
 /*
  * ==========================================================
+ * PROJETO: Portal AMB Amazonas
  * ARQUIVO: canvasUtils.ts
  * CAMINHO: client/src/lib/canvasUtils.ts
+ * DATA: 15 de Janeiro de 2026
  * FUNÇÃO: Utilitário para Recorte de Imagens (Crop)
+ * VERSÃO: 1.0 Prime
  * ==========================================================
  */
 
