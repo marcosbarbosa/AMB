@@ -2,12 +2,18 @@
  * ==========================================================
  * PROJETO: Portal AMB Amazonas
  * ARQUIVO: GestaoEventosMaster.tsx
- * VERSÃO: 8.0 Prime (UI/UX Refinada + Ícones de Filtro)
+ * CAMINHO: client/src/pages/admin/GestaoEventosMaster.tsx
+ * DATA: 14 de Janeiro de 2026
+ * HORA: 23:55
+ * FUNÇÃO: Centro de Comando de Eventos (FIX: Variável de Times + Cropper)
+ * VERSÃO: 9.1 Prime (Stable)
  * ==========================================================
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import Cropper from 'react-easy-crop'; // Biblioteca de recorte
+import { getCroppedImg } from '@/lib/canvasUtils'; // Função auxiliar
 import { Navigation } from '@/components/Navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -25,12 +31,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"; 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider"; 
 
 // Icons
 import { 
   Trophy, Calendar, Users, FileText, Image as ImageIcon, 
   Plus, Save, Trash2, Search, MapPin, Upload, Loader2, Edit, ArrowLeft, 
-  User, Medal, RefreshCw
+  User, Medal, RefreshCw, Crop
 } from 'lucide-react';
 
 const API_BASE = 'https://www.ambamazonas.com.br/api';
@@ -40,24 +47,35 @@ export default function GestaoEventosMaster() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Estados
+  // Estados Globais
   const [loading, setLoading] = useState(false);
   const [eventos, setEventos] = useState<any[]>([]);
   const [timesDisponiveis, setTimesDisponiveis] = useState<any[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 
-  // Formulário
+  // Estados Formulário
   const [formData, setFormData] = useState({
     nome_evento: '', tipo: 'campeonato', genero: 'masculino', 
     data_inicio: '', data_fim: '', descricao: '', status: 'ativo'
   });
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [previewBanner, setPreviewBanner] = useState<string | null>(null);
-  const [removerImagem, setRemoverImagem] = useState(false); // Flag para apagar no banco
 
-  // Contexto
-  const [timesInscritosIds, setTimesInscritosIds] = useState<number[]>([]);
+  // --- ESTADOS DO CROPPER (RECORTE) ---
+  const [bannerFile, setBannerFile] = useState<File | null>(null); 
+  const [previewBanner, setPreviewBanner] = useState<string | null>(null); 
+  const [removerImagem, setRemoverImagem] = useState(false);
+
+  // Estados temporários para o Modal de Recorte
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
+  // Estados Contexto
+  const [timesInscritosIds, setTimesInscritosIds] = useState<number[]>([]); // CORRIGIDO: Nome da variável padronizado
   const [jogos, setJogos] = useState<any[]>([]);
+
+  // Modal Jogo
   const [isJogoModalOpen, setIsJogoModalOpen] = useState(false);
   const [jogoForm, setJogoForm] = useState({ id: 0, id_time_a: '', id_time_b: '', data_hora: '', local_jogo: '', placar_a: '', placar_b: '' });
 
@@ -117,13 +135,46 @@ export default function GestaoEventosMaster() {
       } catch (e) { setTimesInscritosIds([]); setJogos([]); }
   };
 
-  // --- MANIPULAÇÃO DE BANNER ---
-  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if(e.target.files?.[0]) {
-          setBannerFile(e.target.files[0]);
-          setPreviewBanner(URL.createObjectURL(e.target.files[0]));
+  // --- LÓGICA DE SELEÇÃO E RECORTE DE IMAGEM ---
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const imageDataUrl = await readFile(file);
+      setCropImageSrc(imageDataUrl as string);
+      setIsCropModalOpen(true); 
+      setZoom(1);
+      e.target.value = ''; 
+    }
+  };
+
+  const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const showCroppedImage = async () => {
+    try {
+      if (!cropImageSrc || !croppedAreaPixels) return;
+      const croppedBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+      if (croppedBlob) {
+          const file = new File([croppedBlob], "banner_cropped.jpg", { type: "image/jpeg" });
+          setBannerFile(file);
+          setPreviewBanner(URL.createObjectURL(croppedBlob));
           setRemoverImagem(false);
+          setIsCropModalOpen(false);
+          toast({ title: "Imagem Recortada", description: "O banner foi ajustado com sucesso." });
       }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Erro ao recortar", variant: "destructive" });
+    }
+  };
+
+  const readFile = (file: File) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.addEventListener('load', () => resolve(reader.result), false);
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleRemoveBanner = (e: React.MouseEvent) => {
@@ -131,7 +182,7 @@ export default function GestaoEventosMaster() {
       if(confirm("Deseja remover este banner? (Salve para confirmar)")) {
           setPreviewBanner(null);
           setBannerFile(null);
-          setRemoverImagem(true); // Marca para deletar no banco
+          setRemoverImagem(true); 
       }
   };
 
@@ -145,7 +196,7 @@ export default function GestaoEventosMaster() {
     if (selectedEventId) data.append('id', selectedEventId.toString());
 
     if (bannerFile) data.append('banner', bannerFile);
-    if (removerImagem) data.append('remover_imagem', 'true'); // Envia flag de remoção
+    if (removerImagem) data.append('remover_imagem', 'true');
 
     data.append('token', token || '');
 
@@ -189,7 +240,7 @@ export default function GestaoEventosMaster() {
       <Navigation />
       <main className="flex-1 max-w-[1600px] w-full mx-auto pt-24 pb-8 px-4 flex gap-6 items-start h-[calc(100vh-60px)]">
 
-        {/* LISTA ESQUERDA (COM ÍCONES VISUAIS) */}
+        {/* LISTA ESQUERDA */}
         <Card className="w-80 h-full flex flex-col border-none shadow-xl bg-white overflow-hidden shrink-0">
             <CardHeader className="bg-slate-900 text-white p-4 shrink-0">
                 <CardTitle className="text-sm font-bold uppercase flex justify-between items-center">Eventos <Button size="icon" variant="secondary" className="h-6 w-6" onClick={() => setSelectedEventId(null)}><Plus className="h-4 w-4" /></Button></CardTitle>
@@ -200,17 +251,9 @@ export default function GestaoEventosMaster() {
                     {eventos.map(evt => (
                         <div key={evt.id} onClick={() => setSelectedEventId(evt.id)} className={`p-3 rounded-lg cursor-pointer border transition-all ${selectedEventId === evt.id ? 'bg-blue-50 border-blue-200 shadow-sm' : 'border-transparent hover:bg-slate-50'}`}>
                             <div className="font-bold text-sm text-slate-800 line-clamp-1 mb-1">{evt.nome_evento}</div>
-
-                            {/* ÍCONES DE VISIBILIDADE (GÊNERO E TIPO) */}
                             <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-[10px] h-5 px-1.5 flex gap-1 items-center bg-white">
-                                    {evt.tipo === 'campeonato' ? <Trophy className="h-3 w-3 text-yellow-600"/> : <Medal className="h-3 w-3 text-slate-500"/>}
-                                    {evt.tipo}
-                                </Badge>
-                                <Badge variant="outline" className={`text-[10px] h-5 px-1.5 flex gap-1 items-center bg-white ${evt.genero === 'feminino' ? 'border-pink-200 text-pink-700' : 'border-blue-200 text-blue-700'}`}>
-                                    <User className="h-3 w-3" />
-                                    {evt.genero}
-                                </Badge>
+                                <Badge variant="outline" className="text-[10px] h-5 px-1.5 flex gap-1 items-center bg-white">{evt.tipo === 'campeonato' ? <Trophy className="h-3 w-3 text-yellow-600"/> : <Medal className="h-3 w-3 text-slate-500"/>}{evt.tipo}</Badge>
+                                <Badge variant="outline" className={`text-[10px] h-5 px-1.5 flex gap-1 items-center bg-white ${evt.genero === 'feminino' ? 'border-pink-200 text-pink-700' : 'border-blue-200 text-blue-700'}`}><User className="h-3 w-3" />{evt.genero}</Badge>
                             </div>
                         </div>
                     ))}
@@ -249,28 +292,27 @@ export default function GestaoEventosMaster() {
                             <div className="space-y-2"><Label>Descrição</Label><Textarea value={formData.descricao} onChange={e => setFormData({...formData, descricao: e.target.value})} rows={4}/></div>
                         </div>
 
-                        {/* BANNER COM REMOÇÃO/SUBSTITUIÇÃO */}
                         <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
                             <Label className="flex items-center gap-2 mb-4 text-blue-700 font-bold"><ImageIcon className="h-5 w-5"/> Banner Promocional</Label>
                             <div className={`aspect-[16/6] bg-white border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden relative group hover:border-blue-500 transition-colors ${previewBanner ? 'border-solid border-slate-200' : ''}`} onClick={() => document.getElementById('banner-input')?.click()}>
                                 {previewBanner ? (
                                     <>
                                         <img src={previewBanner} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold"><RefreshCw className="h-8 w-8 mb-2" />Clique para Substituir</div>
+                                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold"><Crop className="h-8 w-8 mb-2" />Clique para Recortar/Trocar</div>
                                         <button onClick={handleRemoveBanner} className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full shadow-lg z-10 hover:scale-110 transition-transform" title="Remover Banner"><Trash2 className="h-4 w-4" /></button>
                                     </>
                                 ) : (
                                     <div className="text-center text-slate-400"><Upload className="h-8 w-8 mx-auto mb-2 opacity-50"/><p className="text-xs">Clique para fazer upload</p></div>
                                 )}
-                                <input id="banner-input" type="file" className="hidden" accept="image/*" onChange={handleBannerChange}/>
+                                <input id="banner-input" type="file" className="hidden" accept="image/*" onChange={onFileChange}/>
                             </div>
-                            <p className="text-xs text-slate-400 mt-2">Dica: Use 1920x600px. Aparece na Home durante o evento.</p>
+                            <p className="text-xs text-slate-400 mt-2">Use o editor para ajustar o banner 1920x600.</p>
                         </div>
                     </div>
                     <div className="mt-8 flex justify-end"><Button size="lg" onClick={handleSaveOverview} disabled={loading} className="font-bold">{loading ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>} {selectedEventId ? 'SALVAR ALTERAÇÕES' : 'CRIAR EVENTO'}</Button></div>
                 </TabsContent>
 
-                {/* ABA 2: TIMES */}
+                {/* ABA 2: TIMES (CORRIGIDA) */}
                 <TabsContent value="times" className="flex-1 p-8 m-0 overflow-y-auto">
                     <div className="mb-6"><h3 className="text-lg font-bold text-slate-700">Inscrição de Times</h3><p className="text-sm text-slate-500">Ative os times que participarão.</p></div>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -304,9 +346,37 @@ export default function GestaoEventosMaster() {
             </Tabs>
         </Card>
 
-        {/* MODAL JOGO */}
+        {/* MODAL DE JOGO */}
         <Dialog open={isJogoModalOpen} onOpenChange={setIsJogoModalOpen}>
             <DialogContent className="max-w-lg"><DialogHeader><DialogTitle>{jogoForm.id ? 'Editar Jogo' : 'Novo Jogo'}</DialogTitle></DialogHeader><div className="grid gap-4 py-4"><div className="grid grid-cols-2 gap-4"><div className="space-y-2"><Label>Time A</Label><Select value={String(jogoForm.id_time_a)} onValueChange={v => setJogoForm({...jogoForm, id_time_a: v})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{timesDisponiveis.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.nome_time}</SelectItem>)}</SelectContent></Select></div><div className="space-y-2"><Label>Time B</Label><Select value={String(jogoForm.id_time_b)} onValueChange={v => setJogoForm({...jogoForm, id_time_b: v})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{timesDisponiveis.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.nome_time}</SelectItem>)}</SelectContent></Select></div></div><div className="grid grid-cols-2 gap-4"><div className="space-y-2"><Label>Data/Hora</Label><Input type="datetime-local" value={jogoForm.data_hora} onChange={e => setJogoForm({...jogoForm, data_hora: e.target.value})}/></div><div className="space-y-2"><Label>Local</Label><Input value={jogoForm.local_jogo} onChange={e => setJogoForm({...jogoForm, local_jogo: e.target.value})}/></div></div><div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded"><div className="space-y-2"><Label>Placar A</Label><Input type="number" value={jogoForm.placar_a} onChange={e => setJogoForm({...jogoForm, placar_a: e.target.value})}/></div><div className="space-y-2"><Label>Placar B</Label><Input type="number" value={jogoForm.placar_b} onChange={e => setJogoForm({...jogoForm, placar_b: e.target.value})}/></div></div></div><DialogFooter><Button onClick={handleSaveJogo}>Salvar</Button></DialogFooter></DialogContent>
+        </Dialog>
+
+        {/* MODAL DE RECORTE (CROPPER) */}
+        <Dialog open={isCropModalOpen} onOpenChange={setIsCropModalOpen}>
+            <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
+                <DialogHeader><DialogTitle>Ajustar Banner (1920x600)</DialogTitle></DialogHeader>
+                <div className="relative flex-1 bg-black rounded-lg overflow-hidden my-4">
+                    {cropImageSrc && (
+                        <Cropper
+                            image={cropImageSrc}
+                            crop={crop}
+                            zoom={zoom}
+                            aspect={16 / 6} 
+                            onCropChange={setCrop}
+                            onCropComplete={onCropComplete}
+                            onZoomChange={setZoom}
+                        />
+                    )}
+                </div>
+                <div className="flex items-center gap-4 px-4">
+                    <span className="text-sm font-bold text-slate-500">Zoom</span>
+                    <Slider defaultValue={[1]} min={1} max={3} step={0.1} value={[zoom]} onValueChange={(val) => setZoom(val[0])} className="flex-1" />
+                </div>
+                <DialogFooter className="mt-4">
+                    <Button variant="outline" onClick={() => setIsCropModalOpen(false)}>Cancelar</Button>
+                    <Button onClick={showCroppedImage}>Confirmar Recorte</Button>
+                </DialogFooter>
+            </DialogContent>
         </Dialog>
 
       </main>

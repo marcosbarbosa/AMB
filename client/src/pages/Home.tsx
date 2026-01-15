@@ -1,17 +1,24 @@
 /*
  * ==========================================================
- * Módulo: Home.tsx
- * Versão: 4.1 (Corrigido: Sintaxe escape + Suporte a Zoom)
+ * PROJETO: Portal AMB Amazonas (Basquete Master)
+ * ARQUIVO: client/src/pages/Home.tsx
+ * VERSÃO: 5.0 Prime (Integração HeroBanner Dinâmico)
+ * DATA: 14 de Janeiro de 2026
+ * DESCRIÇÃO: Página Inicial com Banner Gerenciável via Admin.
  * ==========================================================
  */
+
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 
-// Componentes da Home
-import { CarouselHero } from '@/components/CarouselHero'; 
+// --- ATUALIZAÇÃO: NOVO COMPONENTE DE BANNER ---
+// Removemos o CarouselHero e usamos o HeroBanner que conecta no banco
+import { HeroBanner } from '@/components/HeroBanner'; 
+
+// Componentes da Home (Mantidos)
 import { ParceirosCarrossel } from '@/components/ParceirosCarrossel'; 
 import { About } from '@/components/About';
 import { Stats } from '@/components/Stats';
@@ -23,7 +30,7 @@ import { ContactPreview } from '@/components/ContactPreview';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
-import { CalendarDays, MapPin, Trophy, X } from 'lucide-react';
+import { CalendarDays, Trophy, X } from 'lucide-react';
 
 const API_JOGOS = 'https://www.ambamazonas.com.br/api/get_jogos_home.php'; 
 
@@ -47,6 +54,7 @@ export default function Home() {
   const [loadingJogos, setLoadingJogos] = useState(true);
   const [imagemZoom, setImagemZoom] = useState<string | null>(null);
 
+  // Scroll suave para âncoras
   useEffect(() => {
     if (hash) {
       setTimeout(() => {
@@ -56,6 +64,7 @@ export default function Home() {
     }
   }, [hash]);
 
+  // Busca de Jogos em Destaque
   useEffect(() => {
     const fetchJogos = async () => {
       try {
@@ -79,11 +88,14 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background font-sans">
       <Navigation />
-      <main>
-        <CarouselHero /> 
 
+      <main>
+        {/* --- 1. HERO BANNER DINÂMICO (Substitui o CarouselHero) --- */}
+        <HeroBanner />
+
+        {/* --- 2. SEÇÃO DE JOGOS (Mantida) --- */}
         {!loadingJogos && jogos.length > 0 && (
           <section className="py-16 bg-slate-50 border-b border-slate-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -94,15 +106,17 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {jogos.map((jogo) => (
-                  <Card key={jogo.id} className="overflow-hidden bg-white shadow-sm border-slate-200">
+                  <Card key={jogo.id} className="overflow-hidden bg-white shadow-sm border-slate-200 hover:shadow-md transition-shadow">
                     <CardContent className="p-0">
                       <div className="bg-slate-900 text-white p-3 text-sm flex justify-between items-center px-6">
                          <div className="flex items-center gap-2">
                             <CalendarDays className="h-4 w-4 text-primary" />
                             <span>{formatData(jogo.data_jogo)} • {jogo.hora_jogo?.slice(0, 5)}</span>
                          </div>
+                         <div className="text-xs text-slate-300 uppercase tracking-wider">{jogo.local}</div>
                       </div>
                       <div className="p-6 flex items-center justify-between">
+                         {/* TIME A */}
                          <div className="flex flex-col items-center flex-1">
                             <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 bg-slate-100 rounded-full flex items-center justify-center p-2 border border-slate-200">
                                {jogo.logo_a ? (
@@ -111,11 +125,18 @@ export default function Home() {
                             </div>
                             <span className="font-bold text-slate-800 text-center text-sm">{jogo.time_a}</span>
                          </div>
+
+                         {/* PLACAR / VS */}
                          <div className="flex flex-col items-center px-2">
                             <div className="text-2xl sm:text-4xl font-black text-slate-900 font-mono">
                                {jogo.status === 'finalizado' ? `${jogo.placar_a}-${jogo.placar_b}` : 'VS'}
                             </div>
+                            <div className="mt-1 text-[10px] font-bold uppercase text-slate-400 tracking-widest">
+                                {jogo.status === 'finalizado' ? 'Final' : 'Em Breve'}
+                            </div>
                          </div>
+
+                         {/* TIME B */}
                          <div className="flex flex-col items-center flex-1">
                             <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 bg-slate-100 rounded-full flex items-center justify-center p-2 border border-slate-200">
                                {jogo.logo_b ? (
@@ -133,9 +154,8 @@ export default function Home() {
           </section>
         )}
 
-        {/* Passa a função de zoom para o componente carrossel */}
+        {/* --- 3. DEMAIS SEÇÕES (Mantidas) --- */}
         <ParceirosCarrossel onImageClick={(url: string) => setImagemZoom(url)} />
-
         <About />
         <Stats />
         <CTABanner />
@@ -143,11 +163,18 @@ export default function Home() {
         <ContactPreview />
       </main>
 
-      {/* MODAL DE ZOOM (LIGHTBOX) */}
+      {/* --- MODAL DE ZOOM (LIGHTBOX) --- */}
       <Dialog open={!!imagemZoom} onOpenChange={() => setImagemZoom(null)}>
         <DialogContent className="max-w-4xl bg-transparent border-none shadow-none flex justify-center items-center p-4 ring-0 focus:outline-none">
            <div className="relative">
-             <Button variant="secondary" size="icon" className="absolute -top-12 right-0 rounded-full bg-white/20 text-white hover:bg-white/40 border-none" onClick={() => setImagemZoom(null)}><X className="h-6 w-6"/></Button>
+             <Button 
+                variant="secondary" 
+                size="icon" 
+                className="absolute -top-12 right-0 rounded-full bg-white/20 text-white hover:bg-white/40 border-none backdrop-blur-sm" 
+                onClick={() => setImagemZoom(null)}
+             >
+                <X className="h-6 w-6"/>
+             </Button>
              {imagemZoom && (
                 <img 
                     src={imagemZoom} 
@@ -159,6 +186,7 @@ export default function Home() {
            </div>
         </DialogContent>
       </Dialog>
+
       <Footer />
     </div>
   );

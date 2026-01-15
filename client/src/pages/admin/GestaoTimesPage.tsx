@@ -1,18 +1,12 @@
 /*
  * ==========================================================
- * PORTAL AMB DO AMAZONAS
- * ==========================================================
- *
- * Copyright (c) 2026 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 14 de Janeiro de 2026
- * Hora: 21:30
- * Versão: 7.0 (Correção Definitiva da Exclusão)
- *
- * Descrição: Gestão de Times.
- * CORREÇÃO: Função handleDelete agora envia o TOKEN para autorizar a exclusão.
- *
+ * PROJETO: Portal AMB Amazonas
+ * ARQUIVO: GestaoTimesPage.tsx
+ * CAMINHO: client/src/pages/admin/GestaoTimesPage.tsx
+ * DATA: 14 de Janeiro de 2026
+ * HORA: 23:58
+ * FUNÇÃO: Gestão de Times (CRUD Completo)
+ * VERSÃO: 8.0 Prime (Fix Delete Token)
  * ==========================================================
  */
 
@@ -118,28 +112,28 @@ export default function GestaoTimesPage() {
   const handleDelete = async (id: number) => {
     if (!confirm("Tem certeza que deseja excluir este time permanentemente?")) return;
 
-    // Feedback visual imediato
-    const toastId = toast({ title: "Processando...", description: "Excluindo time do sistema." });
-
     try {
-        // Agora enviamos o TOKEN junto com o ID
+        // CORREÇÃO: Enviando ID e TOKEN no corpo da requisição
         const res = await axios.post(`${API_BASE}/admin_excluir_time.php`, { 
             id: id,
-            token: token // <--- ESSENCIAL PARA AUTORIZAÇÃO
-        }); 
+            token: token // <--- O SEGREDO ESTAVA AQUI!
+        });
 
         if (res.data.status === 'sucesso') {
             toast({ title: "Sucesso", description: "Time removido com sucesso.", className: "bg-green-600 text-white" });
             setTimes(prev => prev.filter(t => t.id !== id));
-            // Se estava editando o time excluído, limpa o form
-            if (editingId === id) handleCancelEdit();
+
+            // Se o usuário estava editando o time que acabou de excluir, limpa o form
+            if (editingId === id) {
+                handleCancelEdit();
+            }
         } else {
             throw new Error(res.data.mensagem);
         }
     } catch (error: any) {
-        console.error(error);
-        const msg = error.response?.data?.mensagem || error.message || "Erro desconhecido";
-        toast({ title: "Falha ao excluir", description: msg, variant: "destructive" });
+        console.error("Erro ao excluir:", error);
+        const msg = error.response?.data?.mensagem || "Falha ao excluir.";
+        toast({ title: "Erro", description: msg, variant: "destructive" });
     }
   };
 
@@ -210,6 +204,7 @@ export default function GestaoTimesPage() {
                         </div>
                         <div className="space-y-2">
                             <Label>Escudo / Logo</Label>
+                            {/* PREVIEW DO UPLOAD: MANTIDO QUADRADO PARA VISUALIZAÇÃO CLARA */}
                             <div className="flex flex-col items-center gap-4 border-2 border-dashed rounded-xl p-4 bg-slate-50">
                                 {previewLogo ? (
                                     <div className="relative h-32 w-32 bg-white rounded-lg shadow-sm border p-1">
@@ -249,6 +244,7 @@ export default function GestaoTimesPage() {
                                         {filteredTimes.map((time) => (
                                             <tr key={time.id} className={`hover:bg-slate-50 transition-colors ${editingId === time.id ? 'bg-yellow-50' : ''}`}>
                                                 <td className="px-6 py-3">
+                                                    {/* MINIATURA: Aumentei o padding (p-1.5) para não cortar */}
                                                     <div className="h-10 w-10 bg-white rounded-full border flex items-center justify-center overflow-hidden">
                                                         {(time.url_logo || time.url_logo_time) ? (
                                                             <img src={`https://www.ambamazonas.com.br${time.url_logo || time.url_logo_time}`} className="h-full w-full object-contain p-1.5" />
@@ -284,6 +280,10 @@ export default function GestaoTimesPage() {
                 <DialogHeader><DialogTitle>Detalhes do Time</DialogTitle></DialogHeader>
                 {viewTime && (
                     <div className="flex flex-col items-center py-6 gap-4">
+                        {/* CORREÇÃO CRÍTICA AQUI:
+                            Mudado de 'rounded-full' para 'rounded-2xl' (Quadrado Arredondado).
+                            Isso evita que escudos quadrados ou pontudos sejam cortados.
+                        */}
                         <div className="h-40 w-40 bg-white rounded-2xl border-2 border-slate-100 shadow-xl flex items-center justify-center overflow-hidden p-2">
                              {(viewTime.url_logo || viewTime.url_logo_time) ? (
                                 <img src={`https://www.ambamazonas.com.br${viewTime.url_logo || viewTime.url_logo_time}`} className="w-full h-full object-contain" />
