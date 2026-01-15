@@ -1,16 +1,17 @@
 /*
  * ==========================================================
  * PROJETO: Portal AMB Amazonas (Basquete Master)
- * STATUS: Versão Estável 6.5 - "Momento Sublime"
- * DATA: 12 de Janeiro de 2026
  * ARQUIVO: Navigation.tsx
  * CAMINHO: client/src/components/Navigation.tsx
- * FUNÇÃO: Navbar com Proteção contra Erro 'split' e Link Transparência.
+ * DATA: 15 de Janeiro de 2026
+ * HORA: 14:20
+ * FUNÇÃO: Navbar com link 'Eventos' adicionado.
+ * VERSÃO: 7.1 Prime
  * ==========================================================
  */
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Edit3, LogOut, LayoutDashboard, Lock, Handshake, FileText } from 'lucide-react'; 
+import { Menu, X, User, Edit3, LogOut, LayoutDashboard, Lock, Handshake, CalendarDays } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import ambLogo from '../assets/logo-amb.png'; 
@@ -20,10 +21,11 @@ export function Navigation() {
   const location = useLocation();
   const { isAuthenticated, atleta, logout } = useAuth();
 
-  // Itens de navegação atualizados com Transparência
+  // ATUALIZAÇÃO: 'Eventos' inserido na ordem solicitada
   const navItems = [
     { label: 'Início', href: '/' },
     { label: 'Sobre', href: '/#sobre' },
+    { label: 'Eventos', href: '/eventos' }, // NOVO LINK
     { label: 'Transparência', href: '/transparencia' }, 
     { label: 'Parceiros', href: '/parceiros' }, 
     { label: 'Contato', href: '/contato' },
@@ -99,7 +101,6 @@ export function Navigation() {
             <div className="flex items-center gap-2">
               {isAuthenticated && atleta ? (
                 <div className="flex items-center gap-2">
-                  {/* CORREÇÃO PARA ERRO SPLIT: Proteção com Optional Chaining */}
                   <span className="text-sm text-muted-foreground hidden lg:inline">
                     Olá, {atleta?.nome_completo ? atleta.nome_completo.split(' ')[0] : 'Associado'} 
                   </span>

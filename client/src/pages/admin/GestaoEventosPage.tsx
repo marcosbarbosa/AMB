@@ -1,67 +1,44 @@
 /*
  * ==========================================================
- * PORTAL AMB DO AMAZONAS
- * ==========================================================
- *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 8 de novembro de 2025
- * Hora: 00:10
- * Versão: 3.2 (Plano B - Modularizado)
- * Tarefa: 300 (Módulo 29-C)
- *
- * Descrição: Página de Gestão de Eventos (/admin/eventos).
- * ATUALIZADO: Adiciona o botão "Tabela de Jogos".
- *
+ * PROJETO: Portal AMB DO AMAZONAS
+ * ARQUIVO: GestaoEventosPage.tsx
+ * CAMINHO: client/src/pages/admin/GestaoEventosPage.tsx
+ * DATA: 15 de Janeiro de 2026
+ * HORA: 22:15
+ * FUNÇÃO: Gestão Completa (Eventos, Times, Jogos+MVP, Boletins)
+ * VERSÃO: 4.0 Prime (MVP + Boletins + Criar Time)
  * ==========================================================
  */
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext'; 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom'; 
 import { Button } from '@/components/ui/button'; 
 import { Input } from '@/components/ui/input'; 
 import { Label } from '@/components/ui/label'; 
 import { Textarea } from '@/components/ui/textarea'; 
-import { Check, X, Loader2, ArrowLeft, Edit, Trash2, PlusCircle, Newspaper, Users, CalendarClock } from 'lucide-react'; // Adicionado CalendarClock
+import { 
+  Check, X, Loader2, ArrowLeft, Edit, Trash2, PlusCircle, Newspaper, 
+  Users, CalendarClock, Trophy, Star, FileText, Download, Upload, Image as ImageIcon 
+} from 'lucide-react'; 
 import axios from 'axios'; 
 import { useToast } from '@/hooks/use-toast';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose,
 } from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
-// --- APIs (Apenas CRUD de Eventos) ---
-const LISTAR_EVENTOS_API_URL = 'https://www.ambamazonas.com.br/api/listar_eventos.php'; 
-const CRIAR_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_criar_evento.php';
-const APAGAR_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_apagar_evento.php';
-const ATUALIZAR_EVENTO_API_URL = 'https://www.ambamazonas.com.br/api/admin_atualizar_evento.php';
+// --- APIs ---
+const API_BASE = 'https://www.ambamazonas.com.br/api';
 
 // --- Interfaces ---
 interface Evento {
@@ -69,452 +46,303 @@ interface Evento {
   data_inicio: string; data_fim: string | null; descricao: string | null;
   tipo: 'campeonato' | 'torneio';
 }
-interface EventoFormData {
-  nome_evento: string; genero: 'masculino' | 'feminino' | 'misto';
-  tipo: 'campeonato' | 'torneio';
-  data_inicio: string; data_fim: string; descricao: string;
+interface Boletim { id: number; titulo: string; rodada: string; url_arquivo: string; }
+interface Time { id: number; nome_time: string; url_logo: string | null; }
+interface Jogo { 
+    id: number; id_time_a: string; id_time_b: string; 
+    nome_time_a?: string; nome_time_b?: string; 
+    placar_a: string; placar_b: string; 
+    data_hora: string; local_jogo: string;
+    mvp_nome?: string; mvp_foto?: string; // Campos MVP
 }
-interface EventoEditFormData extends EventoFormData { id: number; }
-
 
 export default function GestaoEventosPage() {
   const { isAuthenticated, atleta, token, isLoading: isAuthLoading } = useAuth(); 
   const navigate = useNavigate(); 
   const { toast } = useToast();
 
+  // Estados Gerais
   const [eventos, setEventos] = useState<Evento[]>([]);
-  const [isLoadingEventos, setIsLoadingEventos] = useState(true);
-  const [erroEventos, setErroEventos] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false); 
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 
-  const initialEventoFormState: EventoFormData = {
-    nome_evento: '', genero: 'misto', tipo: 'campeonato', 
-    data_inicio: '', data_fim: '', descricao: ''
-  };
-  const [eventoFormData, setEventoFormData] = useState(initialEventoFormState);
+  // Estados para Sub-Funcionalidades
+  const [timesDisponiveis, setTimesDisponiveis] = useState<Time[]>([]);
+  const [timesInscritosIds, setTimesInscritosIds] = useState<number[]>([]);
+  const [jogos, setJogos] = useState<Jogo[]>([]);
+  const [boletins, setBoletins] = useState<Boletim[]>([]);
 
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [eventoParaEditar, setEventoParaEditar] = useState<EventoEditFormData | null>(null);
+  // Modais
+  const [isNewTimeModalOpen, setIsNewTimeModalOpen] = useState(false);
+  const [isJogoModalOpen, setIsJogoModalOpen] = useState(false);
 
-  // 1. FUNÇÃO DE FETCH DE EVENTOS
-  const fetchEventos = useCallback(async () => {
-    setIsLoadingEventos(true);
-    setErroEventos(null);
-    try {
-      const response = await axios.get(LISTAR_EVENTOS_API_URL); 
-      if (response.data.status === 'sucesso') {
-        setEventos(response.data.eventos || []);
-      } else {
-        throw new Error(response.data.mensagem || 'Erro ao buscar eventos');
-      }
-    } catch (error) {
-      console.error("Erro ao buscar eventos:", error);
-      setErroEventos('Não foi possível carregar os eventos.');
-    } finally {
-      setIsLoadingEventos(false);
-    }
-  }, []);
+  // Forms
+  const [jogoForm, setJogoForm] = useState<any>({ id: 0, id_time_a: '', id_time_b: '', data_hora: '', local_jogo: '', placar_a: '', placar_b: '', mvp_nome: '' });
+  const [mvpFile, setMvpFile] = useState<File | null>(null); // Foto MVP
+  const [newTimeForm, setNewTimeForm] = useState({ nome: '', sigla: '' });
+  const [newTimeLogo, setNewTimeLogo] = useState<File | null>(null);
 
-  // Efeitos de Segurança e Dados
+  const [boletimForm, setBoletimForm] = useState({ titulo: '', rodada: '' });
+  const [boletimFile, setBoletimFile] = useState<File | null>(null);
+
   useEffect(() => {
-    if (isAuthLoading) return; 
-    if (!isAuthenticated || (isAuthenticated && atleta?.role !== 'admin')) { 
-      toast({ title: 'Acesso Negado', description: 'Você não tem permissão para ver esta página.', variant: 'destructive' });
-      navigate('/'); 
-    } else {
-      fetchEventos(); 
+    if (isAuthenticated && atleta?.role === 'admin') {
+      fetchEventos();
+      fetchTimesGerais();
     }
-  }, [isAuthenticated, atleta, isAuthLoading, navigate, toast, fetchEventos]); 
+  }, [isAuthenticated]);
 
-  // Handlers de Formulário (Criação)
-  const handleEventoFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = event.target;
-    setEventoFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleEventoSelectChange = (name: string, value: string) => {
-     setEventoFormData(prev => ({ ...prev, [name]: value as any }));
-  };
-
-  const handleCriarEvento = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!token) return;
-    setIsSubmitting(true);
-
-    const dataToSend = { ...eventoFormData, 
-      data_fim: eventoFormData.data_fim || null, 
-      descricao: eventoFormData.descricao || null 
-    };
-
-    const payload = { token: token, data: dataToSend };
-
+  // --- FETCHS ---
+  const fetchEventos = async () => {
     try {
-      const response = await axios.post(CRIAR_EVENTO_API_URL, payload);
-      if (response.data.status === 'sucesso') {
-        toast({ title: 'Sucesso!', description: 'Evento criado com sucesso!' });
-        setEventoFormData(initialEventoFormState); 
-        fetchEventos(); 
-      } else { throw new Error(response.data.mensagem); }
-    } catch (error: any) {
-      let msg = error.response?.data?.mensagem || 'Não foi possível criar o evento.';
-      toast({ title: 'Erro', description: msg, variant: 'destructive' });
-    } finally {
-      setIsSubmitting(false);
-    }
+        const res = await axios.get(`${API_BASE}/listar_eventos.php`);
+        if (res.data.status === 'sucesso') setEventos(res.data.eventos || []);
+    } catch (e) { console.error(e); } finally { setIsLoading(false); }
   };
 
-  // Handler para Apagar Evento
-  const handleApagarEvento = async (idEvento: number) => {
-    if (!token) return;
+  const fetchTimesGerais = async () => {
     try {
-      const payload = { token: token, data: { id_evento: idEvento }};
-      const response = await axios.post(APAGAR_EVENTO_API_URL, payload);
-      if (response.data.status === 'sucesso') {
-        toast({ title: 'Sucesso!', description: 'Evento apagado com sucesso.' });
-        setEventos(prev => prev.filter(evento => evento.id !== idEvento)); 
-      } else { throw new Error(response.data.mensagem); }
-    } catch (error: any) {
-      let msg = error.response?.data?.mensagem || 'Não foi possível apagar o evento.';
-      toast({ title: 'Erro', description: msg, variant: 'destructive' });
-    }
+        const res = await axios.get(`${API_BASE}/listar_times_admin.php`, { params: { token } });
+        if (res.data.status === 'sucesso') setTimesDisponiveis(res.data.times);
+    } catch (e) { console.error(e); }
   };
 
-  // Handlers de Edição (Modal)
-  const handleAbrirModalEditar = (evento: Evento) => {
-    setEventoParaEditar({
-      ...evento,
-      id: evento.id, 
-      data_inicio: evento.data_inicio ? evento.data_inicio.split('T')[0] : '',
-      data_fim: evento.data_fim ? evento.data_fim.split('T')[0] : '',
-      descricao: evento.descricao || '',
-    });
-    setIsEditModalOpen(true);
+  const fetchDetalhesEvento = async (id: number) => {
+      setSelectedEventId(id);
+      try {
+          const res = await axios.get(`${API_BASE}/public_get_evento_detalhes.php?id=${id}`);
+          if (res.data.status === 'sucesso') {
+              const dados = res.data.dados;
+              // Mapeia inscritos se houver lógica no back, por enquanto carrega tudo no select
+              setJogos(dados.jogos || []);
+              setBoletins(dados.boletins || []);
+          }
+      } catch (e) { console.error(e); }
   };
 
-  const handleEditFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = event.target;
-    if (eventoParaEditar) {
-      setEventoParaEditar(prev => ({ ...prev!, [name]: value }));
-    }
+  // --- AÇÕES DE TIMES ---
+  const handleCriarTime = async () => {
+      if(!newTimeForm.nome) return toast({ title: "Erro", description: "Nome obrigatório", variant: "destructive" });
+      const data = new FormData();
+      data.append('nome', newTimeForm.nome);
+      data.append('sigla', newTimeForm.sigla);
+      if(newTimeLogo) data.append('logo', newTimeLogo);
+      data.append('token', token || '');
+
+      try {
+          const res = await axios.post(`${API_BASE}/admin_criar_time.php`, data);
+          if(res.data.status === 'sucesso') {
+              toast({ title: "Time Criado!" });
+              setIsNewTimeModalOpen(false);
+              fetchTimesGerais();
+              setNewTimeForm({ nome: '', sigla: '' }); setNewTimeLogo(null);
+          }
+      } catch(e) { toast({ title: "Erro", variant: "destructive" }); }
   };
 
-  const handleEditSelectChange = (name: string, value: string) => {
-     if (eventoParaEditar) {
-      setEventoParaEditar(prev => ({ ...prev!, [name]: value as any }));
-    }
+  // --- AÇÕES DE JOGOS E MVP ---
+  const handleSaveJogo = async () => {
+      if(!selectedEventId) return;
+
+      const data = new FormData();
+      data.append('id', jogoForm.id.toString());
+      data.append('id_evento', selectedEventId.toString());
+      data.append('id_time_a', jogoForm.id_time_a);
+      data.append('id_time_b', jogoForm.id_time_b);
+      data.append('data_hora', jogoForm.data_hora);
+      data.append('local_jogo', jogoForm.local_jogo);
+      data.append('placar_a', jogoForm.placar_a);
+      data.append('placar_b', jogoForm.placar_b);
+      data.append('mvp_nome', jogoForm.mvp_nome);
+      if(mvpFile) data.append('foto', mvpFile); // FOTO DO MVP
+      data.append('token', token || '');
+
+      // Endpoint unificado ou separado. Vou usar o admin_salvar_jogo.php modificado ou admin_salvar_mvp separado.
+      // Assumindo que admin_salvar_jogo.php agora aceita FormData e trata MVP.
+      try {
+          // Salva Jogo básico
+          const resJogo = await axios.post(`${API_BASE}/admin_salvar_jogo.php`, data); // Precisa ser adaptado no back para receber FormData
+
+          // Se tiver MVP e ID do jogo (update ou create), chama o endpoint específico do MVP se o jogo foi salvo
+          if(resJogo.data.status === 'sucesso') {
+             if(jogoForm.mvp_nome) {
+                 // Se for novo, precisamos do ID retornado. Se for edição, usamos jogoForm.id
+                 const jogoIdFinal = jogoForm.id || resJogo.data.id_jogo; 
+                 data.append('jogo_id', jogoIdFinal);
+                 await axios.post(`${API_BASE}/admin_salvar_mvp.php`, data);
+             }
+             toast({ title: "Jogo e MVP Salvos!" });
+             setIsJogoModalOpen(false);
+             fetchDetalhesEvento(selectedEventId);
+          }
+      } catch(e) { toast({ title: "Erro ao salvar", variant: "destructive" }); }
   };
 
-  const handleSalvarEdicaoEvento = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); 
-    if (!token || !eventoParaEditar) return;
-    setIsSubmitting(true);
+  // --- AÇÕES DE BOLETINS ---
+  const handleUploadBoletim = async () => {
+      if(!selectedEventId || !boletimFile || !boletimForm.titulo) return toast({ title: "Dados incompletos", variant: "destructive" });
 
-    const payload = {
-      token: token,
-      data: {
-        id_evento: eventoParaEditar.id, 
-        nome_evento: eventoParaEditar.nome_evento,
-        genero: eventoParaEditar.genero,
-        tipo: eventoParaEditar.tipo,
-        data_inicio: eventoParaEditar.data_inicio,
-        data_fim: eventoParaEditar.data_fim || null,
-        descricao: eventoParaEditar.descricao || null,
-      }
-    };
+      const data = new FormData();
+      data.append('evento_id', selectedEventId.toString());
+      data.append('titulo', boletimForm.titulo);
+      data.append('rodada', boletimForm.rodada);
+      data.append('arquivo', boletimFile);
+      data.append('token', token || '');
 
-    try {
-      const response = await axios.post(ATUALIZAR_EVENTO_API_URL, payload);
-      if (response.data.status === 'sucesso' || response.data.status === 'info') {
-        toast({ title: 'Sucesso!', description: response.data.mensagem });
-        setIsEditModalOpen(false); 
-        fetchEventos(); 
-      } else {
-        throw new Error(response.data.mensagem);
-      }
-    } catch (error: any) {
-      let msg = error.response?.data?.mensagem || 'Não foi possível atualizar o evento.';
-      toast({ title: 'Erro', description: msg, variant: 'destructive' });
-    } finally {
-      setIsSubmitting(false);
-    }
+      try {
+          const res = await axios.post(`${API_BASE}/admin_salvar_boletim.php`, data);
+          if(res.data.status === 'sucesso') {
+              toast({ title: "Boletim Enviado!" });
+              setBoletimForm({ titulo: '', rodada: '' }); setBoletimFile(null);
+              fetchDetalhesEvento(selectedEventId);
+          }
+      } catch(e) { toast({ title: "Erro no upload", variant: "destructive" }); }
   };
 
-  // Estado de Carregamento Principal
-  if (isAuthLoading || isLoadingEventos) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="mr-2 h-8 w-8 animate-spin" />
-        <p className="text-muted-foreground">A carregar gestão de eventos...</p>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin"/></div>;
 
-  // Renderização (JSX)
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <Navigation />
-      <main className="pt-16"> 
-        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <section className="py-16 lg:py-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              {/* Link para Voltar */}
-              <div className="mb-8">
-                <Link 
-                  to="/admin/painel" 
-                  className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Voltar ao Painel de Administração
-                </Link>
-              </div>
+      <main className="pt-24 pb-12 px-4 max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-black text-slate-800 uppercase">Gestão de Eventos</h1>
+            <Button variant="outline" onClick={() => navigate('/admin/painel')}><ArrowLeft className="mr-2 h-4 w-4"/> Voltar</Button>
+        </div>
 
-              <h1 className="text-3xl font-semibold font-accent text-foreground mb-6">
-                Gestão de Eventos
-              </h1>
-
-                {/* Grid 1: Criar / Listar Eventos */}
-                <div className="grid lg:grid-cols-2 gap-12">
-
-                  {/* Coluna 1: Formulário de Novo Evento */}
-                  <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-                    <h3 className="text-xl font-semibold text-foreground mb-4">
-                      1. Criar Evento
-                    </h3>
-                    <form onSubmit={handleCriarEvento} className="space-y-4">
-                      {/* ... (Formulário de Evento mantido) ... */}
-                      <div className="space-y-2">
-                        <Label htmlFor="nome_evento">Nome do Evento</Label>
-                        <Input id="nome_evento" name="nome_evento" required 
-                               value={eventoFormData.nome_evento} onChange={handleEventoFormChange} />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="genero">Gênero</Label>
-                          <Select name="genero" required
-                                  value={eventoFormData.genero} 
-                                  onValueChange={(value) => handleEventoSelectChange('genero', value)}
-                          >
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="misto">Misto</SelectItem>
-                              <SelectItem value="masculino">Masculino</SelectItem>
-                              <SelectItem value="feminino">Feminino</SelectItem>
-                            </SelectContent>
-                          </Select>
+        <div className="grid lg:grid-cols-3 gap-8">
+            {/* LISTA DE EVENTOS (LATERAL) */}
+            <Card className="lg:col-span-1 h-fit">
+                <CardHeader><CardTitle>Selecione o Evento</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                    {eventos.map(evt => (
+                        <div key={evt.id} onClick={() => fetchDetalhesEvento(evt.id)} className={`p-3 rounded border cursor-pointer hover:bg-slate-100 ${selectedEventId === evt.id ? 'bg-blue-50 border-blue-500' : ''}`}>
+                            <div className="font-bold">{evt.nome_evento}</div>
+                            <div className="text-xs text-slate-500">{evt.tipo} • {evt.genero}</div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="tipo">Tipo</Label>
-                          <Select name="tipo" required
-                                  value={eventoFormData.tipo} 
-                                  onValueChange={(value) => handleEventoSelectChange('tipo', value)}
-                          >
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="campeonato">Campeonato</SelectItem>
-                              <SelectItem value="torneio">Torneio</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="data_inicio">Data de Início</Label>
-                          <Input id="data_inicio" name="data_inicio" type="date" required 
-                                 value={eventoFormData.data_inicio} onChange={handleEventoFormChange} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="data_fim">Data de Fim (Opcional)</Label>
-                          <Input id="data_fim" name="data_fim" type="date"
-                                 value={eventoFormData.data_fim} onChange={handleEventoFormChange} />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="descricao">Descrição (Opcional)</Label>
-                        <Textarea id="descricao" name="descricao" rows={4}
-                                  value={eventoFormData.descricao} onChange={handleEventoFormChange} />
-                      </div>
-                      <Button type="submit" className="w-full" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isSubmitting ? 'A criar...' : 'Criar Evento'}
-                        <PlusCircle className="ml-2 h-4 w-4" />
-                      </Button>
-                    </form>
-                  </div>
+                    ))}
+                </CardContent>
+            </Card>
 
-                  {/* Coluna 2: Lista de Eventos */}
-                  <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-                    <h3 className="text-xl font-semibold text-foreground mb-4">
-                      Eventos Cadastrados ({eventos.length})
-                    </h3>
-                    {isLoadingEventos && <p>A carregar eventos...</p>}
-                    {erroEventos && <p className="text-red-600">{erroEventos}</p>}
-                    {!isLoadingEventos && !erroEventos && (
-                      <ul className="space-y-4 max-h-[600px] overflow-y-auto">
-                        {eventos.map((evento) => (
-                          <li key={evento.id} className="border-b border-border pb-4 last:border-b-0">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h4 className="font-medium text-foreground">{evento.nome_evento}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  Início: {new Date(evento.data_inicio).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}
-                                </p>
-                              </div>
-                              <div className="flex gap-2 flex-shrink-0">
-                                 {/* 1. Botão Editar */}
-                                 <DialogTrigger asChild>
-                                   <Button 
-                                     variant="outline" size="icon" className="h-8 w-8" 
-                                     title="Editar Evento"
-                                     onClick={() => handleAbrirModalEditar(evento)}
-                                   >
-                                     <Edit className="h-4 w-4" />
-                                   </Button>
-                                 </DialogTrigger>
+            {/* ÁREA DE TRABALHO */}
+            {selectedEventId ? (
+                <Card className="lg:col-span-2">
+                    <CardHeader><CardTitle>Painel do Evento</CardTitle></CardHeader>
+                    <CardContent>
+                        <Tabs defaultValue="jogos">
+                            <TabsList className="mb-4">
+                                <TabsTrigger value="jogos">Jogos & MVP</TabsTrigger>
+                                <TabsTrigger value="boletins">Boletins</TabsTrigger>
+                                <TabsTrigger value="times">Times</TabsTrigger>
+                            </TabsList>
 
-                                 {/* 2. Botão Inscrever Times */}
-                                 <Button 
-                                   variant="outline" size="icon" className="h-8 w-8" 
-                                   title="Inscrever Times no Evento"
-                                   onClick={() => navigate(`/admin/eventos/inscricoes/${evento.id}`)}
-                                 >
-                                   <Users className="h-4 w-4" />
-                                 </Button>
+                            {/* ABA JOGOS */}
+                            <TabsContent value="jogos">
+                                <div className="flex justify-end mb-4"><Button onClick={() => { setJogoForm({ id: 0, id_time_a: '', id_time_b: '', data_hora: '', local_jogo: '', placar_a: '', placar_b: '', mvp_nome: '' }); setMvpFile(null); setIsJogoModalOpen(true); }}><PlusCircle className="mr-2 h-4 w-4"/> Novo Jogo</Button></div>
+                                <div className="space-y-2">
+                                    {jogos.map(jogo => (
+                                        <div key={jogo.id} className="p-3 border rounded flex justify-between items-center bg-white">
+                                            <div>
+                                                <div className="font-bold text-sm">{jogo.nome_time_a} vs {jogo.nome_time_b}</div>
+                                                <div className="text-xs text-slate-500">{new Date(jogo.data_hora).toLocaleDateString()} • {jogo.local_jogo}</div>
+                                                {jogo.mvp_nome && <Badge variant="secondary" className="mt-1 text-[10px] bg-yellow-100 text-yellow-800"><Star className="h-3 w-3 mr-1"/> MVP: {jogo.mvp_nome}</Badge>}
+                                            </div>
+                                            <Button variant="ghost" size="sm" onClick={() => { setJogoForm(jogo); setIsJogoModalOpen(true); }}><Edit className="h-4 w-4"/></Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </TabsContent>
 
-                                 {/* 3. Botão Tabela de Jogos (NOVO) */}
-                                 <Button 
-                                   variant="outline" size="icon" className="h-8 w-8" 
-                                   title="Gerir Tabela de Jogos"
-                                   onClick={() => navigate(`/admin/eventos/jogos/${evento.id}`)}
-                                 >
-                                   <CalendarClock className="h-4 w-4" />
-                                 </Button>
+                            {/* ABA BOLETINS */}
+                            <TabsContent value="boletins">
+                                <div className="bg-slate-50 p-4 rounded-lg mb-6 border">
+                                    <h4 className="font-bold text-sm mb-3">Publicar Novo Boletim</h4>
+                                    <div className="grid gap-3">
+                                        <Input placeholder="Título (ex: Boletim 01)" value={boletimForm.titulo} onChange={e => setBoletimForm({...boletimForm, titulo: e.target.value})} />
+                                        <Input placeholder="Rodada (ex: Fase de Grupos)" value={boletimForm.rodada} onChange={e => setBoletimForm({...boletimForm, rodada: e.target.value})} />
+                                        <Input type="file" accept=".pdf" onChange={e => setBoletimFile(e.target.files?.[0] || null)} />
+                                        <Button onClick={handleUploadBoletim}><Upload className="mr-2 h-4 w-4"/> Enviar PDF</Button>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    {boletins.map(bol => (
+                                        <div key={bol.id} className="flex justify-between items-center p-3 border rounded bg-white">
+                                            <div className="flex items-center gap-3">
+                                                <FileText className="text-red-500 h-5 w-5"/>
+                                                <div><div className="font-bold text-sm">{bol.titulo}</div><div className="text-xs text-slate-500">{bol.rodada}</div></div>
+                                            </div>
+                                            <Button variant="ghost" size="sm" onClick={() => window.open(`https://www.ambamazonas.com.br${bol.url_arquivo}`)}><Download className="h-4 w-4"/></Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </TabsContent>
 
-                                 {/* 4. Botão Gerir Conteúdo */}
-                                 <Button 
-                                   variant="outline" size="icon" className="h-8 w-8" 
-                                   title="Gerir Posts e Boletins"
-                                   onClick={() => navigate(`/admin/eventos/conteudo/${evento.id}`)}
-                                 >
-                                   <Newspaper className="h-4 w-4" />
-                                 </Button>
+                            {/* ABA TIMES (Com Criar Novo) */}
+                            <TabsContent value="times">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h4 className="font-bold">Times no Evento</h4>
+                                    <Button variant="outline" size="sm" onClick={() => setIsNewTimeModalOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/> Cadastrar Time Novo</Button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {timesDisponiveis.map(time => (
+                                        <div key={time.id} className="p-2 border rounded flex items-center gap-2">
+                                            <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center overflow-hidden">
+                                                {time.url_logo ? <img src={`https://www.ambamazonas.com.br/uploads/logos_times/${time.url_logo}`} className="h-full w-full object-contain"/> : <Users className="h-4 w-4"/>}
+                                            </div>
+                                            <span className="text-sm font-medium">{time.nome_time}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </TabsContent>
+                        </Tabs>
+                    </CardContent>
+                </Card>
+            ) : (
+                <div className="lg:col-span-2 flex items-center justify-center text-slate-400">Selecione um evento para gerenciar</div>
+            )}
+        </div>
 
-                                 {/* 5. Botão Apagar */}
-                                 <AlertDialog>
-                                   <AlertDialogTrigger asChild>
-                                     <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Apagar Evento">
-                                       <Trash2 className="h-4 w-4" />
-                                     </Button>
-                                   </AlertDialogTrigger>
-                                   <AlertDialogContent>
-                                     <AlertDialogHeader>
-                                       <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
-                                       <AlertDialogDescription>
-                                         Esta ação não pode ser desfeita. Isto irá apagar permanentemente o evento: 
-                                         <br/><strong>{evento.nome_evento}</strong>
-                                       </AlertDialogDescription>
-                                     </AlertDialogHeader>
-                                     <AlertDialogFooter>
-                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                       <AlertDialogAction 
-                                          className="bg-destructive hover:bg-destructive/90"
-                                          onClick={() => handleApagarEvento(evento.id)}
-                                       >
-                                         Sim, apagar evento
-                                       </AlertDialogAction>
-                                     </AlertDialogFooter>
-                                   </AlertDialogContent>
-                                 </AlertDialog>
-                              </div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-
-              {/* O <DialogContent> (Modal de Edição) FICA AQUI DENTRO */}
-              <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
-                  <DialogTitle>Editar Evento</DialogTitle>
-                  <DialogDescription>
-                    Altere os detalhes do evento: {eventoParaEditar?.nome_evento}
-                  </DialogDescription>
-                </DialogHeader>
-
-                {eventoParaEditar && (
-                  <form onSubmit={(e) => { e.preventDefault(); handleSalvarEdicaoEvento(e); }} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-nome_evento">Nome do Evento</Label>
-                      <Input id="edit-nome_evento" name="nome_evento" 
-                             value={eventoParaEditar.nome_evento} 
-                             onChange={handleEditFormChange} />
-                    </div>
-                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-genero">Gênero</Label>
-                            <Select name="genero" 
-                                    value={eventoParaEditar.genero} 
-                                    onValueChange={(value) => handleEditSelectChange('genero', value)}
-                            >
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="misto">Misto</SelectItem>
-                                <SelectItem value="masculino">Masculino</SelectItem>
-                                <SelectItem value="feminino">Feminino</SelectItem>
-                              </SelectContent>
-                            </Select>
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="edit-tipo">Tipo</Label>
-                            <Select name="tipo" 
-                                    value={eventoParaEditar.tipo} 
-                                    onValueChange={(value) => handleEditSelectChange('tipo', value)}
-                            >
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="campeonato">Campeonato</SelectItem>
-                                <SelectItem value="torneio">Torneio</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                     </div>
+        {/* MODAL NOVO JOGO / MVP */}
+        <Dialog open={isJogoModalOpen} onOpenChange={setIsJogoModalOpen}>
+            <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Gerenciar Jogo</DialogTitle></DialogHeader>
+                <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-data_inicio">Data de Início</Label>
-                        <Input id="edit-data_inicio" name="data_inicio" type="date" 
-                               value={eventoParaEditar.data_inicio} 
-                               onChange={handleEditFormChange} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-data_fim">Data de Fim (Opcional)</Label>
-                        <Input id="edit-data_fim" name="data_fim" type="date"
-                               value={eventoParaEditar.data_fim || ''} 
-                               onChange={handleEditFormChange} />
-                      </div>
+                        <div className="space-y-2"><Label>Time A</Label><Select value={String(jogoForm.id_time_a)} onValueChange={v => setJogoForm({...jogoForm, id_time_a: v})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{timesDisponiveis.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.nome_time}</SelectItem>)}</SelectContent></Select></div>
+                        <div className="space-y-2"><Label>Time B</Label><Select value={String(jogoForm.id_time_b)} onValueChange={v => setJogoForm({...jogoForm, id_time_b: v})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{timesDisponiveis.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.nome_time}</SelectItem>)}</SelectContent></Select></div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-descricao">Descrição (Opcional)</Label>
-                      <Textarea id="edit-descricao" name="descricao" rows={4}
-                                value={eventoParaEditar.descricao || ''} 
-                                onChange={handleEditFormChange} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input type="datetime-local" value={jogoForm.data_hora} onChange={e => setJogoForm({...jogoForm, data_hora: e.target.value})} />
+                        <Input placeholder="Local" value={jogoForm.local_jogo} onChange={e => setJogoForm({...jogoForm, local_jogo: e.target.value})} />
                     </div>
+                    <div className="grid grid-cols-2 gap-4"><Input placeholder="Placar A" value={jogoForm.placar_a} onChange={e => setJogoForm({...jogoForm, placar_a: e.target.value})} /><Input placeholder="Placar B" value={jogoForm.placar_b} onChange={e => setJogoForm({...jogoForm, placar_b: e.target.value})} /></div>
 
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button type="button" variant="outline">Cancelar</Button>
-                      </DialogClose>
-                      <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isSubmitting ? 'A salvar...' : 'Salvar Alterações'}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                )}
-              </DialogContent>
-            </div>
-          </section>
+                    <div className="border-t pt-4 mt-2">
+                        <Label className="flex items-center gap-2 mb-2 text-yellow-600"><Star className="h-4 w-4"/> Destaque (MVP)</Label>
+                        <Input placeholder="Nome do Jogador MVP" value={jogoForm.mvp_nome || ''} onChange={e => setJogoForm({...jogoForm, mvp_nome: e.target.value})} className="mb-2"/>
+                        <div className="flex items-center gap-2">
+                            <Input type="file" accept="image/*" onChange={e => setMvpFile(e.target.files?.[0] || null)} />
+                            {jogoForm.mvp_foto && !mvpFile && <Badge variant="outline">Foto atual existe</Badge>}
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter><Button onClick={handleSaveJogo}>Salvar Jogo</Button></DialogFooter>
+            </DialogContent>
         </Dialog>
+
+        {/* MODAL NOVO TIME */}
+        <Dialog open={isNewTimeModalOpen} onOpenChange={setIsNewTimeModalOpen}>
+            <DialogContent>
+                <DialogHeader><DialogTitle>Cadastrar Novo Time</DialogTitle></DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2"><Label>Nome do Time</Label><Input value={newTimeForm.nome} onChange={e => setNewTimeForm({...newTimeForm, nome: e.target.value})} /></div>
+                    <div className="space-y-2"><Label>Sigla (3 letras)</Label><Input value={newTimeForm.sigla} onChange={e => setNewTimeForm({...newTimeForm, sigla: e.target.value})} maxLength={3}/></div>
+                    <div className="space-y-2"><Label>Logo do Time</Label><Input type="file" accept="image/*" onChange={e => setNewTimeLogo(e.target.files?.[0] || null)} /></div>
+                </div>
+                <DialogFooter><Button onClick={handleCriarTime}>Criar Time</Button></DialogFooter>
+            </DialogContent>
+        </Dialog>
+
       </main>
       <Footer />
     </div>
