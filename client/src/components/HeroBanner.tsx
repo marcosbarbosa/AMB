@@ -2,8 +2,8 @@
  * ==========================================================
  * PROJETO: Portal AMB Amazonas
  * ARQUIVO: client/src/components/HeroBanner.tsx
- * ATUALIZAÇÃO: Setas de Navegação com Alta Visibilidade
- * VERSÃO: 4.0 Prime (Force Visible Arrows)
+ * FUNÇÃO: Banner Principal (Institucional + Parceiros + Setas Visíveis)
+ * VERSÃO: 5.0 Prime (Force Visible Arrows + Unified API)
  * ==========================================================
  */
 
@@ -12,15 +12,26 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Trophy, ChevronRight, ChevronLeft } from 'lucide-react';
+import { ArrowRight, Trophy, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 
-const API_BASE = 'https://www.ambamazonas.com.br/api';
+// Usamos a API unificada que já traz Institucionais + Parceiros Ouro
+const API_URL = 'https://www.ambamazonas.com.br/api/listar_parceiros_homepage.php';
+
+interface BannerItem {
+  id: string | number;
+  titulo: string;
+  subtitulo?: string;
+  url_imagem: string;
+  url_link_destino?: string | null;
+  fit_mode?: 'cover' | 'contain';
+  tipo?: 'institucional' | 'parceiro';
+}
 
 export function HeroBanner() {
   const navigate = useNavigate();
-  const [banners, setBanners] = useState<any[]>([]);
+  const [banners, setBanners] = useState<BannerItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Configuração do Carousel
@@ -38,58 +49,26 @@ export function HeroBanner() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        let eventoAtivo = null;
-        try {
-            const resEvento = await axios.get(`${API_BASE}/get_banner_ativo.php`);
-            if (resEvento.data.status === 'sucesso' && resEvento.data.banner) {
-                eventoAtivo = resEvento.data.banner;
+        const res = await axios.get(`${API_URL}?t=${Date.now()}`);
+        if (res.data.status === 'sucesso') {
+            // A API já retorna um array "institucionais" que contem tanto banners da AMB quanto de parceiros Ouro
+            const listaMista = res.data.institucionais || [];
+
+            if (listaMista.length > 0) {
+                setBanners(listaMista);
+            } else {
+                // Fallback se não vier nada
+                setBanners([{ 
+                    id: 'default', 
+                    titulo: 'A Grandeza não tem idade', 
+                    url_imagem: '', // Vai cair no fallback de imagem
+                    tipo: 'institucional' 
+                }]);
             }
-        } catch (e) { console.warn("Sem evento ativo"); }
-
-        let bannersInst = [];
-        try {
-            const resInst = await axios.get(`${API_BASE}/listar_banners_publico.php`);
-            if (resInst.data.status === 'sucesso') {
-                bannersInst = resInst.data.banners;
-            }
-        } catch (e) { console.warn("Erro banners institucionais"); }
-
-        let listaFinal = [];
-
-        if (eventoAtivo) {
-            listaFinal.push({
-                type: 'evento',
-                id: 'evt_' + eventoAtivo.id,
-                titulo: eventoAtivo.nome_evento,
-                subtitulo: `${eventoAtivo.genero || ''} • ${eventoAtivo.tipo || ''}`,
-                imagem: eventoAtivo.url_imagem,
-                link: '/campeonatos',
-                modo: 'cover'
-            });
         }
-
-        if (Array.isArray(bannersInst)) {
-            bannersInst.forEach((b: any) => {
-                listaFinal.push({
-                    type: 'institucional',
-                    id: 'inst_' + b.id,
-                    titulo: b.titulo,
-                    subtitulo: 'AMB Amazonas',
-                    imagem: b.url_imagem,
-                    link: b.link_destino || b.url_link_destino || '',
-                    modo: b.modo_exibicao || 'cover'
-                });
-            });
-        }
-
-        if (listaFinal.length === 0) {
-            listaFinal.push({ type: 'fallback' });
-        }
-
-        setBanners(listaFinal);
       } catch (error) {
-        console.error(error);
-        setBanners([{ type: 'fallback' }]);
+        console.error("Erro Banner:", error);
+        setBanners([{ id: 'err', titulo: 'AMB Amazonas', url_imagem: '', tipo: 'institucional' }]);
       } finally {
         setLoading(false);
       }
@@ -97,7 +76,7 @@ export function HeroBanner() {
     fetchData();
   }, []);
 
-  if (loading) return <div className="h-[500px] md:h-[600px] bg-slate-900 animate-pulse" />;
+  if (loading) return <div className="h-[500px] md:h-[600px] bg-slate-900 flex items-center justify-center"><Loader2 className="h-10 w-10 text-slate-500 animate-spin"/></div>;
 
   return (
     <div className="relative h-[500px] md:h-[600px] w-full overflow-hidden bg-slate-900 group">
@@ -105,95 +84,101 @@ export function HeroBanner() {
       {/* Container do Embla Carousel */}
       <div className="h-full w-full" ref={emblaRef}>
         <div className="flex h-full">
-          {banners.map((item, index) => (
-            <div key={item.id || index} className="relative flex-[0_0_100%] h-full flex items-center justify-center min-w-0">
+          {banners.map((item, index) => {
+             // Tratamento de URL
+             const imgUrl = item.url_imagem && item.url_imagem.startsWith('http') 
+                ? item.url_imagem 
+                : (item.url_imagem ? `https://www.ambamazonas.com.br${item.url_imagem}` : null);
 
-              {/* --- IMAGEM DE FUNDO --- */}
-              <div className="absolute inset-0 z-0">
-                  {item.type === 'fallback' ? (
-                      <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=2090&fit=crop" className="w-full h-full object-cover opacity-40 grayscale" />
-                  ) : (
-                      <div className={`w-full h-full ${item.modo === 'contain' ? 'bg-black flex items-center justify-center' : ''}`}>
-                          {item.imagem ? (
-                              <img 
-                                  src={`https://www.ambamazonas.com.br${item.imagem}`} 
-                                  className={`w-full h-full ${item.modo === 'contain' ? 'object-contain' : 'object-cover opacity-80'}`} 
-                              />
-                          ) : (
-                              <div className="w-full h-full bg-slate-800 flex items-center justify-center text-slate-500">Imagem Indisponível</div>
-                          )}
-                      </div>
-                  )}
+             return (
+                <div key={item.id || index} className="relative flex-[0_0_100%] h-full flex items-center justify-center min-w-0">
 
-                  {/* Gradiente */}
-                  {(item.modo === 'cover' || item.type === 'fallback') && (
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
-                  )}
-              </div>
-
-              {/* --- CONTEÚDO --- */}
-              <div className="relative z-10 container mx-auto px-12 md:px-20 text-center pointer-events-none"> 
-                  <div className="pointer-events-auto">
-                    {item.type === 'evento' && (
-                        <Badge className="mb-4 bg-yellow-500 text-black font-black uppercase tracking-wider text-xs md:text-sm px-4 py-1 hover:bg-yellow-400 border-none shadow-lg">
-                            Acontecendo Agora
-                        </Badge>
-                    )}
-
-                    {(item.type !== 'institucional' || item.modo === 'cover') && (
+                {/* --- IMAGEM DE FUNDO --- */}
+                <div className="absolute inset-0 z-0">
+                    {imgUrl ? (
                         <>
-                            <h1 className="text-3xl md:text-6xl font-black text-white uppercase tracking-tighter mb-4 drop-shadow-lg max-w-4xl mx-auto leading-tight">
-                                {item.type === 'fallback' ? 'A Grandeza não tem idade' : item.titulo}
-                            </h1>
-                            {item.subtitulo && (
-                                <p className="text-slate-200 text-sm md:text-xl font-medium mb-8 uppercase tracking-widest bg-black/30 inline-block px-4 py-1 rounded-full backdrop-blur-sm">
-                                    {item.subtitulo}
-                                </p>
+                            {/* Blur Background se for Contain */}
+                            {item.fit_mode === 'contain' && (
+                                <div 
+                                    className="absolute inset-0 bg-cover bg-center blur-xl opacity-50"
+                                    style={{ backgroundImage: `url(${imgUrl})` }}
+                                />
                             )}
 
-                            {item.type === 'evento' && (
-                                <div><Button size="lg" className="h-12 md:h-14 px-8 text-base md:text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-xl pointer-events-auto" onClick={() => navigate(item.link)}>Acompanhar Tabela <Trophy className="ml-2 h-5 w-5"/></Button></div>
-                            )}
-
-                            {item.type === 'fallback' && (
-                                <div className="flex justify-center gap-4"><Button size="lg" className="bg-yellow-500 text-black font-bold pointer-events-auto" onClick={() => navigate('/seja-parceiro')}>Seja Parceiro</Button></div>
-                            )}
+                            {/* Imagem Principal */}
+                            <img 
+                                src={imgUrl} 
+                                className={`w-full h-full ${item.fit_mode === 'contain' ? 'object-contain' : 'object-cover opacity-90'}`} 
+                                alt={item.titulo}
+                            />
                         </>
+                    ) : (
+                        <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=2090&fit=crop" className="w-full h-full object-cover opacity-40 grayscale" />
                     )}
 
-                    {item.type === 'institucional' && item.link && (
-                        <div className="absolute bottom-10 left-0 right-0 pointer-events-auto">
-                            <Button variant="outline" className="bg-white/10 text-white border-white/20 backdrop-blur hover:bg-white/20" onClick={() => window.open(item.link, '_blank')}>
-                                Saiba Mais <ArrowRight className="ml-2 h-4 w-4"/>
-                            </Button>
-                        </div>
+                    {/* Gradiente Overlay */}
+                    {(item.fit_mode === 'cover' || !imgUrl) && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent" />
                     )}
-                  </div>
-              </div>
-            </div>
-          ))}
+                </div>
+
+                {/* --- CONTEÚDO --- */}
+                <div className="relative z-10 container mx-auto px-12 md:px-20 text-center pointer-events-none"> 
+                    <div className="pointer-events-auto">
+
+                        {/* Se for Parceiro, mostra Badge */}
+                        {item.tipo === 'parceiro' && (
+                            <Badge className="mb-4 bg-yellow-500 text-black font-black uppercase tracking-wider text-xs md:text-sm px-4 py-1 hover:bg-yellow-400 border-none shadow-lg animate-in fade-in slide-in-from-top-4">
+                                Parceiro Oficial
+                            </Badge>
+                        )}
+
+                        {/* Título e Subtítulo (Oculta se for apenas imagem 'cover' de parceiro sem título definido, opcional) */}
+                        {item.titulo && item.titulo !== '' && (
+                            <>
+                                <h1 className="text-3xl md:text-6xl font-black text-white uppercase tracking-tighter mb-4 drop-shadow-lg max-w-4xl mx-auto leading-tight">
+                                    {item.titulo}
+                                </h1>
+                                {item.url_link_destino && (
+                                    <div className="mt-8">
+                                        <Button 
+                                            size="lg" 
+                                            className={`h-12 px-8 text-base font-bold shadow-xl pointer-events-auto transition-transform hover:scale-105 ${item.tipo === 'parceiro' ? 'bg-yellow-500 text-black hover:bg-yellow-400' : 'bg-blue-600 text-white hover:bg-blue-700'}`} 
+                                            onClick={() => window.open(item.url_link_destino!, '_blank')}
+                                        >
+                                            Saiba Mais <ArrowRight className="ml-2 h-5 w-5"/>
+                                        </Button>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+                </div>
+             );
+          })}
         </div>
       </div>
 
       {/* --- BOTÕES DE NAVEGAÇÃO "FORÇADOS" --- 
-          Usando botões HTML normais para garantir visibilidade e Z-index máximo 
+          Z-Index 100 para garantir que fiquem sobre tudo
       */}
       {banners.length > 1 && (
           <>
             <button 
                 onClick={scrollPrev}
-                className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 z-[100] h-12 w-12 rounded-full bg-black/40 text-white border border-white/20 flex items-center justify-center hover:bg-black/70 hover:scale-110 transition-all cursor-pointer backdrop-blur-md shadow-xl"
+                className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 z-[100] h-12 w-12 rounded-full bg-black/40 text-white border border-white/20 flex items-center justify-center hover:bg-black/70 hover:scale-110 transition-all cursor-pointer backdrop-blur-md shadow-xl group/btn"
                 aria-label="Anterior"
             >
-                <ChevronLeft className="h-8 w-8"/>
+                <ChevronLeft className="h-8 w-8 group-hover/btn:-translate-x-0.5 transition-transform"/>
             </button>
 
             <button 
                 onClick={scrollNext}
-                className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 z-[100] h-12 w-12 rounded-full bg-black/40 text-white border border-white/20 flex items-center justify-center hover:bg-black/70 hover:scale-110 transition-all cursor-pointer backdrop-blur-md shadow-xl"
+                className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 z-[100] h-12 w-12 rounded-full bg-black/40 text-white border border-white/20 flex items-center justify-center hover:bg-black/70 hover:scale-110 transition-all cursor-pointer backdrop-blur-md shadow-xl group/btn"
                 aria-label="Próximo"
             >
-                <ChevronRight className="h-8 w-8"/>
+                <ChevronRight className="h-8 w-8 group-hover/btn:translate-x-0.5 transition-transform"/>
             </button>
           </>
       )}
