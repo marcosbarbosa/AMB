@@ -9,15 +9,19 @@
  * ==========================================================
  */
 
-import React from 'react';
-import { AdminSidebar } from '@/components/admin/AdminSidebar';
-import { Newspaper, Construction } from 'lucide-react';
+import { Newspaper, Construction, ArrowLeft } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 export default function GestaoNoticiasPage() {
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <AdminSidebar />
+    <div className="min-h-screen bg-slate-50">
+      <div className="p-4 border-b bg-white">
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/admin/painel"><ArrowLeft className="h-4 w-4 mr-2" />Voltar ao Painel</Link>
+        </Button>
+      </div>
       <main className="flex-1 p-8 flex flex-col items-center justify-center">
 
         <div className="max-w-2xl w-full text-center">
