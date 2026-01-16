@@ -4,8 +4,8 @@
  * ARQUIVO: Navigation.tsx
  * CAMINHO: client/src/components/Navigation.tsx
  * DATA: 15 de Janeiro de 2026
- * FUNÇÃO: Navbar Principal (Consumidor de Config)
- * VERSÃO: 15.0 Prime
+ * FUNÇÃO: Navbar com Módulo Eleitoral (Placeholder)
+ * VERSÃO: 16.0 Prime (Election Module Added)
  * ==========================================================
  */
 
@@ -13,12 +13,13 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Menu, X, LogOut, Lock, ChevronDown, Settings,
-  Building2, Trophy, Newspaper, Mail, Home, LayoutDashboard 
+  Building2, Trophy, Newspaper, Mail, Home, Vote 
 } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { useSiteConfig } from '@/context/SiteConfigContext';
-import { FerramentasModal } from '@/components/FerramentasModal'; // Importando o modal corrigido
+import { FerramentasModal } from '@/components/FerramentasModal';
+import { useToast } from '@/hooks/use-toast'; // Importante para a mensagem
 import ambLogo from '../assets/logo-amb.png'; 
 
 interface SubItem {
@@ -33,16 +34,18 @@ interface MenuItem {
   href?: string;
   icon?: any;
   submenu?: SubItem[];
+  specialAction?: boolean; // Nova flag para itens especiais
 }
 
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isToolsOpen, setIsToolsOpen] = useState(false); // Estado do modal
+  const [isToolsOpen, setIsToolsOpen] = useState(false); 
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   const location = useLocation();
   const { isAuthenticated, atleta, logout } = useAuth();
   const { menuConfig, isLoading } = useSiteConfig();
+  const { toast } = useToast(); // Hook de notificação
   const navRef = useRef<HTMLDivElement>(null);
 
   // Fecha dropdowns ao clicar fora
@@ -61,19 +64,27 @@ export function Navigation() {
     setActiveDropdown(null);
   }, [location.pathname]);
 
-  // Estrutura do Menu
+  // --- ESTRUTURA DO MENU (Incluindo Eleições) ---
   const navStructure: MenuItem[] = [
     { key: 'inicio', label: 'Início', href: '/', icon: Home },
+    { 
+        // Item Especial de Eleições
+        key: 'eleicoes', 
+        label: 'ELEIÇÕES 2026', 
+        href: '#eleicoes', 
+        icon: Vote, 
+        specialAction: true 
+    },
     { 
       key: 'institucional',
       label: 'Institucional', 
       icon: Building2,
       submenu: [
         { key: 'sobre', label: 'Sobre a AMB', href: '/sobre' },
-        { key: 'estatuto', label: 'Estatuto', href: '/sobre' },
+        { key: 'estatuto', label: 'Estatuto Social', href: '/sobre' },
         { key: 'transparencia', label: 'Transparência', href: '/transparencia' },
         { key: 'parceiros', label: 'Nossos Parceiros', href: '/parceiros' },
-        { key: 'cadastro', label: 'Quero ser Associado', href: '/cadastro' }
+        { key: 'cadastro', label: 'Seja um Associado', href: '/cadastro' }
       ]
     },
     { 
@@ -88,26 +99,33 @@ export function Navigation() {
     { key: 'contato', label: 'Contato', href: '/#contato', icon: Mail },
   ];
 
-  // Lógica de Filtro
+  // Lógica de Filtragem
   const filteredNav = navStructure.filter(item => {
-      // Se não carregou ainda, mostra por padrão para não piscar vazio
       if (isLoading) return true;
-
-      // Se a chave pai estiver false, remove
+      // Se não existir a chave no banco (ex: 'eleicoes' ainda não inserido), mostra por padrão
       if (menuConfig[item.key] === false) return false;
 
-      // Filtra filhos
       if (item.submenu) {
           const visibleSubs = item.submenu.filter(sub => menuConfig[sub.key] !== false);
-          // Se quiser esconder o pai caso não tenha filhos visíveis:
-          // if (visibleSubs.length === 0) return false;
+          // if (visibleSubs.length === 0) return false; 
       }
       return true;
   });
 
-  const handleLinkClick = (href: string) => {
+  const handleLinkClick = (href: string, isSpecial = false) => {
     setIsMenuOpen(false);
     setActiveDropdown(null);
+
+    // Lógica Especial para Eleições
+    if (isSpecial || href === '#eleicoes') {
+        toast({
+            title: "Módulo Eleitoral",
+            description: "O sistema de votação eletrônica estará disponível conforme edital.",
+            className: "bg-blue-900 text-white border-blue-800 font-bold"
+        });
+        return;
+    }
+
     if (href.startsWith('/#')) {
         const element = document.getElementById(href.replace('/#', ''));
         element?.scrollIntoView({ behavior: 'smooth' });
@@ -140,7 +158,7 @@ export function Navigation() {
               </div>
             </Link>
 
-            {/* DESKTOP MENU - FILTRADO & PROFISSA */}
+            {/* DESKTOP MENU */}
             <div className="hidden lg:flex items-center gap-1">
               {filteredNav.map((item) => (
                 <div key={item.label} className="relative group">
@@ -179,17 +197,28 @@ export function Navigation() {
                       )}
                     </>
                   ) : (
-                    <Link 
-                        to={item.href!}
-                        onClick={() => handleLinkClick(item.href!)}
-                        className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-200 ${
-                        location.pathname === item.href 
-                        ? 'text-blue-700 bg-blue-50 ring-1 ring-blue-100' 
-                        : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-                        }`}
-                    >
-                        {item.label}
-                    </Link>
+                    // Link Direto (Com tratamento especial para Eleições)
+                    item.specialAction ? (
+                        <button
+                            onClick={() => handleLinkClick(item.href!, true)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all duration-200 text-blue-800 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 border border-blue-200/50"
+                        >
+                            {item.icon && <item.icon className="h-4 w-4 stroke-[2.5px]" />}
+                            {item.label}
+                        </button>
+                    ) : (
+                        <Link 
+                            to={item.href!}
+                            onClick={() => handleLinkClick(item.href!)}
+                            className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-200 ${
+                            location.pathname === item.href 
+                            ? 'text-blue-700 bg-blue-50 ring-1 ring-blue-100' 
+                            : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            {item.label}
+                        </Link>
+                    )
                   )}
                 </div>
               ))}
@@ -200,7 +229,6 @@ export function Navigation() {
               {isAuthenticated && atleta ? (
                 <div className="flex items-center gap-2 bg-slate-50 pl-1 pr-1 py-1 rounded-full border border-slate-200">
 
-                  {/* BOTÃO FERRAMENTAS (Engrenagem) */}
                   {atleta.role === 'admin' && (
                     <Button 
                         variant="ghost" 
@@ -236,7 +264,6 @@ export function Navigation() {
                 </div>
               )}
 
-              {/* Menu Mobile */}
               <Button variant="ghost" size="icon" className="lg:hidden ml-1 text-slate-900" onClick={() => setIsMenuOpen(!isMenuOpen)}>
                 {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </Button>
@@ -270,9 +297,15 @@ export function Navigation() {
                     </div>
                   ) : (
                     <div className="py-1">
-                      <button onClick={() => handleLinkClick(item.href!)} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-bold text-slate-700 hover:bg-slate-50">
-                          {item.icon && <item.icon className="h-5 w-5 opacity-70"/>}{item.label}
-                      </button>
+                      {item.specialAction ? (
+                          <button onClick={() => handleLinkClick(item.href!, true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-black uppercase tracking-tight text-blue-800 bg-blue-50 border border-blue-100">
+                              {item.icon && <item.icon className="h-5 w-5"/>}{item.label}
+                          </button>
+                      ) : (
+                          <button onClick={() => handleLinkClick(item.href!)} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-bold text-slate-700 hover:bg-slate-50">
+                              {item.icon && <item.icon className="h-5 w-5 opacity-70"/>}{item.label}
+                          </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -282,7 +315,6 @@ export function Navigation() {
         )}
       </nav>
 
-      {/* RENDERIZA O MODAL CORRIGIDO */}
       <FerramentasModal isOpen={isToolsOpen} onClose={() => setIsToolsOpen(false)} />
     </>
   );
