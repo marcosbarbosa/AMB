@@ -21,7 +21,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useSiteConfig } from '@/context/SiteConfigContext';
 import { FerramentasModal } from '@/components/FerramentasModal';
 import { useToast } from '@/hooks/use-toast';
-import ambLogo from '../assets/logo-amb.png'; 
+import ambLogo from '../assets/logo-amb.png';
+// IMPORTANTE: A imagem deve estar em client/src/assets/fbbm-icone.jpg
+import fbbmIcon from '../assets/fbbm-icone.jpg'; 
 
 interface SubItem {
   key: string;
