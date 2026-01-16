@@ -4,81 +4,116 @@
  * ARQUIVO: App.tsx
  * CAMINHO: client/src/App.tsx
  * DATA: 15 de Janeiro de 2026
- * FUNÇÃO: Roteador Principal (Blindado e Configurado)
- * VERSÃO: 12.0 Prime
+ * FUNÇÃO: Roteador Principal (Correção Diretoria + BI + Associados)
+ * VERSÃO: 19.0 Prime
  * ==========================================================
  */
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/context/AuthContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SiteConfigProvider } from "@/context/SiteConfigContext"; // Essencial para o Menu
+import { SiteConfigProvider } from "@/context/SiteConfigContext";
+import { Loader2 } from "lucide-react";
 
-// --- PÁGINAS PÚBLICAS ---
+// --- IMPORT ESTÁTICO (Home para SEO e LCP) ---
 import Home from "@/pages/Home";
-import AboutPage from "@/pages/AboutPage";
-import Contact from "@/pages/Contact";
-import ParceirosPage from "@/pages/ParceirosPage";
-import SejaParceiroPage from "@/pages/SejaParceiroPage";
-import PrestacaoContasPage from "@/pages/PrestacaoContasPage";
 
-// --- AUTENTICAÇÃO ---
-import LoginPage from "@/pages/LoginPage";
-import CadastroPage from "@/pages/CadastroPage";
-import NotFound from "@/pages/not-found";
+// --- IMPORTS DINÂMICOS (Lazy Loading para Performance) ---
+const AboutPage = lazy(() => import("@/pages/AboutPage"));
+const Contact = lazy(() => import("@/pages/Contact"));
+const ParceirosPage = lazy(() => import("@/pages/ParceirosPage"));
+const SejaParceiroPage = lazy(() => import("@/pages/SejaParceiroPage"));
+const PrestacaoContasPage = lazy(() => import("@/pages/PrestacaoContasPage"));
+const InteligenciaPage = lazy(() => import("@/pages/InteligenciaPage")); // <--- NOVO
 
-// --- ÁREA DO ATLETA ---
-import PainelPage from "@/pages/PainelPage";
-import EditarPerfilPage from "@/pages/EditarPerfilPage";
+// Auth
+const LoginPage = lazy(() => import("@/pages/LoginPage"));
+const CadastroPage = lazy(() => import("@/pages/CadastroPage"));
+const NotFound = lazy(() => import("@/pages/not-found"));
 
-// --- ÁREA ADMINISTRATIVA ---
-import AdminPainelPage from "@/pages/admin/AdminPainelPage";
-import GestaoAssociadosPage from "@/pages/admin/GestaoAssociadosPage";
-import GestaoParceirosPage from "@/pages/admin/GestaoParceirosPage";
-import GestaoBannersAMB from "@/pages/admin/GestaoBannersAMB";
-import GestaoTransparencia from "@/pages/admin/GestaoTransparencia";
-import GestaoEventosMaster from "@/pages/admin/GestaoEventosMaster";
-import GestaoTimesPage from "@/pages/admin/GestaoTimesPage";
+// Área do Atleta
+const PainelPage = lazy(() => import("@/pages/PainelPage"));
+const EditarPerfilPage = lazy(() => import("@/pages/EditarPerfilPage"));
+
+// Área Administrativa
+const AdminPainelPage = lazy(() => import("@/pages/admin/AdminPainelPage"));
+const GestaoAssociadosPage = lazy(() => import("@/pages/admin/GestaoAssociadosPage"));
+const GestaoParceirosPage = lazy(() => import("@/pages/admin/GestaoParceirosPage"));
+const GestaoBannersAMB = lazy(() => import("@/pages/admin/GestaoBannersAMB"));
+const GestaoTransparencia = lazy(() => import("@/pages/admin/GestaoTransparencia"));
+const GestaoEventosMaster = lazy(() => import("@/pages/admin/GestaoEventosMaster"));
+const GestaoTimesPage = lazy(() => import("@/pages/admin/GestaoTimesPage"));
+
+// CORREÇÃO CRÍTICA: O nome do arquivo físico é 'DiretoriaGestaoPage.tsx'
+// Antes estava: import("@/pages/admin/GestaoDiretoriaPage") -> CAUSAVA ERRO 404
+const DiretoriaGestaoPage = lazy(() => import("@/pages/admin/DiretoriaGestaoPage"));
+
+// --- COMPONENTE DE LOADING ---
+const PageLoader = () => (
+  <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+    <div className="relative">
+      <div className="h-16 w-16 rounded-full border-4 border-slate-200 border-t-blue-600 animate-spin"></div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full bg-slate-100"></div>
+      </div>
+    </div>
+    <p className="mt-4 text-sm font-bold text-slate-500 uppercase tracking-widest animate-pulse">
+      Carregando Sistema...
+    </p>
+  </div>
+);
 
 function App() {
   return (
     <AuthProvider>
-      <SiteConfigProvider> {/* O Cérebro do Menu Dinâmico */}
+      <SiteConfigProvider>
         <TooltipProvider>
-          <Routes>
-            {/* ROTAS PÚBLICAS */}
-            <Route path="/" element={<Home />} />
-            <Route path="/sobre" element={<AboutPage />} />
-            <Route path="/contato" element={<Contact />} />
-            <Route path="/parceiros" element={<ParceirosPage />} />
-            <Route path="/seja-parceiro" element={<SejaParceiroPage />} />
-            <Route path="/transparencia" element={<PrestacaoContasPage />} />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              {/* --- ROTAS PÚBLICAS --- */}
+              <Route path="/" element={<Home />} />
+              <Route path="/sobre" element={<AboutPage />} />
+              <Route path="/contato" element={<Contact />} />
+              <Route path="/parceiros" element={<ParceirosPage />} />
+              <Route path="/seja-parceiro" element={<SejaParceiroPage />} />
+              <Route path="/transparencia" element={<PrestacaoContasPage />} />
 
-            {/* ROTAS DE AUTENTICAÇÃO */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/cadastro" element={<CadastroPage />} />
+              {/* Rota BI - Inteligência */}
+              <Route path="/bi" element={<InteligenciaPage />} />
 
-            {/* ROTAS DO ATLETA */}
-            <Route path="/painel" element={<PainelPage />} />
-            <Route path="/painel/editar" element={<EditarPerfilPage />} />
+              {/* --- AUTENTICAÇÃO --- */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/cadastro" element={<CadastroPage />} />
 
-            {/* ROTAS ADMINISTRATIVAS */}
-            <Route path="/admin" element={<AdminPainelPage />} />
-            <Route path="/admin/login" element={<AdminPainelPage />} /> 
-            <Route path="/admin/painel" element={<AdminPainelPage />} />
+              {/* --- ÁREA DO ATLETA --- */}
+              <Route path="/painel" element={<PainelPage />} />
+              <Route path="/painel/editar" element={<EditarPerfilPage />} />
 
-            <Route path="/admin/atletas" element={<GestaoAssociadosPage />} />
-            <Route path="/admin/parceiros" element={<GestaoParceirosPage />} />
-            <Route path="/admin/banners" element={<GestaoBannersAMB />} />
-            <Route path="/admin/transparencia" element={<GestaoTransparencia />} />
-            <Route path="/admin/eventos" element={<GestaoEventosMaster />} />
-            <Route path="/admin/times" element={<GestaoTimesPage />} />
+              {/* --- ÁREA ADMINISTRATIVA --- */}
+              <Route path="/admin" element={<AdminPainelPage />} />
+              <Route path="/admin/login" element={<AdminPainelPage />} /> 
+              <Route path="/admin/painel" element={<AdminPainelPage />} />
 
-            {/* ROTA DE ERRO 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* Rota Associados (Atletas) */}
+              <Route path="/admin/associados" element={<GestaoAssociadosPage />} />
+              <Route path="/admin/atletas" element={<GestaoAssociadosPage />} /> {/* Legacy support */}
+
+              <Route path="/admin/parceiros" element={<GestaoParceirosPage />} />
+              <Route path="/admin/banners" element={<GestaoBannersAMB />} />
+              <Route path="/admin/transparencia" element={<GestaoTransparencia />} />
+              <Route path="/admin/eventos" element={<GestaoEventosMaster />} />
+              <Route path="/admin/times" element={<GestaoTimesPage />} />
+
+              {/* Rota Diretoria - Apontando para o componente correto */}
+              <Route path="/admin/diretoria" element={<DiretoriaGestaoPage />} />
+              <Route path="/admin/diretoria-gestao" element={<DiretoriaGestaoPage />} />
+
+              {/* --- ROTA 404 --- */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
           <Toaster />
         </TooltipProvider>
       </SiteConfigProvider>

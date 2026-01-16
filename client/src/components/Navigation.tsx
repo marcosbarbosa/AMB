@@ -4,8 +4,8 @@
  * ARQUIVO: Navigation.tsx
  * CAMINHO: client/src/components/Navigation.tsx
  * DATA: 15 de Janeiro de 2026
- * FUNÇÃO: Navbar com Módulo Eleitoral (Placeholder)
- * VERSÃO: 16.0 Prime (Election Module Added)
+ * FUNÇÃO: Navbar com BI no Menu Institucional
+ * VERSÃO: 19.0 Prime
  * ==========================================================
  */
 
@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { useSiteConfig } from '@/context/SiteConfigContext';
 import { FerramentasModal } from '@/components/FerramentasModal';
-import { useToast } from '@/hooks/use-toast'; // Importante para a mensagem
+import { useToast } from '@/hooks/use-toast';
 import ambLogo from '../assets/logo-amb.png'; 
 
 interface SubItem {
@@ -34,7 +34,7 @@ interface MenuItem {
   href?: string;
   icon?: any;
   submenu?: SubItem[];
-  specialAction?: boolean; // Nova flag para itens especiais
+  specialAction?: boolean;
 }
 
 export function Navigation() {
@@ -45,10 +45,12 @@ export function Navigation() {
   const location = useLocation();
   const { isAuthenticated, atleta, logout } = useAuth();
   const { menuConfig, isLoading } = useSiteConfig();
-  const { toast } = useToast(); // Hook de notificação
+  const { toast } = useToast();
   const navRef = useRef<HTMLDivElement>(null);
 
-  // Fecha dropdowns ao clicar fora
+  const userRole = atleta?.role ? String(atleta.role).toLowerCase().trim() : '';
+  const isAdmin = userRole === 'admin' || userRole === 'administrador' || userRole === 'master';
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (navRef.current && !navRef.current.contains(event.target as Node)) {
@@ -64,11 +66,10 @@ export function Navigation() {
     setActiveDropdown(null);
   }, [location.pathname]);
 
-  // --- ESTRUTURA DO MENU (Incluindo Eleições) ---
+  // --- ESTRUTURA DO MENU ---
   const navStructure: MenuItem[] = [
     { key: 'inicio', label: 'Início', href: '/', icon: Home },
     { 
-        // Item Especial de Eleições
         key: 'eleicoes', 
         label: 'ELEIÇÕES 2026', 
         href: '#eleicoes', 
@@ -83,6 +84,7 @@ export function Navigation() {
         { key: 'sobre', label: 'Sobre a AMB', href: '/sobre' },
         { key: 'estatuto', label: 'Estatuto Social', href: '/sobre' },
         { key: 'transparencia', label: 'Transparência', href: '/transparencia' },
+        { key: 'bi', label: 'Inteligência (BI)', href: '/bi' }, // <--- LINK DO BI
         { key: 'parceiros', label: 'Nossos Parceiros', href: '/parceiros' },
         { key: 'cadastro', label: 'Seja um Associado', href: '/cadastro' }
       ]
@@ -99,12 +101,9 @@ export function Navigation() {
     { key: 'contato', label: 'Contato', href: '/#contato', icon: Mail },
   ];
 
-  // Lógica de Filtragem
   const filteredNav = navStructure.filter(item => {
       if (isLoading) return true;
-      // Se não existir a chave no banco (ex: 'eleicoes' ainda não inserido), mostra por padrão
       if (menuConfig[item.key] === false) return false;
-
       if (item.submenu) {
           const visibleSubs = item.submenu.filter(sub => menuConfig[sub.key] !== false);
           // if (visibleSubs.length === 0) return false; 
@@ -116,11 +115,10 @@ export function Navigation() {
     setIsMenuOpen(false);
     setActiveDropdown(null);
 
-    // Lógica Especial para Eleições
     if (isSpecial || href === '#eleicoes') {
         toast({
             title: "Módulo Eleitoral",
-            description: "O sistema de votação eletrônica estará disponível conforme edital.",
+            description: "O sistema de votação estará disponível conforme edital.",
             className: "bg-blue-900 text-white border-blue-800 font-bold"
         });
         return;
@@ -149,7 +147,6 @@ export function Navigation() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="flex items-center justify-between h-full">
 
-            {/* LOGO */}
             <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity z-50" onClick={() => window.scrollTo(0,0)}>
               <img src={ambLogo} alt="AMB Amazonas" className="h-12 w-auto drop-shadow-sm" />
               <div className="flex flex-col leading-tight">
@@ -158,7 +155,6 @@ export function Navigation() {
               </div>
             </Link>
 
-            {/* DESKTOP MENU */}
             <div className="hidden lg:flex items-center gap-1">
               {filteredNav.map((item) => (
                 <div key={item.label} className="relative group">
@@ -176,7 +172,6 @@ export function Navigation() {
                         <ChevronDown className={`h-4 w-4 stroke-[2.5px] transition-transform duration-200 ${activeDropdown === item.label ? 'rotate-180' : ''}`} />
                       </button>
 
-                      {/* Dropdown */}
                       {activeDropdown === item.label && (
                         <div className="absolute top-full left-0 w-56 pt-3 animate-in fade-in slide-in-from-top-2 duration-200">
                           <div className="bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden ring-1 ring-black/5 p-1">
@@ -197,7 +192,6 @@ export function Navigation() {
                       )}
                     </>
                   ) : (
-                    // Link Direto (Com tratamento especial para Eleições)
                     item.specialAction ? (
                         <button
                             onClick={() => handleLinkClick(item.href!, true)}
@@ -224,31 +218,25 @@ export function Navigation() {
               ))}
             </div>
 
-            {/* BOTÕES DE ACESSO */}
             <div className="flex items-center gap-3">
               {isAuthenticated && atleta ? (
                 <div className="flex items-center gap-2 bg-slate-50 pl-1 pr-1 py-1 rounded-full border border-slate-200">
-
-                  {atleta.role === 'admin' && (
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-9 w-9 rounded-full text-slate-500 hover:text-blue-600 hover:bg-blue-100 transition-colors" 
-                        onClick={() => setIsToolsOpen(true)} 
-                        title="Gerenciar Site"
-                    >
-                        <Settings className="h-5 w-5" />
-                    </Button>
+                  {isAdmin && (
+                    <>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-500 hover:text-blue-600 hover:bg-blue-100 transition-colors" onClick={() => setIsToolsOpen(true)} title="Gerenciar Site">
+                            <Settings className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-yellow-600 hover:bg-yellow-100 transition-colors" asChild title="Painel Administrativo">
+                            <Link to="/admin/painel"><Lock className="h-5 w-5" /></Link>
+                        </Button>
+                    </>
                   )}
-
-                  <span className="text-xs font-bold text-slate-700 hidden xl:inline ml-2 mr-2">
+                  <span className="text-xs font-bold text-slate-700 hidden xl:inline ml-2 mr-2 uppercase tracking-wide">
                     {atleta?.nome_completo?.split(' ')[0]}
                   </span>
-
                   <Button variant="default" size="sm" className="h-8 rounded-full bg-slate-900 text-white hover:bg-black px-4 font-bold text-xs" asChild>
                     <Link to="/painel">Painel</Link>
                   </Button>
-
                   <Button variant="ghost" size="icon" onClick={handleLogout} className="h-8 w-8 rounded-full text-red-500 hover:bg-red-50">
                     <LogOut className="h-4 w-4" /> 
                   </Button>
@@ -263,7 +251,6 @@ export function Navigation() {
                   </Button>
                 </div>
               )}
-
               <Button variant="ghost" size="icon" className="lg:hidden ml-1 text-slate-900" onClick={() => setIsMenuOpen(!isMenuOpen)}>
                 {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </Button>
@@ -298,7 +285,7 @@ export function Navigation() {
                   ) : (
                     <div className="py-1">
                       {item.specialAction ? (
-                          <button onClick={() => handleLinkClick(item.href!, true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-black uppercase tracking-tight text-blue-800 bg-blue-50 border border-blue-100">
+                          <button onClick={() => handleLinkClick(item.href!, true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-bold text-blue-800 bg-blue-50 border border-blue-100">
                               {item.icon && <item.icon className="h-5 w-5"/>}{item.label}
                           </button>
                       ) : (
