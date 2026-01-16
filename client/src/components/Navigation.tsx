@@ -1,34 +1,37 @@
-/*
- * ==========================================================
- * PROJETO: Portal AMB Amazonas
- * ARQUIVO: Navigation.tsx
- * CAMINHO: client/src/components/Navigation.tsx
- * DATA: 15 de Janeiro de 2026
- * FUNÇÃO: Navbar com TopBar Social e Selo FBBM Oficial
- * VERSÃO: 22.0 Prime (Crash Fix & Icon Integration)
- * ==========================================================
- */
+// Nome: Navigation.tsx
+// Caminho: client/src/components/Navigation.tsx
+// Data: 2026-01-16
+// Hora: 08:45 (America/Sao_Paulo)
+// Função: Navbar Principal com Secretaria Digital e Tooltips
+// Versão: v24.0 Prime
+// Alteração: Renomeação de menu Transparência -> Secretaria Digital e adição de Tooltip explicativo.
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Menu, X, LogOut, Lock, ChevronDown, Settings,
   Building2, Trophy, Newspaper, Mail, Home, Vote,
-  Facebook, Instagram, Youtube
+  Facebook, Instagram, Youtube, Info
 } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from "@/components/ui/tooltip"; // Assumindo existência do componente UI
 import { useAuth } from '@/context/AuthContext';
 import { useSiteConfig } from '@/context/SiteConfigContext';
 import { FerramentasModal } from '@/components/FerramentasModal';
 import { useToast } from '@/hooks/use-toast';
 import ambLogo from '../assets/logo-amb.png';
-// IMPORTANTE: A imagem deve estar em client/src/assets/fbbm-icone.jpg
 import fbbmIcon from '../assets/fbbm-icone.jpg'; 
 
 interface SubItem {
   key: string;
   label: string;
   href: string;
+  description?: string; // Adicionado para suporte a tooltip
 }
 
 interface MenuItem {
@@ -69,7 +72,7 @@ export function Navigation() {
     setActiveDropdown(null);
   }, [location.pathname]);
 
-  // --- ESTRUTURA DO MENU ---
+  // --- ESTRUTURA DO MENU ATUALIZADA ---
   const navStructure: MenuItem[] = [
     { key: 'inicio', label: 'Início', href: '/', icon: Home },
     { 
@@ -86,7 +89,13 @@ export function Navigation() {
       submenu: [
         { key: 'sobre', label: 'Sobre a AMB', href: '/sobre' },
         { key: 'estatuto', label: 'Estatuto Social', href: '/sobre' },
-        { key: 'transparencia', label: 'Transparência', href: '/transparencia' },
+        // ALTERAÇÃO: Renomeado para Secretaria Digital com descrição
+        { 
+          key: 'transparencia', 
+          label: 'Secretaria Digital', 
+          href: '/transparencia',
+          description: 'Acesse Estatutos, Regulamentos, Históricos e Balancetes.' 
+        },
         { key: 'bi', label: 'Inteligência (BI)', href: '/bi' },
         { key: 'parceiros', label: 'Nossos Parceiros', href: '/parceiros' },
         { key: 'cadastro', label: 'Seja um Associado', href: '/cadastro' }
@@ -108,8 +117,10 @@ export function Navigation() {
       if (isLoading) return true;
       if (menuConfig[item.key] === false) return false;
       if (item.submenu) {
-          const visibleSubs = item.submenu.filter(sub => menuConfig[sub.key] !== false);
-          // if (visibleSubs.length === 0) return false; 
+          // Mantém o submenu se o item pai estiver ativo, 
+          // a filtragem interna dos filhos ocorre na renderização ou aqui se necessário.
+          // Para simplificar e garantir performance, filtramos na renderização.
+          return true;
       }
       return true;
   });
@@ -145,7 +156,7 @@ export function Navigation() {
   };
 
   return (
-    <>
+    <TooltipProvider>
       <div ref={navRef} className="fixed top-0 left-0 right-0 z-50 flex flex-col shadow-sm transition-all duration-300 font-sans">
 
         {/* --- TOP BAR (SOCIAIS & FBBM) --- */}
@@ -153,7 +164,7 @@ export function Navigation() {
             <div className="flex items-center gap-6">
 
                 <div className="flex items-center gap-4">
-                    {/* LINK FBBM OFICIAL (Com Ícone) */}
+                    {/* LINK FBBM OFICIAL */}
                     <a 
                         href="https://www.fbbm.com.br/" 
                         target="_blank" 
@@ -161,7 +172,6 @@ export function Navigation() {
                         className="flex items-center gap-2 hover:opacity-80 transition-opacity border-r border-slate-700 pr-4 mr-2 group"
                         title="Federação Brasileira de Basquetebol Master"
                     >
-                        {/* Ícone FBBM */}
                         <img 
                             src={fbbmIcon} 
                             alt="FBBM Brasil" 
@@ -172,8 +182,7 @@ export function Navigation() {
                         </span>
                     </a>
 
-                    <span className="hidden sm:inline text-slate-500 text-[10px] mr-1">SIGA-NOS:</span>
-
+                    {/* ÍCONES SOCIAIS */}
                     <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-pink-500 transition-colors transform hover:scale-110" title="Instagram">
                         <Instagram className="h-4 w-4" />
                     </a>
@@ -220,20 +229,43 @@ export function Navigation() {
                         </button>
 
                         {activeDropdown === item.label && (
-                            <div className="absolute top-full left-0 w-56 pt-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="absolute top-full left-0 w-64 pt-3 animate-in fade-in slide-in-from-top-2 duration-200">
                             <div className="bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden ring-1 ring-black/5 p-1">
                                 {item.submenu
                                 .filter(sub => menuConfig[sub.key] !== false)
-                                .map((sub) => (
-                                <Link 
-                                    key={sub.label} 
-                                    to={sub.href}
-                                    onClick={() => handleLinkClick(sub.href)}
-                                    className="block px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                                >
-                                    {sub.label}
-                                </Link>
-                                ))}
+                                .map((sub) => {
+                                  // Renderização condicional com Tooltip se houver descrição
+                                  const LinkComponent = (
+                                    <Link 
+                                        to={sub.href}
+                                        onClick={() => handleLinkClick(sub.href)}
+                                        className="block px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                    >
+                                        <div className="flex flex-col">
+                                          <span>{sub.label}</span>
+                                          {/* Exibe descrição sutil mobile, tooltip no desktop */}
+                                          {sub.description && (
+                                            <span className="lg:hidden text-[10px] text-slate-400 font-normal leading-tight mt-0.5">{sub.description}</span>
+                                          )}
+                                        </div>
+                                    </Link>
+                                  );
+
+                                  if (sub.description) {
+                                    return (
+                                      <Tooltip key={sub.label} delayDuration={300}>
+                                        <TooltipTrigger asChild>
+                                          {LinkComponent}
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="bg-slate-900 text-white border-none text-xs max-w-[200px]">
+                                          <p>{sub.description}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    );
+                                  }
+
+                                  return <div key={sub.label}>{LinkComponent}</div>;
+                                })}
                             </div>
                             </div>
                         )}
@@ -325,7 +357,12 @@ export function Navigation() {
                              .filter(sub => menuConfig[sub.key] !== false)
                              .map(sub => (
                             <Link key={sub.label} to={sub.href} onClick={() => handleLinkClick(sub.href)} className="block px-4 py-3 rounded-md text-sm font-medium text-slate-600 hover:text-blue-700">
-                              {sub.label}
+                              <div className="flex flex-col">
+                                <span>{sub.label}</span>
+                                {sub.description && (
+                                  <span className="text-[10px] text-slate-400 font-normal">{sub.description}</span>
+                                )}
+                              </div>
                             </Link>
                           ))}
                         </div>
@@ -352,6 +389,7 @@ export function Navigation() {
       </div>
 
       <FerramentasModal isOpen={isToolsOpen} onClose={() => setIsToolsOpen(false)} />
-    </>
+    </TooltipProvider>
   );
 }
+// linha 402

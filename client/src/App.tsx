@@ -4,8 +4,8 @@
  * ARQUIVO: App.tsx
  * CAMINHO: client/src/App.tsx
  * DATA: 15 de Janeiro de 2026
- * FUNÇÃO: Roteador Principal + Floating WhatsApp
- * VERSÃO: 20.0 Prime
+ * FUNÇÃO: Roteador Principal + Floating WhatsApp Dinâmico
+ * VERSÃO: 21.0 Prime
  * ==========================================================
  */
 
@@ -14,8 +14,8 @@ import { Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/context/AuthContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SiteConfigProvider } from "@/context/SiteConfigContext";
-import { Loader2, MessageCircle } from "lucide-react"; // MessageCircle para o WhatsApp
+import { SiteConfigProvider, useSiteConfig } from "@/context/SiteConfigContext"; // Importado useSiteConfig
+import { Loader2, MessageCircle } from "lucide-react"; 
 
 // --- IMPORT ESTÁTICO (Home para SEO e LCP) ---
 import Home from "@/pages/Home";
@@ -63,11 +63,20 @@ const PageLoader = () => (
   </div>
 );
 
-// --- COMPONENTE BOTÃO FLUTUANTE WHATSAPP ---
+// --- COMPONENTE BOTÃO FLUTUANTE WHATSAPP (DINÂMICO) ---
 const FloatingWhatsApp = () => {
-  const whatsappNumber = "5592999999999"; // Substitua pelo número real da AMB
+  // Agora pega do contexto global
+  const { whatsappNumber } = useSiteConfig(); 
+
+  // Mensagem padrão
   const message = "Olá! Gostaria de mais informações sobre a AMB Amazonas.";
-  const link = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+  // Limpa o número para evitar erros no link
+  const cleanNumber = whatsappNumber ? whatsappNumber.replace(/\D/g, '') : '';
+
+  // Se não tiver número configurado, usa um fallback ou não renderiza (opcional)
+  const finalNumber = cleanNumber || '5592999999999'; 
+  const link = `https://wa.me/${finalNumber}?text=${encodeURIComponent(message)}`;
 
   return (
     <a
@@ -131,7 +140,7 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
 
-            {/* BOTÃO FLUTUANTE GLOBAL */}
+            {/* BOTÃO FLUTUANTE AGORA TEM ACESSO AO CONTEXTO */}
             <FloatingWhatsApp />
 
           </Suspense>
@@ -143,3 +152,4 @@ function App() {
 }
 
 export default App;
+// linha 125

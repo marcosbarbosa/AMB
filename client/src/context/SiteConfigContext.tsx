@@ -4,91 +4,108 @@
  * ARQUIVO: SiteConfigContext.tsx
  * CAMINHO: client/src/context/SiteConfigContext.tsx
  * DATA: 15 de Janeiro de 2026
- * FUNÇÃO: Contexto Global de Configuração (Gestão de Estado)
- * VERSÃO: 3.0 Prime (Debug Enabled)
+ * FUNÇÃO: Contexto Global (Correção de Payloads e Conexão)
+ * VERSÃO: 9.0 Prime
  * ==========================================================
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-// URL Base da API
 const API_BASE = 'https://www.ambamazonas.com.br/api';
 
-interface SiteConfig {
-  [key: string]: boolean;
-}
-
-interface SiteConfigContextType {
-  menuConfig: SiteConfig;
-  refreshConfig: () => Promise<void>;
-  updateConfig: (newConfig: SiteConfig) => Promise<boolean>;
+interface SiteConfigContextData {
+  menuConfig: Record<string, boolean>;
+  whatsappNumber: string;
+  emailContact: string;
   isLoading: boolean;
+  updateConfig: (newConfig: Record<string, boolean>) => Promise<boolean>;
+  updateWhatsapp: (newNumber: string) => Promise<boolean>;
+  updateEmail: (newEmail: string) => Promise<boolean>;
 }
 
-const SiteConfigContext = createContext<SiteConfigContextType | undefined>(undefined);
+const SiteConfigContext = createContext<SiteConfigContextData>({} as SiteConfigContextData);
 
 export function SiteConfigProvider({ children }: { children: React.ReactNode }) {
-  // Estado inicial padrão (tudo visível por segurança)
-  const [menuConfig, setMenuConfig] = useState<SiteConfig>({
-      inicio: true, institucional: true, campeonatos: true, blog: true, contato: true
-  });
+  const [menuConfig, setMenuConfig] = useState<Record<string, boolean>>({});
+  const [whatsappNumber, setWhatsappNumber] = useState('5592999999999'); 
+  const [emailContact, setEmailContact] = useState('associacaomasterdebasquetebol@gmail.com');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Busca configurações do servidor
-  const fetchConfig = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/get_menu_config.php?t=${Date.now()}`);
-      if (res.data.status === 'sucesso') {
-        console.log("Config carregada:", res.data.config); // Debug
-        setMenuConfig(res.data.config);
+  // Carrega configurações ao iniciar
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        // Adiciona timestamp para evitar cache
+        const response = await axios.get(`${API_BASE}/get_site_config.php?t=${Date.now()}`);
+        if (response.data) {
+          if (response.data.menu) setMenuConfig(response.data.menu);
+          if (response.data.whatsapp) setWhatsappNumber(response.data.whatsapp);
+          if (response.data.email) setEmailContact(response.data.email);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar configs:", error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Erro ao carregar menu config:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+    loadConfig();
+  }, []);
 
-  // Atualiza configurações
-  const updateConfig = async (newConfig: SiteConfig): Promise<boolean> => {
-    // 1. Atualização Otimista (Muda na tela na hora)
-    setMenuConfig(newConfig);
-
+  // --- ATUALIZA MENU ---
+  const updateConfig = async (newConfig: Record<string, boolean>) => {
     try {
-      // 2. Envia para o servidor
-      const res = await axios.post(`${API_BASE}/update_menu_config.php`, {
-        config: newConfig
-      });
+      const payload = { config: newConfig }; // Envelopa em 'config' para o PHP
+      const response = await axios.post(`${API_BASE}/update_menu_config.php`, payload);
 
-      if (res.data.status === 'sucesso') {
-        console.log("Config salva com sucesso!");
-        return true;
-      } else {
-        throw new Error(res.data.mensagem);
+      if (response.data.status === 'sucesso') {
+          setMenuConfig(newConfig);
+          return true;
       }
+      return false;
     } catch (error) {
-      console.error("Erro crítico ao salvar:", error);
-      fetchConfig(); // Reverte para o estado anterior em caso de erro
+      console.error("Erro ao salvar config menu:", error);
       return false;
     }
   };
 
-  useEffect(() => {
-    fetchConfig();
-  }, []);
+  // --- ATUALIZA WHATSAPP ---
+  const updateWhatsapp = async (newNumber: string) => {
+    try {
+      const cleanNumber = newNumber.replace(/\D/g, '');
+      const response = await axios.post(`${API_BASE}/update_whatsapp.php`, { number: cleanNumber });
+      if (response.data.status === 'sucesso') {
+        setWhatsappNumber(cleanNumber);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Erro ao salvar WhatsApp:", error);
+      return false;
+    }
+  };
+
+  // --- ATUALIZA EMAIL ---
+  const updateEmail = async (newEmail: string) => {
+    try {
+      const response = await axios.post(`${API_BASE}/update_email.php`, { email: newEmail });
+      if (response.data.status === 'sucesso') {
+        setEmailContact(newEmail);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Erro ao salvar Email:", error);
+      return false;
+    }
+  };
 
   return (
-    <SiteConfigContext.Provider value={{ menuConfig, refreshConfig: fetchConfig, updateConfig, isLoading }}>
+    <SiteConfigContext.Provider value={{ menuConfig, whatsappNumber, emailContact, isLoading, updateConfig, updateWhatsapp, updateEmail }}>
       {children}
     </SiteConfigContext.Provider>
   );
 }
 
-export const useSiteConfig = () => {
-  const context = useContext(SiteConfigContext);
-  if (context === undefined) {
-    throw new Error('useSiteConfig deve ser usado dentro de um SiteConfigProvider');
-  }
-  return context;
-};
+export const useSiteConfig = () => useContext(SiteConfigContext);
+// linha 105
