@@ -4,8 +4,8 @@
  * ARQUIVO: App.tsx
  * CAMINHO: client/src/App.tsx
  * DATA: 15 de Janeiro de 2026
- * FUNÇÃO: Roteador Principal (Correção Diretoria + BI + Associados)
- * VERSÃO: 19.0 Prime
+ * FUNÇÃO: Roteador Principal + Floating WhatsApp
+ * VERSÃO: 20.0 Prime
  * ==========================================================
  */
 
@@ -15,7 +15,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/context/AuthContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SiteConfigProvider } from "@/context/SiteConfigContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageCircle } from "lucide-react"; // MessageCircle para o WhatsApp
 
 // --- IMPORT ESTÁTICO (Home para SEO e LCP) ---
 import Home from "@/pages/Home";
@@ -26,7 +26,7 @@ const Contact = lazy(() => import("@/pages/Contact"));
 const ParceirosPage = lazy(() => import("@/pages/ParceirosPage"));
 const SejaParceiroPage = lazy(() => import("@/pages/SejaParceiroPage"));
 const PrestacaoContasPage = lazy(() => import("@/pages/PrestacaoContasPage"));
-const InteligenciaPage = lazy(() => import("@/pages/InteligenciaPage")); // <--- NOVO
+const InteligenciaPage = lazy(() => import("@/pages/InteligenciaPage")); 
 
 // Auth
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
@@ -45,10 +45,8 @@ const GestaoBannersAMB = lazy(() => import("@/pages/admin/GestaoBannersAMB"));
 const GestaoTransparencia = lazy(() => import("@/pages/admin/GestaoTransparencia"));
 const GestaoEventosMaster = lazy(() => import("@/pages/admin/GestaoEventosMaster"));
 const GestaoTimesPage = lazy(() => import("@/pages/admin/GestaoTimesPage"));
-
-// CORREÇÃO CRÍTICA: O nome do arquivo físico é 'DiretoriaGestaoPage.tsx'
-// Antes estava: import("@/pages/admin/GestaoDiretoriaPage") -> CAUSAVA ERRO 404
 const DiretoriaGestaoPage = lazy(() => import("@/pages/admin/DiretoriaGestaoPage"));
+const GestaoNoticiasPage = lazy(() => import("@/pages/admin/GestaoNoticiasPage")); 
 
 // --- COMPONENTE DE LOADING ---
 const PageLoader = () => (
@@ -65,6 +63,28 @@ const PageLoader = () => (
   </div>
 );
 
+// --- COMPONENTE BOTÃO FLUTUANTE WHATSAPP ---
+const FloatingWhatsApp = () => {
+  const whatsappNumber = "5592999999999"; // Substitua pelo número real da AMB
+  const message = "Olá! Gostaria de mais informações sobre a AMB Amazonas.";
+  const link = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+  return (
+    <a
+      href={link}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20bd5a] text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-green-500/30 flex items-center justify-center group"
+      title="Fale Conosco no WhatsApp"
+    >
+      <MessageCircle className="h-8 w-8 fill-white stroke-white" />
+      <span className="absolute right-full mr-3 bg-white text-slate-800 text-xs font-bold py-1 px-3 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+        Fale Conosco
+      </span>
+    </a>
+  );
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -79,8 +99,6 @@ function App() {
               <Route path="/parceiros" element={<ParceirosPage />} />
               <Route path="/seja-parceiro" element={<SejaParceiroPage />} />
               <Route path="/transparencia" element={<PrestacaoContasPage />} />
-
-              {/* Rota BI - Inteligência */}
               <Route path="/bi" element={<InteligenciaPage />} />
 
               {/* --- AUTENTICAÇÃO --- */}
@@ -96,9 +114,8 @@ function App() {
               <Route path="/admin/login" element={<AdminPainelPage />} /> 
               <Route path="/admin/painel" element={<AdminPainelPage />} />
 
-              {/* Rota Associados (Atletas) */}
               <Route path="/admin/associados" element={<GestaoAssociadosPage />} />
-              <Route path="/admin/atletas" element={<GestaoAssociadosPage />} /> {/* Legacy support */}
+              <Route path="/admin/atletas" element={<GestaoAssociadosPage />} />
 
               <Route path="/admin/parceiros" element={<GestaoParceirosPage />} />
               <Route path="/admin/banners" element={<GestaoBannersAMB />} />
@@ -106,13 +123,17 @@ function App() {
               <Route path="/admin/eventos" element={<GestaoEventosMaster />} />
               <Route path="/admin/times" element={<GestaoTimesPage />} />
 
-              {/* Rota Diretoria - Apontando para o componente correto */}
               <Route path="/admin/diretoria" element={<DiretoriaGestaoPage />} />
               <Route path="/admin/diretoria-gestao" element={<DiretoriaGestaoPage />} />
 
-              {/* --- ROTA 404 --- */}
+              <Route path="/admin/noticias" element={<GestaoNoticiasPage />} />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
+
+            {/* BOTÃO FLUTUANTE GLOBAL */}
+            <FloatingWhatsApp />
+
           </Suspense>
           <Toaster />
         </TooltipProvider>
