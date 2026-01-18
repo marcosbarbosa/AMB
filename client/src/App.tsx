@@ -71,12 +71,12 @@ const PageLoader = () => (
 
 // --- WHATSAPP FLUTUANTE (DADOS OFICIAIS) ---
 const FloatingWhatsApp = () => {
-  const { whatsappNumber } = useSiteConfig(); 
+  const { config } = useSiteConfig(); 
   const message = "Olá! Gostaria de mais informações sobre a AMB Amazonas.";
 
   // Prioridade: Banco de Dados > Oficial Hardcoded
   // Número Oficial: +55 92 9252-1345
-  const rawNumber = whatsappNumber || '559292521345';
+  const rawNumber = config?.whatsapp || '559292521345';
 
   const cleanNumber = rawNumber.replace(/\D/g, '');
   const link = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
