@@ -1,20 +1,19 @@
 /*
- * ==========================================================
- * PROJETO: Portal AMB Amazonas
- * ARQUIVO: App.tsx
- * CAMINHO: client/src/App.tsx
- * DATA: 15 de Janeiro de 2026
- * FUNÇÃO: Roteador Principal + Floating WhatsApp Dinâmico
- * VERSÃO: 21.0 Prime
- * ==========================================================
- */
+// Nome: App.tsx
+// Caminho: client/src/App.tsx
+// Data: 2026-01-17
+// Hora: 22:45 (America/Sao_Paulo)
+// Função: Roteador Principal + Fix Import Case Sensitivity
+// Versão: v23.0 Prime Stable
+// Alteração: Correção do import NotFound e mapeamento de rotas institucionais.
+*/
 
 import React, { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/context/AuthContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SiteConfigProvider, useSiteConfig } from "@/context/SiteConfigContext"; // Importado useSiteConfig
+import { SiteConfigProvider, useSiteConfig } from "@/context/SiteConfigContext"; 
 import { Loader2, MessageCircle } from "lucide-react"; 
 
 // --- IMPORT ESTÁTICO (Home para SEO e LCP) ---
@@ -25,13 +24,18 @@ const AboutPage = lazy(() => import("@/pages/AboutPage"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const ParceirosPage = lazy(() => import("@/pages/ParceirosPage"));
 const SejaParceiroPage = lazy(() => import("@/pages/SejaParceiroPage"));
-const PrestacaoContasPage = lazy(() => import("@/pages/PrestacaoContasPage"));
+
+// NOVAS PÁGINAS INSTITUCIONAIS (Garantir que os arquivos existem)
 const InteligenciaPage = lazy(() => import("@/pages/InteligenciaPage")); 
+const DiretoriaPage = lazy(() => import("@/pages/DiretoriaPage")); 
+const SecretariaDigitalPage = lazy(() => import("@/pages/SecretariaDigitalPage")); 
 
 // Auth
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const CadastroPage = lazy(() => import("@/pages/CadastroPage"));
-const NotFound = lazy(() => import("@/pages/not-found"));
+
+// CORREÇÃO: Nome exato do arquivo (Case Sensitive)
+const NotFound = lazy(() => import("@/pages/not-found")); 
 
 // Área do Atleta
 const PainelPage = lazy(() => import("@/pages/PainelPage"));
@@ -63,20 +67,16 @@ const PageLoader = () => (
   </div>
 );
 
-// --- COMPONENTE BOTÃO FLUTUANTE WHATSAPP (DINÂMICO) ---
+// --- COMPONENTE BOTÃO FLUTUANTE WHATSAPP (ATUALIZADO) ---
 const FloatingWhatsApp = () => {
-  // Agora pega do contexto global
   const { whatsappNumber } = useSiteConfig(); 
 
-  // Mensagem padrão
   const message = "Olá! Gostaria de mais informações sobre a AMB Amazonas.";
 
-  // Limpa o número para evitar erros no link
-  const cleanNumber = whatsappNumber ? whatsappNumber.replace(/\D/g, '') : '';
-
-  // Se não tiver número configurado, usa um fallback ou não renderiza (opcional)
-  const finalNumber = cleanNumber || '5592999999999'; 
-  const link = `https://wa.me/${finalNumber}?text=${encodeURIComponent(message)}`;
+  // Safe Access com fallback oficial
+  const rawNumber = whatsappNumber || '559292521345';
+  const cleanNumber = rawNumber.replace(/\D/g, '');
+  const link = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
 
   return (
     <a
@@ -107,8 +107,17 @@ function App() {
               <Route path="/contato" element={<Contact />} />
               <Route path="/parceiros" element={<ParceirosPage />} />
               <Route path="/seja-parceiro" element={<SejaParceiroPage />} />
-              <Route path="/transparencia" element={<PrestacaoContasPage />} />
-              <Route path="/bi" element={<InteligenciaPage />} />
+
+              {/* ROTAS INSTITUCIONAIS NOVAS */}
+              <Route path="/inteligencia" element={<InteligenciaPage />} />
+              <Route path="/diretoria" element={<DiretoriaPage />} />
+              <Route path="/secretaria-digital" element={<SecretariaDigitalPage />} />
+
+              {/* REDIRECTS INTELIGENTES */}
+              <Route path="/transparencia" element={<Navigate to="/secretaria-digital" replace />} />
+              <Route path="/historico" element={<Navigate to="/secretaria-digital" replace />} />
+              <Route path="/prestacao-contas" element={<Navigate to="/secretaria-digital" replace />} />
+              <Route path="/bi" element={<Navigate to="/inteligencia" replace />} />
 
               {/* --- AUTENTICAÇÃO --- */}
               <Route path="/login" element={<LoginPage />} />
@@ -122,6 +131,7 @@ function App() {
               <Route path="/admin" element={<AdminPainelPage />} />
               <Route path="/admin/login" element={<AdminPainelPage />} /> 
               <Route path="/admin/painel" element={<AdminPainelPage />} />
+              <Route path="/admin/configuracoes" element={<AdminPainelPage />} />
 
               <Route path="/admin/associados" element={<GestaoAssociadosPage />} />
               <Route path="/admin/atletas" element={<GestaoAssociadosPage />} />
@@ -137,10 +147,10 @@ function App() {
 
               <Route path="/admin/noticias" element={<GestaoNoticiasPage />} />
 
+              {/* Rota 404 (Última) */}
               <Route path="*" element={<NotFound />} />
             </Routes>
 
-            {/* BOTÃO FLUTUANTE AGORA TEM ACESSO AO CONTEXTO */}
             <FloatingWhatsApp />
 
           </Suspense>
@@ -152,4 +162,4 @@ function App() {
 }
 
 export default App;
-// linha 125
+// linha 170 App.tsx
