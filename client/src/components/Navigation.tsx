@@ -2,23 +2,21 @@
 // Nome: Navigation.tsx
 // Caminho: client/src/components/Navigation.tsx
 // Data: 2026-01-17
-// Hora: 23:20 (America/Sao_Paulo)
-// Função: Navbar com Safe Config Access e Tooltip
-// Versão: v14.0 Prime Stable
+// Hora: 23:55 (America/Sao_Paulo)
+// Função: Navbar com Botão Roxo para SuperUser e Tooltips
+// Versão: v15.0 Prime
+// Alteração: Lógica visual do botão admin baseada em is_superuser.
 */
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Menu, X, ChevronDown, Settings, Newspaper, 
-  Home, Facebook, Instagram, Youtube, Info, BarChart3, Mail, Trophy, Building2
+  Home, Facebook, Instagram, Youtube, Info, BarChart3, Mail, Trophy, Building2, Crown
 } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger 
 } from "@/components/ui/tooltip";
 import { useAuth } from '@/context/AuthContext';
 import { useSiteConfig } from '@/context/SiteConfigContext';
@@ -37,7 +35,6 @@ export function Navigation() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // PROTEÇÃO CONTRA CRASH: Objeto padrão se config for undefined
   const safeConfig = config || { menu: {}, social: {} };
 
   const navItems = [
@@ -67,9 +64,13 @@ export function Navigation() {
 
   const filteredNav = navItems.filter(item => safeConfig?.menu?.[item.key] !== false);
 
-  const fbLink = safeConfig?.social?.facebook || '';
-  const igLink = safeConfig?.social?.instagram || '';
-  const ytLink = safeConfig?.social?.youtube || '';
+  // Lógica do Superusuário (Botão Roxo)
+  // O backend deve retornar 1 ou true. Tratamos ambos.
+  const isSuperUser = atleta?.is_superuser == 1 || atleta?.is_superuser === true;
+
+  const adminBtnClass = isSuperUser 
+    ? "text-purple-600 bg-purple-50 hover:bg-purple-100 hover:text-purple-700 border border-purple-200"
+    : "text-slate-600 hover:text-blue-600 hover:bg-blue-50";
 
   return (
     <div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-4'}`}>
@@ -95,33 +96,18 @@ export function Navigation() {
                       {item.label}
                     </Link>
                   )}
-
                   {item.submenu && (
                     <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                       <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 min-w-[240px]">
                         {item.submenu.map(sub => {
-                          if (sub.key === 'secretaria_digital' && sub.description) {
-                            return (
-                              <TooltipProvider key={sub.key}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Link to={sub.href} className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl">
-                                      {sub.label}
-                                    </Link>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="right" className="bg-slate-900 text-white border-none">
-                                    <p className="font-medium text-xs">{sub.description}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            );
-                          }
-                          return (
-                            <Link key={sub.key} to={sub.href} className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl">
-                              {sub.key === 'bi_publico' && <BarChart3 className="h-4 w-4" />}
-                              {sub.label}
-                            </Link>
-                          );
+                           if (sub.key === 'secretaria_digital' && sub.description) {
+                             return (
+                               <TooltipProvider key={sub.key}>
+                                 <Tooltip><TooltipTrigger asChild><Link to={sub.href} className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl">{sub.label}</Link></TooltipTrigger><TooltipContent side="right" className="bg-slate-900 text-white border-none"><p className="font-medium text-xs">{sub.description}</p></TooltipContent></Tooltip>
+                               </TooltipProvider>
+                             )
+                           }
+                           return <Link key={sub.key} to={sub.href} className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl">{sub.label}</Link>
                         })}
                       </div>
                     </div>
@@ -132,16 +118,18 @@ export function Navigation() {
 
             <div className="flex items-center gap-3">
               <div className="hidden xl:flex items-center gap-2 pr-4 border-r border-slate-100">
-                {fbLink && <a href={fbLink} target="_blank" rel="noreferrer" className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"><Facebook className="h-4 w-4" /></a>}
-                {igLink && <a href={igLink} target="_blank" rel="noreferrer" className="p-2 text-slate-400 hover:text-pink-600 hover:bg-pink-50 rounded-full transition-all"><Instagram className="h-4 w-4" /></a>}
-                {ytLink && <a href={ytLink} target="_blank" rel="noreferrer" className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"><Youtube className="h-4 w-4" /></a>}
+                {safeConfig?.social?.facebook && <a href={safeConfig.social.facebook} target="_blank" className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"><Facebook className="h-4 w-4" /></a>}
+                {safeConfig?.social?.instagram && <a href={safeConfig.social.instagram} target="_blank" className="p-2 text-slate-400 hover:text-pink-600 hover:bg-pink-50 rounded-full transition-all"><Instagram className="h-4 w-4" /></a>}
+                {safeConfig?.social?.youtube && <a href={safeConfig.social.youtube} target="_blank" className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"><Youtube className="h-4 w-4" /></a>}
               </div>
 
               {isAuthenticated ? (
                 <div className="flex items-center gap-2">
                    {atleta?.role === 'admin' && (
                      <Link to="/admin/painel">
-                       <Button variant="ghost" size="icon" className="text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-full"><Settings className="h-5 w-5" /></Button>
+                       <Button variant="ghost" size="icon" className={`rounded-full transition-all ${adminBtnClass}`}>
+                         {isSuperUser ? <Crown className="h-5 w-5" /> : <Settings className="h-5 w-5" />}
+                       </Button>
                      </Link>
                    )}
                    <Button variant="ghost" size="sm" onClick={logout} className="text-red-600 hover:bg-red-50 font-black rounded-full uppercase text-xs">Sair</Button>
@@ -156,26 +144,9 @@ export function Navigation() {
             </div>
         </div>
       </div>
-
-      {isMenuOpen && (
-        <div className="lg:hidden fixed inset-0 top-20 bg-white z-40 p-4 border-t overflow-y-auto">
-             {filteredNav.map((item) => (
-                <div key={item.key} className="py-2 border-b">
-                   <span className="font-bold text-slate-900 block mb-2">{item.label}</span>
-                   {item.submenu ? (
-                     <div className="pl-4 space-y-2">
-                        {item.submenu.map(sub => (
-                           <Link key={sub.key} to={sub.href} className="block text-sm text-slate-600 py-1" onClick={() => setIsMenuOpen(false)}>{sub.label}</Link>
-                        ))}
-                     </div>
-                   ) : (
-                      <Link to={item.href!} className="block text-sm text-blue-600" onClick={() => setIsMenuOpen(false)}>Acessar</Link>
-                   )}
-                </div>
-             ))}
-        </div>
-      )}
+      {/* Mobile Overlay Omitted for Brevity but present in full file */}
+      {isMenuOpen && (<div className="lg:hidden fixed inset-0 top-20 bg-white z-40 p-4 border-t overflow-y-auto">{filteredNav.map((item)=>(<div key={item.key} className="py-2 border-b"><span className="font-bold text-slate-900 block mb-2">{item.label}</span>{item.submenu?<div className="pl-4 space-y-2">{item.submenu.map(sub=>(<Link key={sub.key} to={sub.href} className="block text-sm text-slate-600 py-1" onClick={()=>setIsMenuOpen(false)}>{sub.label}</Link>))}</div>:<Link to={item.href!} className="block text-sm text-blue-600" onClick={()=>setIsMenuOpen(false)}>Acessar</Link>}</div>))}</div>)}
     </div>
   );
 }
-// linha 190 Navigation.tsx
+// linha 145 Navigation.tsx

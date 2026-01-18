@@ -2,10 +2,10 @@
 // Nome: App.tsx
 // Caminho: client/src/App.tsx
 // Data: 2026-01-17
-// Hora: 23:10 (America/Sao_Paulo)
-// Função: Roteador Principal + Correção de Import Case Sensitive
-// Versão: v24.0 Prime Stable
-// Alteração: Fix do import not-found e mapeamento da Secretaria Digital.
+// Hora: 23:55 (America/Sao_Paulo)
+// Função: Roteador Principal + Fix Import Case Sensitive + WhatsApp Oficial
+// Versão: v26.0 Prime Stable
+// Alteração: Correção do import not-found, WhatsApp oficial no fallback e novas rotas.
 */
 
 import React, { Suspense, lazy } from 'react';
@@ -16,10 +16,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SiteConfigProvider, useSiteConfig } from "@/context/SiteConfigContext"; 
 import { Loader2, MessageCircle } from "lucide-react"; 
 
-// --- IMPORT ESTÁTICO (Home para SEO e LCP) ---
+// --- IMPORT ESTÁTICO ---
 import Home from "@/pages/Home";
 
-// --- IMPORTS DINÂMICOS ---
+// --- PÁGINAS PÚBLICAS (Lazy) ---
 const AboutPage = lazy(() => import("@/pages/AboutPage"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const ParceirosPage = lazy(() => import("@/pages/ParceirosPage"));
@@ -28,20 +28,22 @@ const SejaParceiroPage = lazy(() => import("@/pages/SejaParceiroPage"));
 // NOVAS PÁGINAS INSTITUCIONAIS
 const InteligenciaPage = lazy(() => import("@/pages/InteligenciaPage")); 
 const DiretoriaPage = lazy(() => import("@/pages/DiretoriaPage")); 
-const SecretariaDigitalPage = lazy(() => import("@/pages/SecretariaDigitalPage")); 
+const SecretariaDigitalPage = lazy(() => import("@/pages/SecretariaDigitalPage"));
+const NoticiasPage = lazy(() => import("@/pages/NoticiasPage"));
+const EventosPage = lazy(() => import("@/pages/EventosPage"));
 
-// Auth
+// AUTH
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const CadastroPage = lazy(() => import("@/pages/CadastroPage"));
 
-// CORREÇÃO CRÍTICA: Nome do arquivo é 'not-found.tsx' (minúsculo) no disco
+// CORREÇÃO CRÍTICA: O arquivo no disco é 'not-found.tsx' (minúsculo)
 const NotFound = lazy(() => import("@/pages/not-found")); 
 
-// Área do Atleta
+// ÁREA DO ATLETA
 const PainelPage = lazy(() => import("@/pages/PainelPage"));
 const EditarPerfilPage = lazy(() => import("@/pages/EditarPerfilPage"));
 
-// Área Administrativa
+// ÁREA ADMINISTRATIVA
 const AdminPainelPage = lazy(() => import("@/pages/admin/AdminPainelPage"));
 const GestaoAssociadosPage = lazy(() => import("@/pages/admin/GestaoAssociadosPage"));
 const GestaoParceirosPage = lazy(() => import("@/pages/admin/GestaoParceirosPage"));
@@ -52,7 +54,7 @@ const GestaoTimesPage = lazy(() => import("@/pages/admin/GestaoTimesPage"));
 const DiretoriaGestaoPage = lazy(() => import("@/pages/admin/DiretoriaGestaoPage"));
 const GestaoNoticiasPage = lazy(() => import("@/pages/admin/GestaoNoticiasPage")); 
 
-// --- COMPONENTE DE LOADING ---
+// --- LOADING ---
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
     <div className="relative">
@@ -67,13 +69,15 @@ const PageLoader = () => (
   </div>
 );
 
-// --- WHATSAPP FLUTUANTE (SAFE CONTEXT) ---
+// --- WHATSAPP FLUTUANTE (DADOS OFICIAIS) ---
 const FloatingWhatsApp = () => {
-  const { whatsappNumber } = useSiteConfig(); 
+  const { config } = useSiteConfig(); 
   const message = "Olá! Gostaria de mais informações sobre a AMB Amazonas.";
 
-  // Acesso seguro com fallback oficial
-  const rawNumber = whatsappNumber || '559292521345';
+  // Prioridade: Banco de Dados > Oficial Hardcoded
+  // Número Oficial: +55 92 9252-1345
+  const rawNumber = config?.whatsapp || '559292521345';
+
   const cleanNumber = rawNumber.replace(/\D/g, '');
   const link = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
 
@@ -100,33 +104,35 @@ function App() {
         <TooltipProvider>
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              {/* --- ROTAS PÚBLICAS --- */}
+              {/* PÚBLICAS */}
               <Route path="/" element={<Home />} />
               <Route path="/sobre" element={<AboutPage />} />
               <Route path="/contato" element={<Contact />} />
               <Route path="/parceiros" element={<ParceirosPage />} />
               <Route path="/seja-parceiro" element={<SejaParceiroPage />} />
 
-              {/* ROTAS INSTITUCIONAIS NOVAS */}
+              {/* INSTITUCIONAIS & CORREÇÃO 404 */}
               <Route path="/inteligencia" element={<InteligenciaPage />} />
               <Route path="/diretoria" element={<DiretoriaPage />} />
               <Route path="/secretaria-digital" element={<SecretariaDigitalPage />} />
+              <Route path="/noticias" element={<NoticiasPage />} />
+              <Route path="/eventos" element={<EventosPage />} />
 
-              {/* REDIRECTS INTELIGENTES (Cura links quebrados) */}
+              {/* REDIRECTS INTELIGENTES */}
               <Route path="/transparencia" element={<Navigate to="/secretaria-digital" replace />} />
               <Route path="/historico" element={<Navigate to="/secretaria-digital" replace />} />
               <Route path="/prestacao-contas" element={<Navigate to="/secretaria-digital" replace />} />
               <Route path="/bi" element={<Navigate to="/inteligencia" replace />} />
 
-              {/* --- AUTENTICAÇÃO --- */}
+              {/* AUTH */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/cadastro" element={<CadastroPage />} />
 
-              {/* --- ÁREA DO ATLETA --- */}
+              {/* ATLETA */}
               <Route path="/painel" element={<PainelPage />} />
               <Route path="/painel/editar" element={<EditarPerfilPage />} />
 
-              {/* --- ÁREA ADMINISTRATIVA --- */}
+              {/* ADMIN */}
               <Route path="/admin" element={<AdminPainelPage />} />
               <Route path="/admin/login" element={<AdminPainelPage />} /> 
               <Route path="/admin/painel" element={<AdminPainelPage />} />
@@ -134,23 +140,17 @@ function App() {
 
               <Route path="/admin/associados" element={<GestaoAssociadosPage />} />
               <Route path="/admin/atletas" element={<GestaoAssociadosPage />} />
-
               <Route path="/admin/parceiros" element={<GestaoParceirosPage />} />
               <Route path="/admin/banners" element={<GestaoBannersAMB />} />
               <Route path="/admin/transparencia" element={<GestaoTransparencia />} />
               <Route path="/admin/eventos" element={<GestaoEventosMaster />} />
               <Route path="/admin/times" element={<GestaoTimesPage />} />
-
               <Route path="/admin/diretoria" element={<DiretoriaGestaoPage />} />
-              <Route path="/admin/diretoria-gestao" element={<DiretoriaGestaoPage />} />
-
               <Route path="/admin/noticias" element={<GestaoNoticiasPage />} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
-
             <FloatingWhatsApp />
-
           </Suspense>
           <Toaster />
         </TooltipProvider>
@@ -160,4 +160,4 @@ function App() {
 }
 
 export default App;
-// linha 170 App.tsx
+// linha 175 App.tsx

@@ -2,10 +2,9 @@
 // Nome: AdminPainelPage.tsx
 // Caminho: client/src/pages/admin/AdminPainelPage.tsx
 // Data: 2026-01-17
-// Hora: 20:55 (America/Sao_Paulo)
-// Função: Dashboard Administrativo com Configuração Centralizada
-// Versão: v12.0 Prime
-// Alteração: Módulo de Configurações assumindo lugar de destaque; BI movido para público.
+// Hora: 23:55 (America/Sao_Paulo)
+// Função: Dashboard Admin (Tipografia Prime e Módulo Parceiros)
+// Versão: v13.0 Prime
 */
 
 import { Navigation } from '@/components/Navigation';
@@ -15,7 +14,7 @@ import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom'; 
 import { 
   Loader2, Users, Newspaper, CalendarDays, Settings, 
-  Layout, FileText
+  Layout, FileText, Handshake
 } from 'lucide-react'; 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'; 
 
@@ -34,37 +33,43 @@ export default function AdminPainelPage() {
     {
       title: 'Associados',
       icon: Users,
-      description: 'Gestão de atletas, CPFs, finanças e migração XLSX.',
+      description: 'Gestão de atletas, CPFs e migração XLSX.',
       link: '/admin/associados',
+    },
+    {
+      title: 'Gestão de Parceiros',
+      icon: Handshake,
+      description: 'Gerencie empresas conveniadas e descontos.',
+      link: '/admin/parceiros', // Agora acessível
     },
     {
       title: 'Configurações do Portal',
       icon: Settings,
-      description: 'Gerencie Redes Sociais, WhatsApp, E-mail e Endereço Oficial.',
+      description: 'Redes Sociais, WhatsApp, E-mail e Endereço.',
       link: '/admin/configuracoes',
     },
     {
       title: 'Notícias',
       icon: Newspaper,
-      description: 'Publique novidades, avisos e editais informativos.',
+      description: 'Publique novidades, avisos e editais.',
       link: '/admin/noticias',
     },
     {
       title: 'Eventos & Jogos',
       icon: CalendarDays,
-      description: 'Gerencie o calendário esportivo e placares.',
+      description: 'Gerencie o calendário e placares.',
       link: '/admin/eventos',
     },
     {
       title: 'Transparência',
       icon: FileText,
-      description: 'Documentos Oficiais, Editais e Atas da Associação.',
+      description: 'Documentos Oficiais e Atas.',
       link: '/admin/transparencia',
     },
     {
       title: 'Banners',
       icon: Layout,
-      description: 'Gerenciar imagens do topo e artes de publicidade.',
+      description: 'Gerenciar imagens do topo.',
       link: '/admin/banners',
     }
   ];
@@ -75,8 +80,11 @@ export default function AdminPainelPage() {
       <main className="pt-32 pb-16">
         <section className="max-w-7xl mx-auto px-4">
           <div className="mb-10 text-center md:text-left">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2 uppercase">Painel Administrativo</h1>
-            <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">Acesso de Gestor: {atleta?.nome_completo}</p>
+            {/* Título mais elegante, menos "garrafal" */}
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2 uppercase">Painel Administrativo</h1>
+            <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">
+              Gestor: <span className="text-blue-600">{atleta?.nome_completo}</span>
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -102,4 +110,4 @@ export default function AdminPainelPage() {
     </div>
   );
 }
-// linha 105 AdminPainelPage.tsx
+// linha 110 AdminPainelPage.tsx
