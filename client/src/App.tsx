@@ -2,10 +2,10 @@
 // Nome: App.tsx
 // Caminho: client/src/App.tsx
 // Data: 2026-01-17
-// Hora: 22:45 (America/Sao_Paulo)
-// Função: Roteador Principal + Fix Import Case Sensitivity
-// Versão: v23.0 Prime Stable
-// Alteração: Correção do import NotFound e mapeamento de rotas institucionais.
+// Hora: 23:10 (America/Sao_Paulo)
+// Função: Roteador Principal + Correção de Import Case Sensitive
+// Versão: v24.0 Prime Stable
+// Alteração: Fix do import not-found e mapeamento da Secretaria Digital.
 */
 
 import React, { Suspense, lazy } from 'react';
@@ -19,13 +19,13 @@ import { Loader2, MessageCircle } from "lucide-react";
 // --- IMPORT ESTÁTICO (Home para SEO e LCP) ---
 import Home from "@/pages/Home";
 
-// --- IMPORTS DINÂMICOS (Lazy Loading para Performance) ---
+// --- IMPORTS DINÂMICOS ---
 const AboutPage = lazy(() => import("@/pages/AboutPage"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const ParceirosPage = lazy(() => import("@/pages/ParceirosPage"));
 const SejaParceiroPage = lazy(() => import("@/pages/SejaParceiroPage"));
 
-// NOVAS PÁGINAS INSTITUCIONAIS (Garantir que os arquivos existem)
+// NOVAS PÁGINAS INSTITUCIONAIS
 const InteligenciaPage = lazy(() => import("@/pages/InteligenciaPage")); 
 const DiretoriaPage = lazy(() => import("@/pages/DiretoriaPage")); 
 const SecretariaDigitalPage = lazy(() => import("@/pages/SecretariaDigitalPage")); 
@@ -34,7 +34,7 @@ const SecretariaDigitalPage = lazy(() => import("@/pages/SecretariaDigitalPage")
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const CadastroPage = lazy(() => import("@/pages/CadastroPage"));
 
-// CORREÇÃO: Nome exato do arquivo (Case Sensitive)
+// CORREÇÃO CRÍTICA: Nome do arquivo é 'not-found.tsx' (minúsculo) no disco
 const NotFound = lazy(() => import("@/pages/not-found")); 
 
 // Área do Atleta
@@ -67,13 +67,12 @@ const PageLoader = () => (
   </div>
 );
 
-// --- COMPONENTE BOTÃO FLUTUANTE WHATSAPP (ATUALIZADO) ---
+// --- WHATSAPP FLUTUANTE (SAFE CONTEXT) ---
 const FloatingWhatsApp = () => {
   const { whatsappNumber } = useSiteConfig(); 
-
   const message = "Olá! Gostaria de mais informações sobre a AMB Amazonas.";
 
-  // Safe Access com fallback oficial
+  // Acesso seguro com fallback oficial
   const rawNumber = whatsappNumber || '559292521345';
   const cleanNumber = rawNumber.replace(/\D/g, '');
   const link = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
@@ -113,7 +112,7 @@ function App() {
               <Route path="/diretoria" element={<DiretoriaPage />} />
               <Route path="/secretaria-digital" element={<SecretariaDigitalPage />} />
 
-              {/* REDIRECTS INTELIGENTES */}
+              {/* REDIRECTS INTELIGENTES (Cura links quebrados) */}
               <Route path="/transparencia" element={<Navigate to="/secretaria-digital" replace />} />
               <Route path="/historico" element={<Navigate to="/secretaria-digital" replace />} />
               <Route path="/prestacao-contas" element={<Navigate to="/secretaria-digital" replace />} />
@@ -147,7 +146,6 @@ function App() {
 
               <Route path="/admin/noticias" element={<GestaoNoticiasPage />} />
 
-              {/* Rota 404 (Última) */}
               <Route path="*" element={<NotFound />} />
             </Routes>
 

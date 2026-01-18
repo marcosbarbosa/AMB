@@ -2,9 +2,9 @@
 // Nome: Navigation.tsx
 // Caminho: client/src/components/Navigation.tsx
 // Data: 2026-01-17
-// Hora: 22:50 (America/Sao_Paulo)
-// Função: Navbar Blindada (Safe Config Access)
-// Versão: v13.0 Prime Stable
+// Hora: 23:20 (America/Sao_Paulo)
+// Função: Navbar com Safe Config Access e Tooltip
+// Versão: v14.0 Prime Stable
 */
 
 import { useState, useEffect } from 'react';
@@ -37,8 +37,7 @@ export function Navigation() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // --- BLINDAGEM CONTRA CRASH ---
-  // Se config for null/undefined, usa um objeto padrão seguro
+  // PROTEÇÃO CONTRA CRASH: Objeto padrão se config for undefined
   const safeConfig = config || { menu: {}, social: {} };
 
   const navItems = [
@@ -66,7 +65,6 @@ export function Navigation() {
     { key: 'contato', label: 'Contato', href: '/contato', icon: Mail },
   ];
 
-  // Optional Chaining (?.) previne o crash "Cannot read properties of undefined"
   const filteredNav = navItems.filter(item => safeConfig?.menu?.[item.key] !== false);
 
   const fbLink = safeConfig?.social?.facebook || '';
@@ -159,7 +157,6 @@ export function Navigation() {
         </div>
       </div>
 
-      {/* Menu Mobile Renderizado Corretamente */}
       {isMenuOpen && (
         <div className="lg:hidden fixed inset-0 top-20 bg-white z-40 p-4 border-t overflow-y-auto">
              {filteredNav.map((item) => (
