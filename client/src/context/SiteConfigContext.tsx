@@ -1,10 +1,9 @@
 // Nome: SiteConfigContext.tsx
 // Caminho: client/src/context/SiteConfigContext.tsx
-// Data: 2026-01-18
-// Hora: 21:05 (America/Sao_Paulo)
-// Função: Contexto Global com Fetch Dedicado de Menu
-// Versão: v12.1 Menu Fix
-// Alteração: Adicionado fetch paralelo para get_menu_config.php para garantir integridade do menu.
+// Data: 2026-01-19
+// Hora: 00:15
+// Função: Contexto Híbrido (Carregamento Imediato + Atualização Dinâmica)
+// Versão: v15.0 Hybrid Stable
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
@@ -30,40 +29,45 @@ interface SiteConfigContextData {
 const SiteConfigContext = createContext<SiteConfigContextData>({} as SiteConfigContextData);
 
 export function SiteConfigProvider({ children }: { children: React.ReactNode }) {
+  // 1. DADOS PADRÃO OFICIAIS (FALLBACK DE SEGURANÇA)
+  // Isso garante que o site nunca fique em branco, mesmo sem internet/banco
+  const DEFAULT_WHATSAPP = '559292521345';
+  const DEFAULT_EMAIL = 'associacaomasterdebasquetebol@gmail.com';
+
   const [config, setConfig] = useState<any>(null);
   const [menuConfig, setMenuConfig] = useState<Record<string, boolean>>({});
-  const [whatsappNumber, setWhatsappNumber] = useState(''); 
-  const [emailContact, setEmailContact] = useState('');
+
+  // 2. INICIALIZAÇÃO OTIMISTA (Começa com o valor certo)
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP); 
+  const [emailContact, setEmailContact] = useState(DEFAULT_EMAIL);
+
   const [isLoading, setIsLoading] = useState(true);
 
   const loadConfig = async () => {
     try {
-      // Executa requisições em paralelo para performance
-      const [siteRes, menuRes] = await Promise.allSettled([
-        axios.get(`${API_BASE}/get_site_config.php?t=${Date.now()}`),
-        axios.get(`${API_BASE}/get_menu_config.php?t=${Date.now()}`)
-      ]);
+      // Busca dados do banco para ver se algo mudou
+      const response = await axios.get(`${API_BASE}/get_site_config.php?t=${Date.now()}`);
 
-      // Processa Configurações Gerais
-      if (siteRes.status === 'fulfilled' && siteRes.value.data) {
-        const data = siteRes.value.data;
-        setConfig(data);
-        if (data.whatsapp) setWhatsappNumber(data.whatsapp);
-        if (data.email) setEmailContact(data.email);
+      console.log("📥 Config Atualizada:", response.data); 
 
-        // Fallback se o endpoint dedicado falhar
-        if (data.menu && (!menuRes || menuRes.status === 'rejected')) {
-           setMenuConfig(data.menu);
+      if (response.data) {
+        setConfig(response.data);
+
+        if (response.data.menu) setMenuConfig(response.data.menu);
+
+        // 3. ATUALIZAÇÃO INTELIGENTE
+        // Só sobrescreve o padrão se o banco trouxer um valor válido e não vazio
+        if (response.data.whatsapp && response.data.whatsapp.length > 8) {
+            setWhatsappNumber(response.data.whatsapp);
+        }
+
+        if (response.data.email && response.data.email.includes('@')) {
+            setEmailContact(response.data.email);
         }
       }
-
-      // Processa Configuração Específica de Menu (Prioridade Alta)
-      if (menuRes.status === 'fulfilled' && menuRes.value.data && menuRes.value.data.config) {
-        setMenuConfig(prev => ({ ...prev, ...menuRes.value.data.config }));
-      }
-
     } catch (error) {
-      console.error("Erro crítico carregando configs:", error);
+      console.error("⚠️ Usando configuração padrão (Erro API):", error);
+      // Não faz nada, mantém os defaults que já estão no estado
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +75,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => { loadConfig(); }, []);
 
-  // --- UPDATE WHATSAPP ---
+  // --- UPDATES (Mantém a lógica de escrita no banco) ---
   const updateWhatsapp = async (newNumber: string): Promise<UpdateResponse> => {
     try {
       const cleanNumber = newNumber.replace(/\D/g, '');
@@ -80,31 +84,27 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
         setWhatsappNumber(cleanNumber);
         return { success: true, msg: 'WhatsApp atualizado' };
       }
-      return { success: false, msg: response.data.mensagem || 'Erro backend' };
-    } catch (error: any) {
-      return { success: false, msg: error.message || 'Erro conexão' };
-    }
+      return { success: false, msg: response.data.mensagem };
+    } catch (e: any) { return { success: false, msg: e.message }; }
   };
 
-  // --- UPDATE MENU CONFIG ---
+  const updateEmail = async (newEmail: string): Promise<UpdateResponse> => {
+    try {
+      const response = await axios.post(`${API_BASE}/update_email.php`, { email: newEmail });
+      if (response.data.status === 'sucesso') {
+        setEmailContact(newEmail);
+        return { success: true, msg: 'Email salvo' };
+      }
+      return { success: false, msg: response.data.mensagem };
+    } catch (e: any) { return { success: false, msg: e.message }; }
+  };
+
   const updateConfig = async (newConfig: Record<string, boolean>): Promise<UpdateResponse> => {
     try {
         const response = await axios.post(`${API_BASE}/update_menu_config.php`, { config: newConfig });
         if (response.data.status === 'sucesso') {
             setMenuConfig(newConfig);
             return { success: true, msg: 'Menu salvo' };
-        }
-        return { success: false, msg: response.data.mensagem };
-    } catch(e: any) { return { success: false, msg: e.message }; }
-  };
-
-  // --- UPDATE EMAIL ---
-  const updateEmail = async (newEmail: string): Promise<UpdateResponse> => {
-    try {
-        const response = await axios.post(`${API_BASE}/update_email.php`, { email: newEmail });
-        if (response.data.status === 'sucesso') {
-            setEmailContact(newEmail);
-            return { success: true, msg: 'Email salvo' };
         }
         return { success: false, msg: response.data.mensagem };
     } catch(e: any) { return { success: false, msg: e.message }; }
@@ -121,4 +121,4 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 }
 
 export const useSiteConfig = () => useContext(SiteConfigContext);
-// linha 116 SiteConfigContext.tsx
+// linha 118 SiteConfigContext.tsx

@@ -1,10 +1,9 @@
 // Nome: FerramentasModal.tsx
 // Caminho: client/src/components/FerramentasModal.tsx
 // Data: 2026-01-18
-// Hora: 21:38 (America/Sao_Paulo)
-// Função: Modal de Controle com Chaves Sincronizadas
-// Versão: v9.2 Sync Strict
-// Alteração: Chaves (keys) alinhadas estritamente com Navigation.tsx
+// Hora: 23:58
+// Função: Modal com Máscara Flexível (Fixo/Celular)
+// Versão: v9.4 Flex Mask
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -25,16 +24,42 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
   const { menuConfig, whatsappNumber, emailContact, updateConfig, updateWhatsapp, updateEmail } = useSiteConfig();
 
   const [localMenu, setLocalMenu] = useState(menuConfig);
-  const [localWhatsapp, setLocalWhatsapp] = useState(whatsappNumber);
-  const [localEmail, setLocalEmail] = useState(emailContact);
+  const [localWhatsapp, setLocalWhatsapp] = useState('');
+  const [localEmail, setLocalEmail] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const { toast } = useToast();
 
+  // Função de Máscara Flexível
+  const formatWhatsappInput = (value: string) => {
+    let nums = value.replace(/\D/g, '');
+    if (nums.length > 13) nums = nums.slice(0, 13);
+
+    if (!nums) return '';
+    if (nums.length <= 2) return `+${nums}`;
+
+    // +55 (XX
+    let formatted = `+${nums.slice(0, 2)} (${nums.slice(2, 4)}`;
+
+    if (nums.length > 4) {
+      // Se tiver entre 5 e 12 dígitos (Fixo ou Celular incompleto)
+      // Formato: +55 (92) 9252-1345
+      if (nums.length <= 12) {
+         formatted += `) ${nums.slice(4, 8)}${nums.length > 8 ? '-' + nums.slice(8) : ''}`;
+      } 
+      // Se tiver 13 dígitos (Celular completo)
+      // Formato: +55 (92) 99252-1345
+      else {
+         formatted = `+${nums.slice(0, 2)} (${nums.slice(2, 4)}) ${nums.slice(4, 9)}-${nums.slice(9)}`;
+      }
+    }
+    return formatted;
+  };
+
   useEffect(() => {
     if (isOpen) {
       setLocalMenu(menuConfig || {});
-      setLocalWhatsapp(whatsappNumber || '');
+      setLocalWhatsapp(whatsappNumber ? formatWhatsappInput(whatsappNumber) : '');
       setLocalEmail(emailContact || '');
     }
   }, [isOpen, menuConfig, whatsappNumber, emailContact]);
@@ -43,21 +68,27 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
     setLocalMenu(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setLocalWhatsapp(formatWhatsappInput(e.target.value));
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     let hasError = false;
     let successCount = 0;
 
-    // 1. WhatsApp
-    if (localWhatsapp !== whatsappNumber) {
-        const res = await updateWhatsapp(localWhatsapp);
+    // Limpeza rigorosa antes de enviar
+    const cleanLocal = localWhatsapp.replace(/\D/g, '');
+    const cleanContext = whatsappNumber.replace(/\D/g, '');
+
+    if (cleanLocal !== cleanContext) {
+        const res = await updateWhatsapp(cleanLocal);
         if (!res.success) {
             toast({ title: "Erro WhatsApp", description: res.msg, variant: "destructive" });
             hasError = true;
         } else successCount++;
     }
 
-    // 2. Email
     if (localEmail !== emailContact) {
         const res = await updateEmail(localEmail);
         if (!res.success) {
@@ -66,13 +97,10 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
         } else successCount++;
     }
 
-    // 3. Menu
     const resMenu = await updateConfig(localMenu);
     if (!resMenu.success) {
-        // Se houver mensagem detalhada de erro, mostramos
         const msg = resMenu.msg || "Falha ao salvar menu.";
         toast({ title: "Aviso do Menu", description: msg, variant: "warning" });
-        // Se status for 'alerta', ainda consideramos sucesso parcial
         if (msg.includes("Alguns itens")) successCount++;
         else hasError = true;
     } else successCount++;
@@ -85,7 +113,7 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
     }
   };
 
-  // KEYS DEVEM SER IDENTICAS A Navigation.tsx
+  // Mantém a lista de menus para brevidade...
   const menuItems = [
     { key: 'inicio', label: 'Início (Home)', isPai: false },
     { key: 'institucional', label: 'MENU INSTITUCIONAL (PAI)', isPai: true },
@@ -120,18 +148,26 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
                     <div>
                         <Label className="text-xs font-bold text-slate-500">WhatsApp</Label>
                         <div className="relative mt-1">
-                            <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" /><Input value={localWhatsapp} onChange={(e) => setLocalWhatsapp(e.target.value)} placeholder="5592..." className="pl-9" />
+                            <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Input 
+                                value={localWhatsapp}
+                                onChange={handlePhoneChange}
+                                placeholder="+55 (92) 9XXXX-XXXX"
+                                className="pl-9 font-mono text-sm"
+                                maxLength={19} 
+                            />
                         </div>
                     </div>
                     <div>
                         <Label className="text-xs font-bold text-slate-500">Email</Label>
                         <div className="relative mt-1">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" /><Input value={localEmail} onChange={(e) => setLocalEmail(e.target.value)} placeholder="contato@..." className="pl-9" />
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Input value={localEmail} onChange={(e) => setLocalEmail(e.target.value)} placeholder="contato@..." className="pl-9" />
                         </div>
                     </div>
                 </div>
             </div>
-
+            {/* Bloco de Menu continua aqui... */}
             <div>
                 <div className="flex items-center gap-2 mb-3 text-slate-800 font-bold text-xs uppercase tracking-widest px-1">
                     <Eye className="h-4 w-4 text-blue-600" /> Menus & Navegação
@@ -163,4 +199,4 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
     </Dialog>
   );
 }
-// linha 144 FerramentasModal.tsx
+// linha 175 FerramentasModal.tsx
