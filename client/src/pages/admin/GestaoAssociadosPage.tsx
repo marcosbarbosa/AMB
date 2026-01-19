@@ -1,9 +1,9 @@
 // Nome: GestaoAssociadosPage.tsx
 // Caminho: client/src/pages/admin/GestaoAssociadosPage.tsx
 // Data: 2026-01-19
-// Hora: 04:30
-// Função: Gestão de Associados com Ações de Admin Habilitadas
-// Versão: v26.0 Action Fix
+// Hora: 06:00
+// Função: Gestão de Associados com Auditoria de Permissão
+// Versão: v27.0 Audit Mode
 
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   Loader2, Search, Eye, Printer, Banknote, UserPlus, 
-  ChevronLeft, ChevronRight, Shield, ShieldOff, Filter, UserCog
+  ChevronLeft, ChevronRight, Shield, ShieldOff, Filter, AlertOctagon
 } from 'lucide-react';
 import axios from 'axios'; 
 import { useToast } from '@/hooks/use-toast';
@@ -40,11 +40,12 @@ export default function GestaoAssociadosPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
-  // --- LÓGICA DE SUPER USUÁRIO ---
-  // Verifica se é o ID 10 (Elite) ou se tem a flag no banco
-  const isSuperUser = (String(atleta?.id) === '10') || 
-                      (String(atleta?.is_superuser) === '1') || 
-                      (atleta?.is_superuser === true);
+  // --- LÓGICA DE PERMISSÃO "TRIPLA CHECAGEM" ---
+  const isId10 = String(atleta?.id) === '10';
+  const isSuperFlag = String(atleta?.is_superuser) === '1' || atleta?.is_superuser === true;
+  const isEmailElite = atleta?.email === 'mbelitecoach@gmail.com'; // Fallback final
+
+  const isSuperUser = isId10 || isSuperFlag || isEmailElite;
 
   const fetchAssociados = useCallback(async () => {
     if (!token) return;
@@ -78,48 +79,29 @@ export default function GestaoAssociadosPage() {
   const currentItems = filteredAssociados.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredAssociados.length / itemsPerPage);
 
-  // AÇÃO DE PROMOVER/REBAIXAR
   const handleToggleRole = async (targetUser: any) => {
     if (!token) return;
-
-    // Se for 'atleta', promove. Se for 'admin', rebaixa.
     const isPromoting = targetUser.role === 'atleta';
     const endpoint = isPromoting ? 'admin_promover_associado.php' : 'admin_rebaixar_associado.php';
-    const actionText = isPromoting ? "PROMOVER este usuário a ADMIN" : "REBAIXAR este usuário para ATLETA";
 
-    if (!window.confirm(`Tem certeza que deseja ${actionText}: ${targetUser.nome_completo}?`)) return;
+    if (!window.confirm(`ATENÇÃO: Deseja realmente mudar o nível de ${targetUser.nome_completo} para ${isPromoting ? 'ADMIN' : 'ATLETA'}?`)) return;
 
     setIsProcessingRole(targetUser.id);
     try {
-        const res = await axios.post(`${API_ENDPOINT}/${endpoint}`, { 
-            token, 
-            data: { id_atleta: targetUser.id } 
-        });
-
+        const res = await axios.post(`${API_ENDPOINT}/${endpoint}`, { token, data: { id_atleta: targetUser.id } });
         if (res.data.status === 'sucesso') {
-            toast({ 
-                title: "Sucesso", 
-                description: res.data.mensagem, 
-                className: "bg-green-600 text-white border-none" 
-            });
-
-            // Atualiza a lista localmente para refletir a mudança sem recarregar
+            toast({ title: "Sucesso", description: res.data.mensagem, className: "bg-green-600 text-white" });
             const newRole = isPromoting ? 'admin' : 'atleta';
             const updateList = (list: any[]) => list.map(a => a.id === targetUser.id ? { ...a, role: newRole } : a);
-
             setAssociados(prev => updateList(prev));
             setFilteredAssociados(prev => updateList(prev));
-        } else {
-            toast({ title: "Erro", description: res.data.mensagem, variant: "destructive" });
-        }
-    } catch (error: any) {
-        toast({ title: "Erro na Requisição", description: error.message, variant: "destructive" });
-    } finally {
-        setIsProcessingRole(null);
-    }
+        } else { toast({ title: "Erro", description: res.data.mensagem, variant: "destructive" }); }
+    } catch (error: any) { toast({ title: "Erro API", description: error.message, variant: "destructive" }); } 
+    finally { setIsProcessingRole(null); }
   };
 
-  const handleMigrationUpload = async (event: React.ChangeEvent<HTMLInputElement>) => { /* Mantido */ };
+  // Migração
+  const handleMigrationUpload = async (event: React.ChangeEvent<HTMLInputElement>) => { /* ... */ };
   const triggerMigration = (type: any) => { setMigrationType(type); fileInputRef.current?.click(); };
 
   if (isAuthLoading || isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 h-10 w-10" /></div>;
@@ -128,6 +110,11 @@ export default function GestaoAssociadosPage() {
     <div className="min-h-screen bg-slate-50 font-sans">
       <div className="print:hidden"><Navigation /></div>
       <input type="file" ref={fileInputRef} onChange={handleMigrationUpload} accept=".xlsx,.xls,.csv" className="hidden" />
+
+      {/* --- DEBUG DE PERMISSÃO (Visível apenas se houver dúvida) --- */}
+      <div className={`w-full text-center py-1 text-[10px] font-mono uppercase tracking-widest text-white print:hidden ${isSuperUser ? 'bg-purple-600' : 'bg-red-500'}`}>
+          Status: {isSuperUser ? `SUPER USUÁRIO (ID: ${atleta?.id})` : `ADMIN RESTRITO (ID: ${atleta?.id}) - Sem permissão de troca de cargo`}
+      </div>
 
       <main className="pt-32 pb-16 print:pt-4 print:bg-white">
         <section className="max-w-7xl mx-auto px-4">
@@ -138,39 +125,42 @@ export default function GestaoAssociadosPage() {
                 <Badge className="bg-blue-600 text-white">{filteredAssociados.length}</Badge>
             </div>
 
-            {/* --- BLOCO DE CONTROLES (Busca + Paginação) --- */}
+            {/* --- TOOLBAR UNIFICADA (Nativa) --- */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 print:hidden flex flex-col gap-4">
                 <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
                     <div className="relative w-full md:max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <Input placeholder="Buscar..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        <Input placeholder="Buscar nome..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
-                    <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => triggerMigration('financeiro')} disabled={isMigrating}><Banknote className="h-4 w-4 mr-2"/> Financeiro</Button>
-                        <Button variant="outline" size="sm" onClick={() => triggerMigration('associados')} disabled={isMigrating}><UserPlus className="h-4 w-4 mr-2"/> Associados</Button>
-                        <Button variant="ghost" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4"/></Button>
+                    {/* Paginação Nativa - Visibilidade Garantida */}
+                    <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+                        <span className="text-xs font-bold text-slate-500 pl-2">Exibir:</span>
+                        <select 
+                            className="bg-transparent text-sm font-bold p-1 outline-none cursor-pointer"
+                            value={itemsPerPage} 
+                            onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                        >
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
                     </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <Filter className="h-4 w-4 text-slate-400" />
-                        <span className="text-xs font-bold text-slate-500 uppercase">Por Página:</span>
-                        <select className="h-8 w-20 rounded border bg-slate-50 text-sm px-2 cursor-pointer" value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-                            <option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="50">50</option>
-                        </select>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <span className="text-xs font-bold text-slate-500">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredAssociados.length)} de {filteredAssociados.length}</span>
-                        <div className="flex gap-1">
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}><ChevronLeft className="h-4 w-4" /></Button>
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}><ChevronRight className="h-4 w-4" /></Button>
-                        </div>
+                {/* Navegação */}
+                <div className="flex justify-between items-center border-t border-slate-100 pt-2">
+                    <span className="text-xs font-bold text-slate-400">
+                        {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredAssociados.length)} de {filteredAssociados.length}
+                    </span>
+                    <div className="flex gap-1">
+                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}><ChevronLeft className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}><ChevronRight className="h-4 w-4" /></Button>
                     </div>
                 </div>
             </div>
 
-            {/* --- TABELA DE DADOS --- */}
+            {/* --- TABELA --- */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-100 text-sm">
@@ -193,32 +183,31 @@ export default function GestaoAssociadosPage() {
                                 </td>
                                 <td className="px-6 py-3"><Badge variant={assoc.status_financeiro === 'adimplente' ? 'default' : 'destructive'}>{assoc.status_financeiro || 'PENDENTE'}</Badge></td>
 
-                                {/* COLUNA DE ACESSO */}
                                 <td className="px-6 py-3">
                                     <div className="flex items-center gap-3">
                                         <Badge variant="outline" className={isAdmin ? 'text-purple-600 bg-purple-50 border-purple-200' : 'text-slate-600'}>
                                             {assoc.role.toUpperCase()}
                                         </Badge>
 
-                                        {/* BOTÃO DE AÇÃO - RENDERIZAÇÃO BLINDADA */}
+                                        {/* BOTÕES DE AÇÃO - APENAS SUPER USUÁRIO */}
                                         {isSuperUser && (
-                                            <button 
-                                                onClick={() => handleToggleRole(assoc)}
-                                                disabled={isProcessingRole === assoc.id}
-                                                className={`
-                                                    p-1.5 rounded-full transition-all duration-200
-                                                    ${isAdmin ? 'hover:bg-red-50 text-slate-400 hover:text-red-600' : 'hover:bg-green-50 text-slate-300 hover:text-green-600'}
-                                                `}
-                                                title={isAdmin ? "Clique para REBAIXAR para Atleta" : "Clique para PROMOVER a Admin"}
-                                            >
+                                            <div className="flex items-center">
                                                 {isProcessingRole === assoc.id ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : isAdmin ? (
-                                                    <ShieldOff className="h-4 w-4" />
+                                                    <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
                                                 ) : (
-                                                    <Shield className="h-4 w-4" />
+                                                    <button 
+                                                        onClick={() => handleToggleRole(assoc)}
+                                                        className={`p-1.5 rounded-full transition-all hover:bg-slate-100 border border-transparent ${isAdmin ? 'hover:border-red-200' : 'hover:border-green-200'}`}
+                                                        title={isAdmin ? "Clique para REMOVER acesso Admin" : "Clique para DAR acesso Admin"}
+                                                    >
+                                                        {isAdmin ? (
+                                                            <ShieldOff className="h-5 w-5 text-red-400 hover:text-red-600" />
+                                                        ) : (
+                                                            <Shield className="h-5 w-5 text-slate-300 hover:text-green-500" />
+                                                        )}
+                                                    </button>
                                                 )}
-                                            </button>
+                                            </div>
                                         )}
                                     </div>
                                 </td>
@@ -226,8 +215,11 @@ export default function GestaoAssociadosPage() {
                                 <td className="px-6 py-3 text-center">
                                     <Dialog>
                                       <DialogTrigger asChild><Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:bg-blue-50"><Eye className="h-4 w-4" /></Button></DialogTrigger>
-                                      <DialogContent><DialogHeader><DialogTitle>Detalhes do Associado</DialogTitle></DialogHeader>
-                                          <div className="grid grid-cols-2 gap-4 text-sm mt-4"><div><p className="text-xs text-slate-400 uppercase">E-mail</p><p className="font-bold break-all">{assoc.email}</p></div><div><p className="text-xs text-slate-400 uppercase">CPF</p><p className="font-bold">{assoc.cpf || '-'}</p></div></div>
+                                      <DialogContent><DialogHeader><DialogTitle>Detalhes</DialogTitle></DialogHeader>
+                                          <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+                                              <div><p className="text-xs text-slate-400">ID</p><p className="font-bold">{assoc.id}</p></div>
+                                              <div><p className="text-xs text-slate-400">CPF</p><p className="font-bold">{assoc.cpf || '-'}</p></div>
+                                          </div>
                                       </DialogContent>
                                     </Dialog>
                                 </td>
@@ -244,4 +236,4 @@ export default function GestaoAssociadosPage() {
     </div>
   );
 }
-// linha 320 GestaoAssociadosPage.tsx
+// linha 340 GestaoAssociadosPage.tsx

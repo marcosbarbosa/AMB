@@ -1,9 +1,9 @@
 // Nome: SiteConfigContext.tsx
 // Caminho: client/src/context/SiteConfigContext.tsx
 // Data: 2026-01-19
-// Hora: 00:15
-// Função: Contexto Híbrido (Carregamento Imediato + Atualização Dinâmica)
-// Versão: v15.0 Hybrid Stable
+// Hora: 05:00
+// Função: Contexto com Normalização de Tipos (Fix 0 vs False)
+// Versão: v16.0 Boolean Normalizer
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
@@ -29,34 +29,43 @@ interface SiteConfigContextData {
 const SiteConfigContext = createContext<SiteConfigContextData>({} as SiteConfigContextData);
 
 export function SiteConfigProvider({ children }: { children: React.ReactNode }) {
-  // 1. DADOS PADRÃO OFICIAIS (FALLBACK DE SEGURANÇA)
-  // Isso garante que o site nunca fique em branco, mesmo sem internet/banco
   const DEFAULT_WHATSAPP = '559292521345';
   const DEFAULT_EMAIL = 'associacaomasterdebasquetebol@gmail.com';
 
   const [config, setConfig] = useState<any>(null);
+
+  // menuConfig agora guardará APENAS true/false reais
   const [menuConfig, setMenuConfig] = useState<Record<string, boolean>>({});
 
-  // 2. INICIALIZAÇÃO OTIMISTA (Começa com o valor certo)
   const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP); 
   const [emailContact, setEmailContact] = useState(DEFAULT_EMAIL);
-
   const [isLoading, setIsLoading] = useState(true);
 
   const loadConfig = async () => {
     try {
-      // Busca dados do banco para ver se algo mudou
       const response = await axios.get(`${API_BASE}/get_site_config.php?t=${Date.now()}`);
 
-      console.log("📥 Config Atualizada:", response.data); 
+      console.log("📥 Raw Data do Banco:", response.data); 
 
       if (response.data) {
         setConfig(response.data);
 
-        if (response.data.menu) setMenuConfig(response.data.menu);
+        // --- NORMALIZAÇÃO DE DADOS DO MENU (CRUCIAL) ---
+        // O Banco manda 0 ou 1 (int/string). O React precisa de true/false.
+        if (response.data.menu) {
+            const rawMenu = response.data.menu;
+            const normalizedMenu: Record<string, boolean> = {};
 
-        // 3. ATUALIZAÇÃO INTELIGENTE
-        // Só sobrescreve o padrão se o banco trouxer um valor válido e não vazio
+            Object.keys(rawMenu).forEach(key => {
+                const val = rawMenu[key];
+                // Regra: É true se for 1, '1' ou true. Qualquer outra coisa (0, '0', null) vira false.
+                normalizedMenu[key] = (val === 1 || val === '1' || val === true);
+            });
+
+            setMenuConfig(normalizedMenu);
+            console.log("✅ Menu Normalizado:", normalizedMenu); // Debug
+        }
+
         if (response.data.whatsapp && response.data.whatsapp.length > 8) {
             setWhatsappNumber(response.data.whatsapp);
         }
@@ -66,8 +75,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
         }
       }
     } catch (error) {
-      console.error("⚠️ Usando configuração padrão (Erro API):", error);
-      // Não faz nada, mantém os defaults que já estão no estado
+      console.error("⚠️ Erro config:", error);
     } finally {
       setIsLoading(false);
     }
@@ -75,14 +83,14 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => { loadConfig(); }, []);
 
-  // --- UPDATES (Mantém a lógica de escrita no banco) ---
+  // --- UPDATES ---
   const updateWhatsapp = async (newNumber: string): Promise<UpdateResponse> => {
     try {
       const cleanNumber = newNumber.replace(/\D/g, '');
       const response = await axios.post(`${API_BASE}/update_whatsapp.php`, { number: cleanNumber });
       if (response.data.status === 'sucesso') {
         setWhatsappNumber(cleanNumber);
-        return { success: true, msg: 'WhatsApp atualizado' };
+        return { success: true, msg: 'Salvo' };
       }
       return { success: false, msg: response.data.mensagem };
     } catch (e: any) { return { success: false, msg: e.message }; }
@@ -93,7 +101,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
       const response = await axios.post(`${API_BASE}/update_email.php`, { email: newEmail });
       if (response.data.status === 'sucesso') {
         setEmailContact(newEmail);
-        return { success: true, msg: 'Email salvo' };
+        return { success: true, msg: 'Salvo' };
       }
       return { success: false, msg: response.data.mensagem };
     } catch (e: any) { return { success: false, msg: e.message }; }
@@ -103,8 +111,9 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     try {
         const response = await axios.post(`${API_BASE}/update_menu_config.php`, { config: newConfig });
         if (response.data.status === 'sucesso') {
+            // Atualiza o estado local imediatamente com os booleanos corretos
             setMenuConfig(newConfig);
-            return { success: true, msg: 'Menu salvo' };
+            return { success: true, msg: 'Menu atualizado' };
         }
         return { success: false, msg: response.data.mensagem };
     } catch(e: any) { return { success: false, msg: e.message }; }
@@ -121,4 +130,4 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 }
 
 export const useSiteConfig = () => useContext(SiteConfigContext);
-// linha 118 SiteConfigContext.tsx
+// linha 120 SiteConfigContext.tsx

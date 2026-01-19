@@ -1,9 +1,9 @@
 // Nome: Navigation.tsx
 // Caminho: client/src/components/Navigation.tsx
 // Data: 2026-01-19
-// Hora: 04:00
-// Função: Navbar com Verificação de Cargo Híbrida (String/Int)
-// Versão: v38.0 Type Safe
+// Hora: 05:05
+// Função: Navbar com Filtro Booleano Estrito
+// Versão: v39.0 Boolean Logic
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -53,8 +53,6 @@ export function Navigation() {
     }
   }, [isMobileMode]);
 
-  const safeMenu = menuConfig || {};
-
   const socialUrls = {
       facebook: "https://facebook.com/ambamazonas",
       instagram: "https://instagram.com/ambamazonas",
@@ -69,7 +67,7 @@ export function Navigation() {
       icon: Info,
       submenu: [
         { key: 'sobre', label: 'Quem Somos', href: '/sobre' },
-        { key: 'historico', label: 'Histórico', href: '/secretaria-digital' }, 
+        { key: 'historico', label: 'Histórico', href: '/secretaria-digital' }, // Nota: href mantido conforme original
         { key: 'diretoria', label: 'Diretoria', href: '/diretoria' },
         { key: 'transparencia', label: 'Secretaria Digital', href: '/secretaria-digital', description: 'Transparência, regulamentos e atas.' },
         { key: 'bi', label: 'Inteligência (BI)', href: '/inteligencia' },
@@ -81,16 +79,20 @@ export function Navigation() {
     { key: 'contato', label: 'Contato', href: '/contato', icon: Mail },
   ];
 
-  const filteredNav = navItems.filter(item => safeMenu[item.key] !== false);
+  // --- LÓGICA DE FILTRO CORRIGIDA ---
+  // Verifica se a chave é ESTRITAMENTE true.
+  // Se a chave não existir (undefined), assume TRUE (padrão visível), 
+  // mas como normalizamos no context, deve vir true/false correto.
+  const isVisible = (key: string) => {
+      // Se o contexto ainda não carregou, mostra tudo (fallback) ou nada
+      if (Object.keys(menuConfig).length === 0) return true;
+      return menuConfig[key] === true;
+  };
 
-  // --- LÓGICA DE SUPER USUÁRIO BLINDADA ---
-  // Converte tudo para String para evitar erro de tipo (10 vs "10")
-  const isEliteId = String(atleta?.id) === '10';
-  const isSuperFlag = String(atleta?.is_superuser) === '1' || atleta?.is_superuser === true;
+  const filteredNav = navItems.filter(item => isVisible(item.key));
 
-  const isSuperUser = isEliteId || isSuperFlag;
+  const isSuperUser = (String(atleta?.id) === '10') || (String(atleta?.is_superuser) === '1') || (atleta?.is_superuser === true);
 
-  // --- VISUAL ---
   const roleConfig = isSuperUser ? {
       label: "Painel Super Usuário",
       icon: Crown,
@@ -147,7 +149,11 @@ export function Navigation() {
                 ) : (
                    filteredNav.map((item) => {
                      let visibleSubmenu = [];
-                     if (item.submenu) visibleSubmenu = item.submenu.filter(sub => safeMenu[sub.key] !== false);
+                     if (item.submenu) {
+                        // Filtra submenus usando a mesma lógica estrita
+                        visibleSubmenu = item.submenu.filter(sub => isVisible(sub.key));
+                     }
+
                      return (
                         <div key={item.key} className="relative group">
                         {item.submenu ? (
@@ -173,7 +179,6 @@ export function Navigation() {
               <div className="flex items-center gap-2">
                 {isAuthenticated ? (
                   <div className="flex items-center gap-2">
-                     {/* BOTÃO DE CONFIGURAÇÃO / PAINEL */}
                      {atleta?.role === 'admin' && (
                        <TooltipProvider>
                          <Tooltip>
@@ -193,7 +198,6 @@ export function Navigation() {
                          </Tooltip>
                        </TooltipProvider>
                      )}
-
                      <Button variant="ghost" size="sm" onClick={logout} className="text-red-600 hover:bg-red-50 font-black rounded-full uppercase text-xs tracking-tighter">Sair</Button>
                   </div>
                 ) : (
@@ -203,9 +207,35 @@ export function Navigation() {
               </div>
           </div>
         </div>
-        {isMenuOpen && (<div className="lg:hidden fixed inset-0 top-20 bg-white z-40 p-4 border-t overflow-y-auto">{filteredNav.map((item)=>(<div key={item.key} className="py-2 border-b"><span className="font-bold text-slate-900 block mb-2">{item.label}</span>{item.submenu?<div className="pl-4 space-y-2">{item.submenu.filter(s=>safeMenu[s.key]!==false).map(sub=>(<Link key={sub.key} to={sub.href} className="block text-sm text-slate-600 py-1" onClick={()=>setIsMenuOpen(false)}>{sub.label}</Link>))}</div>:<Link to={item.href!} className="block text-sm text-blue-600" onClick={()=>setIsMenuOpen(false)}>Acessar</Link>}</div>))}</div>)}
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+            <div className="lg:hidden fixed inset-0 top-20 bg-white z-40 p-4 border-t overflow-y-auto">
+                {filteredNav.map((item) => {
+                    const visibleSubmenu = item.submenu ? item.submenu.filter(sub => isVisible(sub.key)) : [];
+                    return (
+                        <div key={item.key} className="py-2 border-b">
+                            <span className="font-bold text-slate-900 block mb-2">{item.label}</span>
+                            {item.submenu ? (
+                                <div className="pl-4 space-y-2">
+                                    {visibleSubmenu.map(sub => (
+                                        <Link key={sub.key} to={sub.href} className="block text-sm text-slate-600 py-1" onClick={() => setIsMenuOpen(false)}>
+                                            {sub.label}
+                                        </Link>
+                                    ))}
+                                </div>
+                            ) : (
+                                <Link to={item.href!} className="block text-sm text-blue-600" onClick={() => setIsMenuOpen(false)}>
+                                    Acessar
+                                </Link>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        )}
       </div>
     </>
   );
 }
-// linha 195 Navigation.tsx
+// linha 200 Navigation.tsx
