@@ -1,14 +1,9 @@
-/*
- * ==========================================================
- * PORTAL AMB DO AMAZONAS
- * ARQUIVO: About.tsx
- * CAMINHO: client/src/components/About.tsx
- * DATA: 15 de Janeiro de 2026
- * HORA: 21:30
- * FUNÇÃO: Componente "Nossa História" com Botão de Estatuto Dinâmico
- * VERSÃO: 6.0 Prime (Integrated with New Transparencia API)
- * ==========================================================
- */
+// Nome: About.tsx
+// Caminho: client/src/components/About.tsx
+// Data: 2026-01-19
+// Hora: 20:00
+// Função: História com Controle Condicional de Diretoria
+// Versão: v8.0 Config Aware
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -20,6 +15,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
+import { useSiteConfig } from '@/context/SiteConfigContext'; // 1. Importar Contexto
 
 const API_BASE = 'https://www.ambamazonas.com.br/api';
 
@@ -27,22 +23,22 @@ export function About() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Estados para Lógica do Estatuto
+  // 2. Acessar configuração global
+  const { menuConfig } = useSiteConfig(); 
+
   const [estatutos, setEstatutos] = useState<any[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Busca os estatutos ao carregar a página (silenciosamente)
   useEffect(() => {
     const fetchEstatutos = async () => {
       try {
-        // Busca APENAS documentos do tipo 'estatuto' usando a nova API pública
         const res = await axios.get(`${API_BASE}/listar_documentos_publico.php?tipo=estatuto`);
         if (res.data.status === 'sucesso') {
           setEstatutos(res.data.documentos);
         }
       } catch (error) {
-        console.error("Erro ao buscar estatutos:", error);
+        console.error("Erro estatutos:", error);
       } finally {
         setLoadingDocs(false);
       }
@@ -50,222 +46,99 @@ export function About() {
     fetchEstatutos();
   }, []);
 
-  // Ação Inteligente do Botão "Ver Estatuto"
   const handleVerEstatuto = () => {
     if (loadingDocs) return;
-
     if (estatutos.length === 0) {
-      toast({ 
-        title: "Em Atualização", 
-        description: "O documento do Estatuto está sendo atualizado pela diretoria.", 
-        variant: "default" 
-      });
+      toast({ title: "Em Atualização", description: "O documento do Estatuto está sendo atualizado.", variant: "default" });
     } else if (estatutos.length === 1) {
-      // Se só tem um, abre direto (tratando URL relativa ou absoluta)
       const url = estatutos[0].url_arquivo.startsWith('http') 
         ? estatutos[0].url_arquivo 
         : `https://www.ambamazonas.com.br${estatutos[0].url_arquivo}`;
-
       window.open(url, '_blank');
     } else {
-      // Se tem mais de um (ex: 2022 e 2025), abre o modal para escolha
       setIsModalOpen(true);
     }
   };
 
   const destaquesAMB = [
-    {
-      icon: HeartHandshake, 
-      title: 'Integração Social',
-      description: 'Promovemos atividades que visam o desenvolvimento integral e o retorno de antigos jogadores às quadras.',
-    },
-    {
-      icon: Trophy, 
-      title: 'Espírito Competitivo',
-      description: 'Incentivamos a participação em competições regionais e internacionais, filiados ao Sistema Nacional do Desporto.',
-    },
-    {
-      icon: Users, 
-      title: 'Categoria Master',
-      description: 'Foco total na difusão do Basquetebol para atletas 30+, fortalecendo a amizade e a saúde.',
-    },
+    { icon: HeartHandshake, title: 'Integração Social', description: 'Promovemos atividades que visam o desenvolvimento integral.' },
+    { icon: Trophy, title: 'Espírito Competitivo', description: 'Incentivamos a participação em competições regionais e internacionais.' },
+    { icon: Users, title: 'Categoria Master', description: 'Foco total na difusão do Basquetebol para atletas 30+.' },
   ];
 
-  /* CONFIGURAÇÃO DE LINKS MAPA */
   const ENDERECO = "R. Washington Luís, 111 - Dom Pedro, Manaus - AM, 69040-210";
   const MAP_EMBED_URL = `https://maps.google.com/maps?q=${encodeURIComponent(ENDERECO)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
   const MAP_EXTERNAL_LINK = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ENDERECO)}`;
 
+  // 3. Lógica de Exibição: Se 'diretoria' for false no painel, esconde o componente
+  const showDiretoria = menuConfig['diretoria'] !== false;
+
   return (
     <>
       <section id="sobre" className="py-20 lg:py-24 bg-slate-50 relative overflow-hidden">
-        {/* Elemento Decorativo de Fundo */}
         <div className="absolute top-0 right-0 w-1/2 h-full bg-blue-50/50 -skew-x-12 translate-x-32 pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
 
-            {/* --- COLUNA DE TEXTO --- */}
+            {/* Texto História */}
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2">
-                <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50 px-3 py-1 text-xs uppercase tracking-wider font-bold">
-                   <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse mr-2" />
-                   Institucional
+                <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50 px-3 py-1 text-xs uppercase font-bold">
+                   <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse mr-2" />Institucional
                 </Badge>
               </div>
-
-              <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight">
-                A História da <br/>
-                <span className="text-blue-700">AMB Amazonas</span>
-              </h2>
-
+              <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight">A História da <br/><span className="text-blue-700">AMB Amazonas</span></h2>
               <div className="space-y-4 text-slate-600 text-lg leading-relaxed">
-                <p>
-                  A <strong>Associação Master de Basquetebol do Amazonas (AMB)</strong> é uma entidade civil sem fins lucrativos, fundada em 20 de outubro de 2004 em Manaus.
-                </p>
-                <p>
-                  Nossa missão vai além das quadras: buscamos proporcionar saúde, bem-estar e o reencontro de amigos através do esporte, focando especialmente na categoria <strong>Master (30+)</strong>.
-                </p>
-                <p>
-                  Como entidade afiliada à FBBM e FIMBA, levamos o nome do Amazonas para competições em todo o mundo.
-                </p>
+                <p>A <strong>Associação Master de Basquetebol do Amazonas (AMB)</strong> é uma entidade civil sem fins lucrativos, fundada em 20 de outubro de 2004.</p>
+                <p>Nossa missão vai além das quadras: buscamos proporcionar saúde e o reencontro de amigos através do esporte.</p>
               </div>
-
               <div className="pt-4 flex flex-col sm:flex-row gap-4">
-
-                 {/* BOTÃO NOSSA HISTÓRIA */}
-                 <Button 
-                    onClick={() => navigate('/sobre')}
-                    className="bg-blue-700 hover:bg-blue-800 text-white shadow-lg shadow-blue-900/20 h-12 px-8 text-md"
-                 >
-                   Nossa História
-                 </Button>
-
-                 {/* BOTÃO ESTATUTO (DINÂMICO) */}
-                 <Button 
-                    variant="outline" 
-                    className="border-slate-300 text-slate-700 hover:bg-white hover:text-blue-700 h-12 px-8 text-md relative transition-all"
-                    onClick={handleVerEstatuto}
-                    disabled={loadingDocs}
-                 >
+                 <Button onClick={() => navigate('/sobre')} className="bg-blue-700 hover:bg-blue-800 text-white shadow-lg h-12 px-8 text-md">Nossa História</Button>
+                 <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-white hover:text-blue-700 h-12 px-8 text-md relative" onClick={handleVerEstatuto} disabled={loadingDocs}>
                    {loadingDocs ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Ver Estatuto'} 
                    {!loadingDocs && <ArrowRight className="ml-2 h-4 w-4" />}
-
-                   {/* Indicador visual (Bolinha verde pulsando) se houver estatuto disponível */}
-                   {!loadingDocs && estatutos.length > 0 && (
-                       <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                         <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                       </span>
-                   )}
                  </Button>
               </div>
             </div>
 
-            {/* --- COLUNA DO MAPA --- */}
+            {/* Mapa */}
             <div className="relative group perspective-1000">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-yellow-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-
-              <Card className="relative p-2 bg-white border-slate-200 shadow-2xl rounded-2xl overflow-hidden transform transition-transform duration-500 hover:scale-[1.01]">
+              <Card className="relative p-2 bg-white border-slate-200 shadow-2xl rounded-2xl overflow-hidden">
                  <div className="relative w-full h-[450px] bg-slate-100 rounded-xl overflow-hidden">
-
-                    {/* IFRAME GOOGLE MAPS */}
-                    <iframe 
-                      src={MAP_EMBED_URL}
-                      width="100%" 
-                      height="100%" 
-                      style={{ border: 0 }} 
-                      allowFullScreen 
-                      loading="lazy" 
-                      referrerPolicy="no-referrer-when-downgrade"
-                      className="w-full h-full grayscale group-hover:grayscale-0 transition-all duration-700"
-                      title="Mapa Sede AMB"
-                    ></iframe>
-
-                    {/* Card Flutuante Sobre o Mapa */}
+                    <iframe src={MAP_EMBED_URL} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" className="w-full h-full grayscale group-hover:grayscale-0 transition-all duration-700"></iframe>
                     <div className="absolute bottom-6 left-6 right-6 bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-lg border border-slate-100 flex items-center gap-4">
-                        <div className="bg-blue-100 p-3 rounded-full text-blue-600 shrink-0">
-                            <MapPin className="h-6 w-6" />
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-slate-800 text-sm">CCA Dom Pedro</h4>
-                            <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">
-                                R. Washington Luís, 111 - Dom Pedro<br/>
-                                Manaus - AM
-                            </p>
-                        </div>
-                        <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="ml-auto text-blue-600 hover:text-blue-800 hover:bg-blue-50 shrink-0 text-xs" 
-                            onClick={() => window.open(MAP_EXTERNAL_LINK, '_blank')}
-                        >
-                            Abrir
-                        </Button>
+                        <div className="bg-blue-100 p-3 rounded-full text-blue-600 shrink-0"><MapPin className="h-6 w-6" /></div>
+                        <div><h4 className="font-bold text-slate-800 text-sm">CCA Dom Pedro</h4><p className="text-[10px] text-slate-500">Manaus - AM</p></div>
+                        <Button size="sm" variant="ghost" className="ml-auto text-blue-600 text-xs" onClick={() => window.open(MAP_EXTERNAL_LINK, '_blank')}>Abrir</Button>
                     </div>
-
                  </div>
               </Card>
             </div>
           </div>
 
-          {/* --- DESTAQUES --- */}
           <div className="grid md:grid-cols-3 gap-8 mt-24">
             {destaquesAMB.map((destaque, index) => (
-              <div 
-                key={index} 
-                className="group p-8 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:border-blue-100 transition-all duration-300 relative overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <destaque.icon className="h-24 w-24 text-blue-600 transform rotate-12" />
-                </div>
-
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-blue-50 text-blue-600 mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <destaque.icon className="h-7 w-7" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-700 transition-colors">
-                  {destaque.title}
-                </h3>
-                <p className="text-slate-500 leading-relaxed text-sm">
-                  {destaque.description}
-                </p>
+              <div key={index} className="group p-8 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl transition-all relative overflow-hidden">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-blue-50 text-blue-600 mb-6 group-hover:scale-110 transition-transform"><destaque.icon className="h-7 w-7" /></div>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">{destaque.title}</h3>
+                <p className="text-slate-500 text-sm">{destaque.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* --- MANTIDO: GALERIA DA DIRETORIA --- */}
-      <DiretoriaPremium />
+      {/* 4. RENDERIZAÇÃO CONDICIONAL BLINDADA */}
+      {showDiretoria && <DiretoriaPremium />}
 
-      {/* --- MODAL PARA SELEÇÃO DE ESTATUTO (Se tiver múltiplos) --- */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-md bg-white border border-slate-200">
-            <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-slate-800">
-                    <FileText className="h-5 w-5 text-blue-600"/> Documentos Oficiais
-                </DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>Documentos Oficiais</DialogTitle></DialogHeader>
             <div className="py-4 space-y-3">
-                <p className="text-sm text-slate-500 mb-4">Selecione a versão do Estatuto que deseja visualizar:</p>
                 {estatutos.map(doc => (
-                    <div 
-                        key={doc.id} 
-                        className="flex items-center justify-between p-3 border border-slate-100 rounded-lg hover:bg-slate-50 hover:border-blue-200 transition-all cursor-pointer group" 
-                        onClick={() => {
-                            const url = doc.url_arquivo.startsWith('http') 
-                                ? doc.url_arquivo 
-                                : `https://www.ambamazonas.com.br${doc.url_arquivo}`;
-                            window.open(url, '_blank');
-                        }}
-                    >
-                        <div>
-                            <h4 className="font-bold text-slate-800 text-sm group-hover:text-blue-700">{doc.titulo}</h4>
-                            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full mt-1 inline-block">Ano: {doc.ano_referencia}</span>
-                        </div>
-                        <Button size="sm" variant="ghost" className="text-blue-600 bg-blue-50 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                            <Download className="h-4 w-4"/>
-                        </Button>
+                    <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-slate-50" onClick={() => window.open(doc.url_arquivo.startsWith('http') ? doc.url_arquivo : `https://www.ambamazonas.com.br${doc.url_arquivo}`, '_blank')}>
+                        <h4 className="font-bold text-slate-800 text-sm">{doc.titulo}</h4><Download className="h-4 w-4 text-blue-600"/>
                     </div>
                 ))}
             </div>
@@ -274,3 +147,4 @@ export function About() {
     </>
   );
 }
+// linha 175 About.tsx

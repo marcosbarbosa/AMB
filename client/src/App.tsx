@@ -1,12 +1,9 @@
-/*
 // Nome: App.tsx
 // Caminho: client/src/App.tsx
-// Data: 2026-01-17
-// Hora: 23:55 (America/Sao_Paulo)
-// Função: Roteador Principal + Fix Import Case Sensitive + WhatsApp Oficial
-// Versão: v26.0 Prime Stable
-// Alteração: Correção do import not-found, WhatsApp oficial no fallback e novas rotas.
-*/
+// Data: 2026-01-19
+// Hora: 20:05
+// Função: Roteador Principal + Rotas Eleitorais
+// Versão: v27.0 Election Route Fix
 
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -32,11 +29,13 @@ const SecretariaDigitalPage = lazy(() => import("@/pages/SecretariaDigitalPage")
 const NoticiasPage = lazy(() => import("@/pages/NoticiasPage"));
 const EventosPage = lazy(() => import("@/pages/EventosPage"));
 
+// --- MÓDULO ELEIÇÕES 2026 (NOVO) ---
+const EleicoesPage = lazy(() => import("@/pages/eleicoes/EleicoesPage"));
+
 // AUTH
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const CadastroPage = lazy(() => import("@/pages/CadastroPage"));
 
-// CORREÇÃO CRÍTICA: O arquivo no disco é 'not-found.tsx' (minúsculo)
 const NotFound = lazy(() => import("@/pages/not-found")); 
 
 // ÁREA DO ATLETA
@@ -69,30 +68,18 @@ const PageLoader = () => (
   </div>
 );
 
-// --- WHATSAPP FLUTUANTE (DADOS OFICIAIS) ---
+// --- WHATSAPP FLUTUANTE ---
 const FloatingWhatsApp = () => {
   const { config } = useSiteConfig(); 
   const message = "Olá! Gostaria de mais informações sobre a AMB Amazonas.";
-
-  // Prioridade: Banco de Dados > Oficial Hardcoded
-  // Número Oficial: +55 92 9252-1345
   const rawNumber = config?.whatsapp || '559292521345';
-
   const cleanNumber = rawNumber.replace(/\D/g, '');
   const link = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
 
   return (
-    <a
-      href={link}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20bd5a] text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-green-500/30 flex items-center justify-center group"
-      title="Fale Conosco no WhatsApp"
-    >
+    <a href={link} target="_blank" rel="noopener noreferrer" className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20bd5a] text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-green-500/30 flex items-center justify-center group" title="Fale Conosco no WhatsApp">
       <MessageCircle className="h-8 w-8 fill-white stroke-white" />
-      <span className="absolute right-full mr-3 bg-white text-slate-800 text-xs font-bold py-1 px-3 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-        Fale Conosco
-      </span>
+      <span className="absolute right-full mr-3 bg-white text-slate-800 text-xs font-bold py-1 px-3 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Fale Conosco</span>
     </a>
   );
 };
@@ -111,12 +98,15 @@ function App() {
               <Route path="/parceiros" element={<ParceirosPage />} />
               <Route path="/seja-parceiro" element={<SejaParceiroPage />} />
 
-              {/* INSTITUCIONAIS & CORREÇÃO 404 */}
+              {/* INSTITUCIONAIS */}
               <Route path="/inteligencia" element={<InteligenciaPage />} />
               <Route path="/diretoria" element={<DiretoriaPage />} />
               <Route path="/secretaria-digital" element={<SecretariaDigitalPage />} />
               <Route path="/noticias" element={<NoticiasPage />} />
               <Route path="/eventos" element={<EventosPage />} />
+
+              {/* ELEIÇÕES 2026 */}
+              <Route path="/eleicoes" element={<EleicoesPage />} />
 
               {/* REDIRECTS INTELIGENTES */}
               <Route path="/transparencia" element={<Navigate to="/secretaria-digital" replace />} />
@@ -160,4 +150,4 @@ function App() {
 }
 
 export default App;
-// linha 175 App.tsx
+// linha 185 App.tsx
