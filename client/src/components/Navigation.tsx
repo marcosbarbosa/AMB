@@ -1,10 +1,10 @@
 // Nome: Navigation.tsx
 // Caminho: client/src/components/Navigation.tsx
 // Data: 2026-01-18
-// Hora: 21:10 (America/Sao_Paulo)
-// Função: Navbar Mestra
-// Versão: v33.0 Submenu Filtered
-// Alteração: Filtragem de visibilidade aplicada também aos itens do submenu. Chaves alinhadas ao DB.
+// Hora: 21:35 (America/Sao_Paulo)
+// Função: Navbar Mestra com Filtro de Menu Robusto
+// Versão: v34.0 Strict Keys
+// Alteração: Mapeamento exato de chaves (bi, transparencia) e lógica de renderização condicional.
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -56,7 +56,6 @@ export function Navigation() {
   }, [isMobileMode]);
 
   const safeConfig = config || { social: {} };
-  // Usa menuConfig do contexto (carregado de get_menu_config.php)
   const safeMenu = menuConfig || {};
 
   const socialLinks = {
@@ -65,8 +64,7 @@ export function Navigation() {
       youtube: safeConfig.social?.youtube || safeConfig.social?.youtube_url || ""
   };
 
-  // Estrutura de Navegação Oficial
-  // NOTA: As chaves 'key' devem bater com a tabela config_menu
+  // DEFINIÇÃO OFICIAL DE CHAVES (De acordo com update_menu_config.php)
   const navItems = [
     { key: 'inicio', label: 'Início', href: '/', icon: Home },
     { 
@@ -87,7 +85,6 @@ export function Navigation() {
     { key: 'contato', label: 'Contato', href: '/contato', icon: Mail },
   ];
 
-  // Filtro Pai
   const filteredNav = navItems.filter(item => safeMenu[item.key] !== false);
   const isSuperUser = atleta?.is_superuser == 1 || atleta?.is_superuser === true;
 
@@ -137,12 +134,10 @@ export function Navigation() {
                    <div className="flex gap-2"><div className="h-4 w-20 bg-slate-100 rounded animate-pulse"></div><div className="h-4 w-20 bg-slate-100 rounded animate-pulse"></div></div>
                 ) : (
                    filteredNav.map((item) => {
-                     // Lógica de Filtro para Submenu
+                     // LÓGICA DE FILTRO DE SUBMENU
                      let visibleSubmenu = [];
                      if (item.submenu) {
                        visibleSubmenu = item.submenu.filter(sub => safeMenu[sub.key] !== false);
-                       // Se todos os subitens estiverem ocultos, não renderiza o pai? 
-                       // Opção de design: Mantém o pai se ele estiver ativo, mas sem dropdown se vazio.
                      }
 
                      return (
@@ -155,7 +150,6 @@ export function Navigation() {
                             <Link to={item.href!} className={`px-4 py-2 text-xs font-bold rounded-full transition-all uppercase tracking-tight ${location.pathname === item.href ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'}`}>{item.label}</Link>
                         )}
 
-                        {/* Dropdown com itens filtrados */}
                         {item.submenu && visibleSubmenu.length > 0 && (
                             <div className="absolute top-full left-0 pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                             <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 min-w-[240px]">
@@ -203,7 +197,6 @@ export function Navigation() {
           </div>
         </div>
 
-        {/* Mobile Menu também filtrado */}
         {isMenuOpen && (
             <div className="lg:hidden fixed inset-0 top-20 bg-white z-40 p-4 border-t overflow-y-auto">
                 {filteredNav.map((item) => {
@@ -233,4 +226,4 @@ export function Navigation() {
     </>
   );
 }
-// linha 256 Navigation.tsx
+// linha 257 Navigation.tsx
