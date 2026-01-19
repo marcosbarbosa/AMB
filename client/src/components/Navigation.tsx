@@ -1,10 +1,10 @@
 // Nome: Navigation.tsx
 // Caminho: client/src/components/Navigation.tsx
-// Data: 2026-01-18
-// Hora: 21:35 (America/Sao_Paulo)
-// Função: Navbar Mestra com Filtro de Menu Robusto
-// Versão: v34.0 Strict Keys
-// Alteração: Mapeamento exato de chaves (bi, transparencia) e lógica de renderização condicional.
+// Data: 2026-01-19
+// Hora: 00:30
+// Função: Navbar Mestra com Redes Sociais no Topo
+// Versão: v35.0 Social Header
+// Alteração: Adicionado Facebook, Instagram e YouTube ao lado do ícone da FBBM.
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -55,16 +55,15 @@ export function Navigation() {
     }
   }, [isMobileMode]);
 
-  const safeConfig = config || { social: {} };
   const safeMenu = menuConfig || {};
 
-  const socialLinks = {
-      facebook: safeConfig.social?.facebook || safeConfig.social?.facebook_url || "",
-      instagram: safeConfig.social?.instagram || safeConfig.social?.instagram_url || "",
-      youtube: safeConfig.social?.youtube || safeConfig.social?.youtube_url || ""
+  // LINKS SOCIAIS OFICIAIS
+  const socialUrls = {
+      facebook: "https://facebook.com/ambamazonas",
+      instagram: "https://instagram.com/ambamazonas",
+      youtube: "https://youtube.com/ambamazonas"
   };
 
-  // DEFINIÇÃO OFICIAL DE CHAVES (De acordo com update_menu_config.php)
   const navItems = [
     { key: 'inicio', label: 'Início', href: '/', icon: Home },
     { 
@@ -94,33 +93,59 @@ export function Navigation() {
 
   return (
     <>
+      {/* --- TOP BAR ESCURA --- */}
       <div className="bg-[#0f172a] text-white py-2 px-4 relative z-[60] border-b border-white/5">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3 md:gap-0">
+
+            {/* Esquerda: Botão Mobile View */}
             <div className="flex items-center">
                 <button onClick={() => setIsMobileMode(!isMobileMode)} className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter transition-all ${isMobileMode ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>
                   {isMobileMode ? <Smartphone className="h-3 w-3" /> : <Monitor className="h-3 w-3" />}
                   {isMobileMode ? 'Mobile View' : 'Web View'}
                 </button>
             </div>
+
+            {/* Centro/Direita: FBBM + Redes Sociais */}
             <div className="flex items-center gap-6">
-                <a href="https://www.fbbm.com.br/" target="_blank" rel="noreferrer" className="flex items-center gap-2 group border-r border-white/10 pr-6" title="Federação Brasileira de Basquetebol Master">
+
+                {/* FBBM Link */}
+                <a href="https://www.fbbm.com.br/" target="_blank" rel="noreferrer" className="flex items-center gap-2 group" title="Federação Brasileira de Basquetebol Master">
                     <img src={fbbmLogo} alt="FBBM" className="h-5 w-auto rounded-sm grayscale group-hover:grayscale-0 transition-all duration-300" onError={(e) => e.currentTarget.style.display = 'none'} />
                     <span className="text-[10px] font-bold text-slate-400 group-hover:text-white transition-colors">Filiada à FBBM</span>
                     <ExternalLink className="h-2 w-2 text-slate-500 group-hover:text-white" />
                 </a>
-                <div className="flex items-center gap-5">
-                    {socialLinks.facebook && <a href={socialLinks.facebook} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-[#1877F2] transition-all transform hover:scale-125"><Facebook className="h-4 w-4" /></a>}
-                    {socialLinks.instagram && <a href={socialLinks.instagram} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-[#E1306C] transition-all transform hover:scale-125"><Instagram className="h-4 w-4" /></a>}
-                    {socialLinks.youtube && <a href={socialLinks.youtube} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-[#FF0000] transition-all transform hover:scale-125"><Youtube className="h-4 w-4" /></a>}
+
+                {/* Divisória Vertical */}
+                <div className="h-4 w-px bg-white/10 hidden md:block"></div>
+
+                {/* Ícones Sociais (NOVO) */}
+                <div className="flex items-center gap-4">
+                    <a href={socialUrls.facebook} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-[#1877F2] transition-all transform hover:scale-125" title="Facebook">
+                        <Facebook className="h-4 w-4" />
+                    </a>
+                    <a href={socialUrls.instagram} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-[#E1306C] transition-all transform hover:scale-125" title="Instagram">
+                        <Instagram className="h-4 w-4" />
+                    </a>
+                    <a href={socialUrls.youtube} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-[#FF0000] transition-all transform hover:scale-125" title="YouTube">
+                        <Youtube className="h-4 w-4" />
+                    </a>
                 </div>
+
             </div>
-            <div className="hidden md:block"><span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest italic">Manaus - AM</span></div>
+
+            {/* Direita Extrema: Localização */}
+            <div className="hidden md:block">
+                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest italic">Manaus - AM</span>
+            </div>
         </div>
       </div>
 
+      {/* --- MENU PRINCIPAL (NAVBAR) --- */}
       <div className={`sticky top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'py-1 shadow-md' : 'py-4'}`}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="bg-white/95 backdrop-blur-md rounded-full shadow-xl border border-slate-100 px-6 h-16 flex items-center justify-between transition-all">
+
+              {/* Logo AMB */}
               <Link to="/" className="flex items-center gap-3 group">
                 <img src={ambLogo} alt="AMB" className="h-10 w-auto transition-transform group-hover:scale-105" />
                 <div className="hidden sm:block leading-none">
@@ -129,12 +154,12 @@ export function Navigation() {
                 </div>
               </Link>
 
+              {/* Menu Desktop */}
               <nav className="hidden lg:flex items-center gap-1">
                 {isLoading ? (
                    <div className="flex gap-2"><div className="h-4 w-20 bg-slate-100 rounded animate-pulse"></div><div className="h-4 w-20 bg-slate-100 rounded animate-pulse"></div></div>
                 ) : (
                    filteredNav.map((item) => {
-                     // LÓGICA DE FILTRO DE SUBMENU
                      let visibleSubmenu = [];
                      if (item.submenu) {
                        visibleSubmenu = item.submenu.filter(sub => safeMenu[sub.key] !== false);
@@ -168,6 +193,7 @@ export function Navigation() {
                 )}
               </nav>
 
+              {/* Área do Usuário / Login */}
               <div className="flex items-center gap-2">
                 {isAuthenticated ? (
                   <div className="flex items-center gap-2">
@@ -197,6 +223,7 @@ export function Navigation() {
           </div>
         </div>
 
+        {/* Menu Mobile */}
         {isMenuOpen && (
             <div className="lg:hidden fixed inset-0 top-20 bg-white z-40 p-4 border-t overflow-y-auto">
                 {filteredNav.map((item) => {
@@ -226,4 +253,4 @@ export function Navigation() {
     </>
   );
 }
-// linha 257 Navigation.tsx
+// linha 230 Navigation.tsx
