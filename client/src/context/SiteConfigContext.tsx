@@ -1,13 +1,10 @@
-/*
- * ==========================================================
- * PROJETO: Portal AMB Amazonas
- * ARQUIVO: SiteConfigContext.tsx
- * CAMINHO: client/src/context/SiteConfigContext.tsx
- * DATA: 18 de Janeiro de 2026
- * FUNÇÃO: Contexto Global com Log de Resposta
- * VERSÃO: v12.0 Debug
- * ==========================================================
- */
+// Nome: SiteConfigContext.tsx
+// Caminho: client/src/context/SiteConfigContext.tsx
+// Data: 2026-01-18
+// Hora: 21:05 (America/Sao_Paulo)
+// Função: Contexto Global com Fetch Dedicado de Menu
+// Versão: v12.1 Menu Fix
+// Alteração: Adicionado fetch paralelo para get_menu_config.php para garantir integridade do menu.
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
@@ -41,15 +38,32 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 
   const loadConfig = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/get_site_config.php?t=${Date.now()}`);
-      if (response.data) {
-        setConfig(response.data);
-        if (response.data.menu) setMenuConfig(response.data.menu);
-        if (response.data.whatsapp) setWhatsappNumber(response.data.whatsapp);
-        if (response.data.email) setEmailContact(response.data.email);
+      // Executa requisições em paralelo para performance
+      const [siteRes, menuRes] = await Promise.allSettled([
+        axios.get(`${API_BASE}/get_site_config.php?t=${Date.now()}`),
+        axios.get(`${API_BASE}/get_menu_config.php?t=${Date.now()}`)
+      ]);
+
+      // Processa Configurações Gerais
+      if (siteRes.status === 'fulfilled' && siteRes.value.data) {
+        const data = siteRes.value.data;
+        setConfig(data);
+        if (data.whatsapp) setWhatsappNumber(data.whatsapp);
+        if (data.email) setEmailContact(data.email);
+
+        // Fallback se o endpoint dedicado falhar
+        if (data.menu && (!menuRes || menuRes.status === 'rejected')) {
+           setMenuConfig(data.menu);
+        }
       }
+
+      // Processa Configuração Específica de Menu (Prioridade Alta)
+      if (menuRes.status === 'fulfilled' && menuRes.value.data && menuRes.value.data.config) {
+        setMenuConfig(prev => ({ ...prev, ...menuRes.value.data.config }));
+      }
+
     } catch (error) {
-      console.error("Erro config:", error);
+      console.error("Erro crítico carregando configs:", error);
     } finally {
       setIsLoading(false);
     }
@@ -57,28 +71,22 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => { loadConfig(); }, []);
 
-  // --- UPDATE WHATSAPP (COM LOG DE DEBUG) ---
+  // --- UPDATE WHATSAPP ---
   const updateWhatsapp = async (newNumber: string): Promise<UpdateResponse> => {
     try {
       const cleanNumber = newNumber.replace(/\D/g, '');
-      console.log("Enviando WhatsApp:", cleanNumber); // DEBUG
-
       const response = await axios.post(`${API_BASE}/update_whatsapp.php`, { number: cleanNumber });
-
-      console.log("Resposta Backend WhatsApp:", response.data); // DEBUG
-
       if (response.data.status === 'sucesso') {
         setWhatsappNumber(cleanNumber);
         return { success: true, msg: 'WhatsApp atualizado' };
       }
-      return { success: false, msg: response.data.mensagem || 'Erro desconhecido no backend' };
+      return { success: false, msg: response.data.mensagem || 'Erro backend' };
     } catch (error: any) {
-      console.error("Erro Axios Whats:", error);
-      return { success: false, msg: error.message || 'Erro de conexão' };
+      return { success: false, msg: error.message || 'Erro conexão' };
     }
   };
 
-  // Funções restantes mantidas para brevidade, mas devem seguir o padrão acima...
+  // --- UPDATE MENU CONFIG ---
   const updateConfig = async (newConfig: Record<string, boolean>): Promise<UpdateResponse> => {
     try {
         const response = await axios.post(`${API_BASE}/update_menu_config.php`, { config: newConfig });
@@ -90,6 +98,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     } catch(e: any) { return { success: false, msg: e.message }; }
   };
 
+  // --- UPDATE EMAIL ---
   const updateEmail = async (newEmail: string): Promise<UpdateResponse> => {
     try {
         const response = await axios.post(`${API_BASE}/update_email.php`, { email: newEmail });
@@ -112,4 +121,4 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 }
 
 export const useSiteConfig = () => useContext(SiteConfigContext);
-// linha 110 SiteConfigContext.tsx
+// linha 116 SiteConfigContext.tsx
