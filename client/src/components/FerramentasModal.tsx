@@ -1,9 +1,9 @@
 // Nome: FerramentasModal.tsx
 // Caminho: client/src/components/FerramentasModal.tsx
 // Data: 2026-01-19
-// Hora: 09:00
-// Função: Modal de Configuração com Toast Visível
-// Versão: v12.0 High Contrast Toast
+// Hora: 23:05
+// Função: Modal de Configuração com Item de Cadastro
+// Versão: v13.0 Cadastro Toggle
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -64,7 +64,6 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
     let hasError = false;
     let successCount = 0;
 
-    // 1. WhatsApp
     const cleanLocal = localWhatsapp.replace(/\D/g, '');
     const cleanContext = whatsappNumber.replace(/\D/g, '');
     if (cleanLocal !== cleanContext) {
@@ -75,7 +74,6 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
         } else successCount++;
     }
 
-    // 2. Email
     if (localEmail !== emailContact) {
         const res = await updateEmail(localEmail);
         if (!res.success) {
@@ -84,15 +82,10 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
         } else successCount++;
     }
 
-    // 3. Menu
     try {
         const resMenu = await updateConfig(localMenu);
         if (!resMenu.success) {
-            toast({ 
-                title: "Erro ao Salvar Menu", 
-                description: resMenu.msg || "Verifique conexão/CORS.", 
-                className: "!bg-red-600 !text-white !opacity-100 !shadow-xl border-none"
-            });
+            toast({ title: "Erro ao Salvar Menu", description: resMenu.msg, className: "!bg-red-600 !text-white !opacity-100" });
             hasError = true;
         } else {
             successCount++;
@@ -116,6 +109,7 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
 
   const menuItems = [
     { key: 'inicio', label: 'Início (Home)', isPai: false },
+    { key: 'cadastro', label: 'Botão: Seja Associado (Destaque)', isPai: false }, // NOVO ITEM
     { key: 'institucional', label: 'MENU INSTITUCIONAL (PAI)', isPai: true },
     { key: 'sobre', label: '↳ Sobre a AMB', isPai: false },
     { key: 'historico', label: '↳ Histórico', isPai: false },
@@ -149,13 +143,7 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
                         <Label className="text-xs font-bold text-slate-500">WhatsApp</Label>
                         <div className="relative mt-1">
                             <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input 
-                                value={localWhatsapp}
-                                onChange={handlePhoneChange}
-                                placeholder="+55 (92) 9XXXX-XXXX"
-                                className="pl-9 font-mono text-sm"
-                                maxLength={19} 
-                            />
+                            <Input value={localWhatsapp} onChange={handlePhoneChange} placeholder="+55..." className="pl-9 font-mono text-sm" maxLength={19} />
                         </div>
                     </div>
                     <div>
@@ -199,4 +187,4 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
     </Dialog>
   );
 }
-// linha 170 FerramentasModal.tsx
+// linha 185 FerramentasModal.tsx

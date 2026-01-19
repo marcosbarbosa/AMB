@@ -1,16 +1,16 @@
 // Nome: Navigation.tsx
 // Caminho: client/src/components/Navigation.tsx
 // Data: 2026-01-19
-// Hora: 05:05
-// Função: Navbar com Filtro Booleano Estrito
-// Versão: v39.0 Boolean Logic
+// Hora: 23:00
+// Função: Navbar com Botão CTA "Seja Associado" e Lógica 2FA
+// Versão: v40.0 Growth CTA
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Menu, ChevronDown, Settings, Newspaper, 
   Home, Facebook, Instagram, Youtube, Info, Mail, Trophy, Building2, Crown,
-  Smartphone, Monitor, ExternalLink, ShieldCheck, UserCog
+  Smartphone, Monitor, ExternalLink, ShieldCheck, UserCog, UserPlus
 } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { 
@@ -53,6 +53,8 @@ export function Navigation() {
     }
   }, [isMobileMode]);
 
+  const safeMenu = menuConfig || {};
+
   const socialUrls = {
       facebook: "https://facebook.com/ambamazonas",
       instagram: "https://instagram.com/ambamazonas",
@@ -67,7 +69,7 @@ export function Navigation() {
       icon: Info,
       submenu: [
         { key: 'sobre', label: 'Quem Somos', href: '/sobre' },
-        { key: 'historico', label: 'Histórico', href: '/secretaria-digital' }, // Nota: href mantido conforme original
+        { key: 'historico', label: 'Histórico', href: '/secretaria-digital' }, 
         { key: 'diretoria', label: 'Diretoria', href: '/diretoria' },
         { key: 'transparencia', label: 'Secretaria Digital', href: '/secretaria-digital', description: 'Transparência, regulamentos e atas.' },
         { key: 'bi', label: 'Inteligência (BI)', href: '/inteligencia' },
@@ -79,14 +81,10 @@ export function Navigation() {
     { key: 'contato', label: 'Contato', href: '/contato', icon: Mail },
   ];
 
-  // --- LÓGICA DE FILTRO CORRIGIDA ---
-  // Verifica se a chave é ESTRITAMENTE true.
-  // Se a chave não existir (undefined), assume TRUE (padrão visível), 
-  // mas como normalizamos no context, deve vir true/false correto.
+  // Filtro de visibilidade baseado na configuração do banco
   const isVisible = (key: string) => {
-      // Se o contexto ainda não carregou, mostra tudo (fallback) ou nada
-      if (Object.keys(menuConfig).length === 0) return true;
-      return menuConfig[key] === true;
+      if (Object.keys(safeMenu).length === 0) return true;
+      return safeMenu[key] === true;
   };
 
   const filteredNav = navItems.filter(item => isVisible(item.key));
@@ -150,7 +148,6 @@ export function Navigation() {
                    filteredNav.map((item) => {
                      let visibleSubmenu = [];
                      if (item.submenu) {
-                        // Filtra submenus usando a mesma lógica estrita
                         visibleSubmenu = item.submenu.filter(sub => isVisible(sub.key));
                      }
 
@@ -176,7 +173,19 @@ export function Navigation() {
                 )}
               </nav>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+
+                {/* --- BOTÃO DE CADASTRO/ASSOCIAÇÃO (NOVO) --- */}
+                {/* Só aparece se não estiver logado e se estiver ativado no painel */}
+                {!isAuthenticated && isVisible('cadastro') && (
+                    <Link to="/cadastro" className="hidden md:flex">
+                        <Button className="bg-yellow-500 hover:bg-yellow-600 text-yellow-950 font-black rounded-full px-5 transition-all shadow-lg hover:shadow-yellow-500/30 uppercase text-[10px] tracking-wide flex items-center gap-2 animate-in fade-in zoom-in duration-300">
+                            <UserPlus className="h-3 w-3" />
+                            Seja Associado
+                        </Button>
+                    </Link>
+                )}
+
                 {isAuthenticated ? (
                   <div className="flex items-center gap-2">
                      {atleta?.role === 'admin' && (
@@ -211,6 +220,18 @@ export function Navigation() {
         {/* Mobile Menu */}
         {isMenuOpen && (
             <div className="lg:hidden fixed inset-0 top-20 bg-white z-40 p-4 border-t overflow-y-auto">
+
+                {/* Botão Mobile Destaque */}
+                {!isAuthenticated && isVisible('cadastro') && (
+                    <div className="mb-6 p-2">
+                        <Link to="/cadastro" onClick={() => setIsMenuOpen(false)}>
+                            <Button className="w-full bg-yellow-500 text-yellow-950 font-black h-12 text-sm uppercase">
+                                <UserPlus className="mr-2 h-4 w-4" /> Quero me Associar
+                            </Button>
+                        </Link>
+                    </div>
+                )}
+
                 {filteredNav.map((item) => {
                     const visibleSubmenu = item.submenu ? item.submenu.filter(sub => isVisible(sub.key)) : [];
                     return (
@@ -238,4 +259,4 @@ export function Navigation() {
     </>
   );
 }
-// linha 200 Navigation.tsx
+// linha 220 Navigation.tsx
