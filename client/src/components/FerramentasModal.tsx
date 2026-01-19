@@ -1,9 +1,9 @@
 // Nome: FerramentasModal.tsx
 // Caminho: client/src/components/FerramentasModal.tsx
-// Data: 2026-01-19
-// Hora: 23:05
-// Função: Modal de Configuração com Item de Cadastro
-// Versão: v13.0 Cadastro Toggle
+// Data: 2026-01-20
+// Hora: 12:05
+// Função: Controle de visibilidade das Eleições e Cadastro
+// Versão: v14.0 Election Control
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -109,7 +109,8 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
 
   const menuItems = [
     { key: 'inicio', label: 'Início (Home)', isPai: false },
-    { key: 'cadastro', label: 'Botão: Seja Associado (Destaque)', isPai: false }, // NOVO ITEM
+    { key: 'cadastro', label: 'Botão: Seja Associado (Destaque)', isPai: false }, 
+    { key: 'eleicoes', label: 'Módulo: Eleições 2026', isPai: false }, // ADICIONADO AQUI
     { key: 'institucional', label: 'MENU INSTITUCIONAL (PAI)', isPai: true },
     { key: 'sobre', label: '↳ Sobre a AMB', isPai: false },
     { key: 'historico', label: '↳ Histórico', isPai: false },
@@ -187,4 +188,4 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
     </Dialog>
   );
 }
-// linha 185 FerramentasModal.tsx
+// linha 190 FerramentasModal.tsx

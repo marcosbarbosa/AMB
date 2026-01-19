@@ -53,6 +53,9 @@ const GestaoTimesPage = lazy(() => import("@/pages/admin/GestaoTimesPage"));
 const DiretoriaGestaoPage = lazy(() => import("@/pages/admin/DiretoriaGestaoPage"));
 const GestaoNoticiasPage = lazy(() => import("@/pages/admin/GestaoNoticiasPage")); 
 
+// Importação
+const EleicoesGestaoPage = lazy(() => import("@/pages/admin/EleicoesGestaoPage"));
+
 // --- LOADING ---
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
@@ -139,6 +142,10 @@ function App() {
               <Route path="/admin/noticias" element={<GestaoNoticiasPage />} />
 
               <Route path="*" element={<NotFound />} />
+
+              // Rota (Dentro da área Admin)
+              <Route path="/admin/eleicoes" element={<EleicoesGestaoPage />} />
+              
             </Routes>
             <FloatingWhatsApp />
           </Suspense>

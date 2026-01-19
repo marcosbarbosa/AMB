@@ -1,16 +1,16 @@
 // Nome: Navigation.tsx
 // Caminho: client/src/components/Navigation.tsx
-// Data: 2026-01-19
-// Hora: 23:00
-// Função: Navbar com Botão CTA "Seja Associado" e Lógica 2FA
-// Versão: v40.0 Growth CTA
+// Data: 2026-01-20
+// Hora: 21:00
+// Função: Navbar com Link Direto para Eleições 2026
+// Versão: v42.0 Live Link
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Menu, ChevronDown, Settings, Newspaper, 
   Home, Facebook, Instagram, Youtube, Info, Mail, Trophy, Building2, Crown,
-  Smartphone, Monitor, ExternalLink, ShieldCheck, UserCog, UserPlus
+  Smartphone, Monitor, ExternalLink, ShieldCheck, UserCog, UserPlus, Fingerprint
 } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { 
@@ -61,8 +61,13 @@ export function Navigation() {
       youtube: "https://youtube.com/ambamazonas"
   };
 
+  // --- LISTA DE LINKS (AQUI ESTÁ O BOTÃO) ---
   const navItems = [
     { key: 'inicio', label: 'Início', href: '/', icon: Home },
+
+    // LINK ATIVO E CLICÁVEL:
+    { key: 'eleicoes', label: 'Eleições 2026', href: '/eleicoes', icon: Fingerprint },
+
     { 
       key: 'institucional', 
       label: 'Institucional', 
@@ -81,10 +86,10 @@ export function Navigation() {
     { key: 'contato', label: 'Contato', href: '/contato', icon: Mail },
   ];
 
-  // Filtro de visibilidade baseado na configuração do banco
+  // Verifica se o item deve aparecer (baseado no Painel Admin)
   const isVisible = (key: string) => {
-      if (Object.keys(safeMenu).length === 0) return true;
-      return safeMenu[key] === true;
+      if (Object.keys(safeMenu).length === 0) return true; // Mostra tudo se config falhar
+      return safeMenu[key] !== false; // Padrão é mostrar, exceto se false
   };
 
   const filteredNav = navItems.filter(item => isVisible(item.key));
@@ -151,12 +156,27 @@ export function Navigation() {
                         visibleSubmenu = item.submenu.filter(sub => isVisible(sub.key));
                      }
 
+                     // ESTILO ESPECIAL PARA ELEIÇÕES
+                     const isElection = item.key === 'eleicoes';
+
                      return (
                         <div key={item.key} className="relative group">
                         {item.submenu ? (
                             <button className="flex items-center gap-1 px-4 py-2 text-xs font-bold text-slate-600 hover:text-blue-600 rounded-full transition-colors uppercase tracking-tight">{item.label} <ChevronDown className="h-3 w-3 transition-transform group-hover:rotate-180" /></button>
                         ) : (
-                            <Link to={item.href!} className={`px-4 py-2 text-xs font-bold rounded-full transition-all uppercase tracking-tight ${location.pathname === item.href ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'}`}>{item.label}</Link>
+                            <Link 
+                                to={item.href!} 
+                                className={`px-4 py-2 text-xs font-bold rounded-full transition-all uppercase tracking-tight flex items-center gap-2
+                                    ${location.pathname === item.href 
+                                        ? 'bg-blue-50 text-blue-600' 
+                                        : isElection
+                                            ? 'text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-800 animate-pulse' // Destaque Visual
+                                            : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+                                    }`}
+                            >
+                                {isElection && <Fingerprint className="h-3 w-3" />}
+                                {item.label}
+                            </Link>
                         )}
                         {item.submenu && visibleSubmenu.length > 0 && (
                             <div className="absolute top-full left-0 pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
@@ -174,9 +194,6 @@ export function Navigation() {
               </nav>
 
               <div className="flex items-center gap-3">
-
-                {/* --- BOTÃO DE CADASTRO/ASSOCIAÇÃO (NOVO) --- */}
-                {/* Só aparece se não estiver logado e se estiver ativado no painel */}
                 {!isAuthenticated && isVisible('cadastro') && (
                     <Link to="/cadastro" className="hidden md:flex">
                         <Button className="bg-yellow-500 hover:bg-yellow-600 text-yellow-950 font-black rounded-full px-5 transition-all shadow-lg hover:shadow-yellow-500/30 uppercase text-[10px] tracking-wide flex items-center gap-2 animate-in fade-in zoom-in duration-300">
@@ -217,11 +234,8 @@ export function Navigation() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {isMenuOpen && (
             <div className="lg:hidden fixed inset-0 top-20 bg-white z-40 p-4 border-t overflow-y-auto">
-
-                {/* Botão Mobile Destaque */}
                 {!isAuthenticated && isVisible('cadastro') && (
                     <div className="mb-6 p-2">
                         <Link to="/cadastro" onClick={() => setIsMenuOpen(false)}>
@@ -231,7 +245,6 @@ export function Navigation() {
                         </Link>
                     </div>
                 )}
-
                 {filteredNav.map((item) => {
                     const visibleSubmenu = item.submenu ? item.submenu.filter(sub => isVisible(sub.key)) : [];
                     return (
@@ -240,15 +253,11 @@ export function Navigation() {
                             {item.submenu ? (
                                 <div className="pl-4 space-y-2">
                                     {visibleSubmenu.map(sub => (
-                                        <Link key={sub.key} to={sub.href} className="block text-sm text-slate-600 py-1" onClick={() => setIsMenuOpen(false)}>
-                                            {sub.label}
-                                        </Link>
+                                        <Link key={sub.key} to={sub.href} className="block text-sm text-slate-600 py-1" onClick={() => setIsMenuOpen(false)}>{sub.label}</Link>
                                     ))}
                                 </div>
                             ) : (
-                                <Link to={item.href!} className="block text-sm text-blue-600" onClick={() => setIsMenuOpen(false)}>
-                                    Acessar
-                                </Link>
+                                <Link to={item.href!} className="block text-sm text-blue-600" onClick={() => setIsMenuOpen(false)}>Acessar</Link>
                             )}
                         </div>
                     );
@@ -259,4 +268,4 @@ export function Navigation() {
     </>
   );
 }
-// linha 220 Navigation.tsx
+// linha 245 Navigation.tsx
