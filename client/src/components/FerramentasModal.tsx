@@ -1,9 +1,9 @@
 // Nome: FerramentasModal.tsx
 // Caminho: client/src/components/FerramentasModal.tsx
-// Data: 2026-01-18
-// Hora: 23:58
-// Função: Modal com Máscara Flexível (Fixo/Celular)
-// Versão: v9.4 Flex Mask
+// Data: 2026-01-19
+// Hora: 09:00
+// Função: Modal de Configuração com Toast Visível
+// Versão: v12.0 High Contrast Toast
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -30,28 +30,15 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
 
   const { toast } = useToast();
 
-  // Função de Máscara Flexível
   const formatWhatsappInput = (value: string) => {
     let nums = value.replace(/\D/g, '');
     if (nums.length > 13) nums = nums.slice(0, 13);
-
     if (!nums) return '';
     if (nums.length <= 2) return `+${nums}`;
-
-    // +55 (XX
     let formatted = `+${nums.slice(0, 2)} (${nums.slice(2, 4)}`;
-
     if (nums.length > 4) {
-      // Se tiver entre 5 e 12 dígitos (Fixo ou Celular incompleto)
-      // Formato: +55 (92) 9252-1345
-      if (nums.length <= 12) {
-         formatted += `) ${nums.slice(4, 8)}${nums.length > 8 ? '-' + nums.slice(8) : ''}`;
-      } 
-      // Se tiver 13 dígitos (Celular completo)
-      // Formato: +55 (92) 99252-1345
-      else {
-         formatted = `+${nums.slice(0, 2)} (${nums.slice(2, 4)}) ${nums.slice(4, 9)}-${nums.slice(9)}`;
-      }
+      if (nums.length <= 12) formatted += `) ${nums.slice(4, 8)}${nums.length > 8 ? '-' + nums.slice(8) : ''}`;
+      else formatted = `+${nums.slice(0, 2)} (${nums.slice(2, 4)}) ${nums.slice(4, 9)}-${nums.slice(9)}`;
     }
     return formatted;
   };
@@ -77,43 +64,56 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
     let hasError = false;
     let successCount = 0;
 
-    // Limpeza rigorosa antes de enviar
+    // 1. WhatsApp
     const cleanLocal = localWhatsapp.replace(/\D/g, '');
     const cleanContext = whatsappNumber.replace(/\D/g, '');
-
     if (cleanLocal !== cleanContext) {
         const res = await updateWhatsapp(cleanLocal);
         if (!res.success) {
-            toast({ title: "Erro WhatsApp", description: res.msg, variant: "destructive" });
+            toast({ title: "Erro WhatsApp", description: res.msg, className: "!bg-red-600 !text-white !opacity-100" });
             hasError = true;
         } else successCount++;
     }
 
+    // 2. Email
     if (localEmail !== emailContact) {
         const res = await updateEmail(localEmail);
         if (!res.success) {
-            toast({ title: "Erro Email", description: res.msg, variant: "destructive" });
+            toast({ title: "Erro Email", description: res.msg, className: "!bg-red-600 !text-white !opacity-100" });
             hasError = true;
         } else successCount++;
     }
 
-    const resMenu = await updateConfig(localMenu);
-    if (!resMenu.success) {
-        const msg = resMenu.msg || "Falha ao salvar menu.";
-        toast({ title: "Aviso do Menu", description: msg, variant: "warning" });
-        if (msg.includes("Alguns itens")) successCount++;
-        else hasError = true;
-    } else successCount++;
+    // 3. Menu
+    try {
+        const resMenu = await updateConfig(localMenu);
+        if (!resMenu.success) {
+            toast({ 
+                title: "Erro ao Salvar Menu", 
+                description: resMenu.msg || "Verifique conexão/CORS.", 
+                className: "!bg-red-600 !text-white !opacity-100 !shadow-xl border-none"
+            });
+            hasError = true;
+        } else {
+            successCount++;
+        }
+    } catch (error) {
+        hasError = true;
+        toast({ title: "Erro Crítico", description: "Falha de rede.", className: "!bg-red-600 !text-white" });
+    }
 
     setIsSaving(false);
 
     if (!hasError) {
-        toast({ title: "Configurações Salvas", description: "Portal atualizado.", className: "bg-green-600 text-white border-none" });
+        toast({ 
+            title: "Salvo com Sucesso!", 
+            description: "As alterações já estão visíveis no portal.", 
+            className: "!bg-green-600 !text-white !opacity-100 !border-none !shadow-2xl font-bold" 
+        });
         onClose();
     }
   };
 
-  // Mantém a lista de menus para brevidade...
   const menuItems = [
     { key: 'inicio', label: 'Início (Home)', isPai: false },
     { key: 'institucional', label: 'MENU INSTITUCIONAL (PAI)', isPai: true },
@@ -162,19 +162,19 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
                         <Label className="text-xs font-bold text-slate-500">Email</Label>
                         <div className="relative mt-1">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input value={localEmail} onChange={(e) => setLocalEmail(e.target.value)} placeholder="contato@..." className="pl-9" />
+                            <Input value={localEmail} onChange={(e) => setLocalEmail(e.target.value)} placeholder="email@..." className="pl-9" />
                         </div>
                     </div>
                 </div>
             </div>
-            {/* Bloco de Menu continua aqui... */}
+
             <div>
                 <div className="flex items-center gap-2 mb-3 text-slate-800 font-bold text-xs uppercase tracking-widest px-1">
                     <Eye className="h-4 w-4 text-blue-600" /> Menus & Navegação
                 </div>
                 <div className="space-y-2">
                     {menuItems.map((item) => {
-                        const isVisible = localMenu[item.key] !== false; 
+                        const isVisible = localMenu[item.key] !== undefined ? localMenu[item.key] : true; 
                         return (
                             <div key={item.key} onClick={() => handleToggle(item.key)} className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 border ${item.isPai ? 'bg-blue-50 border-blue-100 mt-4' : 'bg-white border-transparent hover:bg-slate-50 hover:border-slate-200'}`}>
                                 <div className="flex items-center gap-3">
@@ -199,4 +199,4 @@ export function FerramentasModal({ isOpen, onClose }: FerramentasModalProps) {
     </Dialog>
   );
 }
-// linha 175 FerramentasModal.tsx
+// linha 170 FerramentasModal.tsx
