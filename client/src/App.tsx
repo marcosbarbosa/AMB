@@ -1,9 +1,10 @@
 // Nome: App.tsx
 // Caminho: client/src/App.tsx
-// Data: 2026-01-22
-// Hora: 14:30
-// Função: Roteamento Principal (Compatível com Query Params)
-// Versão: v33.0 Golden Master
+// Data: 2026-01-20
+// Hora: 23:45
+// Função: Configuração de Rotas e Dashboard Admin
+// Versão: v34.0 Routing Master
+// Alteração: Correção da hierarquia de rotas admin e links de perfil.
 
 import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -13,7 +14,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SiteConfigProvider } from "@/context/SiteConfigContext"; 
 import Home from "@/pages/Home";
 
-// --- Lazy Loading de Páginas ---
 const AboutPage = lazy(() => import("@/pages/AboutPage"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const ParceirosPage = lazy(() => import("@/pages/ParceirosPage"));
@@ -29,7 +29,6 @@ const CadastroPage = lazy(() => import("@/pages/CadastroPage"));
 const PainelPage = lazy(() => import("@/pages/PainelPage"));
 const EditarPerfilPage = lazy(() => import("@/pages/EditarPerfilPage"));
 
-// --- Admin ---
 const AdminPainelPage = lazy(() => import("@/pages/admin/AdminPainelPage"));
 const GestaoAssociadosPage = lazy(() => import("@/pages/admin/GestaoAssociadosPage"));
 const GestaoParceirosPage = lazy(() => import("@/pages/admin/GestaoParceirosPage"));
@@ -41,25 +40,23 @@ const DiretoriaGestaoPage = lazy(() => import("@/pages/admin/DiretoriaGestaoPage
 const GestaoNoticiasPage = lazy(() => import("@/pages/admin/GestaoNoticiasPage")); 
 const EleicoesGestaoPage = lazy(() => import("@/pages/admin/EleicoesGestaoPage"));
 
-// --- Auth & Recuperação ---
 const EsqueciSenhaPage = lazy(() => import("@/pages/EsqueciSenhaPage"));
 const RedefinirSenhaPage = lazy(() => import("@/pages/RedefinirSenhaPage"));
 const NotFound = lazy(() => import("@/pages/not-found")); 
 
-// Loader Simples
 const PageLoader = () => (
-  <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-    <div className="h-16 w-16 rounded-full border-4 border-slate-200 border-t-blue-600 animate-spin"></div>
+  <div className="flex items-center justify-center min-h-screen bg-slate-50">
+    <div className="h-12 w-12 rounded-full border-4 border-slate-200 border-t-blue-600 animate-spin"></div>
   </div>
 );
 
 function App() {
-  useEffect(() => { document.title = "AMB Amazonas"; }, []);
+  useEffect(() => { document.title = "AMB Amazonas - Portal Oficial"; }, []);
 
   return (
     <AuthProvider>
       <SiteConfigProvider>
-        <TooltipProvider>
+        <TooltipProvider delayDuration={100}>
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* --- ÁREA PÚBLICA --- */}
@@ -75,28 +72,19 @@ function App() {
               <Route path="/eventos" element={<EventosPage />} />
               <Route path="/eleicoes" element={<EleicoesPage />} />
 
-              {/* Redirects Legados */}
-              <Route path="/transparencia" element={<Navigate to="/secretaria-digital" replace />} />
-              <Route path="/historico" element={<Navigate to="/secretaria-digital" replace />} />
-              <Route path="/prestacao-contas" element={<Navigate to="/secretaria-digital" replace />} />
-              <Route path="/bi" element={<Navigate to="/inteligencia" replace />} />
-
               {/* --- AUTENTICAÇÃO --- */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/cadastro" element={<CadastroPage />} />
-
-              {/* Recuperação de Senha */}
               <Route path="/esqueci-senha" element={<EsqueciSenhaPage />} />
-              {/* CORREÇÃO FINAL: Rota exata sem parâmetros de caminho (:token) */}
               <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
 
-              {/* --- ÁREA DO ATLETA --- */}
+              {/* --- ÁREA DO ASSOCIADO --- */}
               <Route path="/painel" element={<PainelPage />} />
-              <Route path="/painel/editar" element={<EditarPerfilPage />} />
+              <Route path="/editar-perfil" element={<EditarPerfilPage />} />
 
-              {/* --- ÁREA ADMIN --- */}
-              <Route path="/admin" element={<AdminPainelPage />} />
-              <Route path="/admin/*" element={<AdminPainelPage />} /> {/* Fallback Admin */}
+              {/* --- ÁREA ADMINISTRATIVA (ORDEM CORRIGIDA) --- */}
+              <Route path="/admin" element={<Navigate to="/admin/painel" replace />} />
+              <Route path="/admin/painel" element={<AdminPainelPage />} />
               <Route path="/admin/associados" element={<GestaoAssociadosPage />} />
               <Route path="/admin/parceiros" element={<GestaoParceirosPage />} />
               <Route path="/admin/banners" element={<GestaoBannersAMB />} />
@@ -107,7 +95,7 @@ function App() {
               <Route path="/admin/noticias" element={<GestaoNoticiasPage />} />
               <Route path="/admin/eleicoes" element={<EleicoesGestaoPage />} />
 
-              {/* Fallback Geral (404) */}
+              {/* Fallback Geral */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
@@ -119,4 +107,4 @@ function App() {
 }
 
 export default App;
-// linha 115 App.tsx
+// linha 102 App.tsx
