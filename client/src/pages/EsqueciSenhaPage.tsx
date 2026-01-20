@@ -1,9 +1,7 @@
 // Nome: EsqueciSenhaPage.tsx
 // Caminho: client/src/pages/EsqueciSenhaPage.tsx
 // Data: 2026-01-22
-// Hora: 00:35
-// Função: Solicitação de reset com debug de path
-// Versão: v6.0 Path Debug
+// Versão: v7.0 Direct Path
 
 import { useState } from 'react';
 import axios from 'axios';
@@ -16,7 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const API_URL = '[https://www.ambamazonas.com.br/api/auth/solicitar_redefinicao.php](https://www.ambamazonas.com.br/api/auth/solicitar_redefinicao.php)';
+// URL Corrigida para apontar para a pasta AUTH
+const API_URL = 'https://www.ambamazonas.com.br/api/auth/solicitar_redefinicao.php';
 
 export default function EsqueciSenhaPage() {
   const { toast } = useToast();
@@ -30,29 +29,22 @@ export default function EsqueciSenhaPage() {
 
     setLoading(true);
     try {
-      // Timeout aumentado para 20s (SMTP pode ser lento)
-      const res = await axios.post(API_URL, { email }, { timeout: 20000 });
+      const res = await axios.post(API_URL, { email });
 
       if (res.data.status === 'sucesso') {
         setSent(true);
         toast({ 
-            title: "Processado!", 
+            title: "Verifique seu e-mail", 
             description: res.data.mensagem,
-            className: "bg-green-600 text-white"
+            className: "bg-green-600 text-white border-0"
         });
       } else {
-        // Erro de Negócio ou Infra (Ex: Lib não encontrada)
-        console.error("Erro Backend:", res.data);
-        toast({ 
-            title: "Erro no Servidor", 
-            description: res.data.mensagem, 
-            variant: "destructive" 
-        });
+        toast({ title: "Atenção", description: res.data.mensagem, variant: "destructive" });
       }
     } catch (error: any) {
-      console.error("Erro de Rede:", error);
-      const msg = error.message || "Erro de conexão.";
-      toast({ title: "Falha de Conexão", description: msg, variant: "destructive" });
+      console.error("Erro:", error);
+      const msg = error.response?.data?.mensagem || "Erro de conexão com o servidor.";
+      toast({ title: "Falha", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -75,10 +67,10 @@ export default function EsqueciSenhaPage() {
                         {sent ? <CheckCircle2 className="h-8 w-8 text-green-600" /> : <Mail className="h-8 w-8 text-blue-600" />}
                     </div>
                     <CardTitle className="text-2xl font-black text-slate-900 uppercase">
-                        {sent ? "Solicitação Recebida" : "Recuperar Senha"}
+                        {sent ? "E-mail Enviado" : "Recuperar Senha"}
                     </CardTitle>
                     <CardDescription>
-                        {sent ? "Verifique sua caixa de entrada e SPAM." : "Informe seu e-mail cadastrado."}
+                        {sent ? "Siga as instruções enviadas para seu e-mail." : "Informe seu e-mail para continuar."}
                     </CardDescription>
                 </CardHeader>
 
@@ -111,4 +103,4 @@ export default function EsqueciSenhaPage() {
     </div>
   );
 }
-// linha 105 EsqueciSenhaPage.tsx
+// linha 100 EsqueciSenhaPage.tsx
