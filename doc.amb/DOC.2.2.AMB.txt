@@ -1,0 +1,1555 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                     AMB PORTAL 2.2 - DOCUMENTAÇÃO TÉCNICA                    ║
+║                    Amazonas Basquete Master - Sistema Web                    ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  Gerado em: 20 de Janeiro de 2026                                            ║
+║  Versão: 2.2 (Produção)                                                      ║
+║  Build: 1884 módulos | 414KB JS | 139KB CSS                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                              ÍNDICE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. Visão Geral do Sistema
+  2. Stack Tecnológico
+  3. Estrutura de Diretórios
+  4. Arquivos de Configuração (Raiz)
+  5. Backend Local (server/)
+  6. Código Compartilhado (shared/)
+  7. Frontend - Entrada Principal
+  8. Frontend - Contextos React
+  9. Frontend - Hooks Customizados
+  10. Frontend - Bibliotecas Utilitárias
+  11. Frontend - Componentes Principais
+  12. Frontend - Componentes UI (Shadcn)
+  13. Frontend - Páginas Públicas
+  14. Frontend - Páginas de Autenticação
+  15. Frontend - Páginas do Associado
+  16. Frontend - Páginas Administrativas
+  17. Assets e Recursos Estáticos
+  18. Integração com Backend PHP (HostGator)
+  19. Endpoints da API PHP
+  20. Dependências do Projeto
+  21. Comandos de Desenvolvimento
+  22. Notas de Implementação
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 1. VISÃO GERAL DO SISTEMA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+O AMB Portal é o site institucional oficial da Associação Amazonas Basquete 
+Master. O sistema oferece:
+
+  • Portal público com informações institucionais
+  • Sistema de cadastro e autenticação de associados
+  • Painel do associado com gestão de perfil
+  • Sistema de eventos e campeonatos
+  • Gestão de notícias e comunicação
+  • Área de parceiros e patrocinadores
+  • Sistema de transparência e prestação de contas
+  • Painel administrativo completo
+  • Sistema de eleições da diretoria
+
+ARQUITETURA:
+  Frontend (Replit) ←→ APIs PHP (HostGator) ←→ MySQL (HostGator)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 2. STACK TECNOLÓGICO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FRONTEND:
+  ├── React 18.3.1          → Biblioteca UI principal
+  ├── TypeScript            → Tipagem estática
+  ├── Vite 5.4.20           → Bundler e dev server
+  ├── Tailwind CSS 4.0      → Framework de estilização
+  ├── Shadcn UI             → Componentes base (Radix)
+  ├── Wouter                → Roteamento SPA
+  ├── TanStack Query v5     → Gerenciamento de estado server
+  ├── React Hook Form       → Formulários
+  ├── Zod                   → Validação de schemas
+  ├── Axios                 → Cliente HTTP
+  ├── Framer Motion         → Animações
+  └── Lucide React          → Ícones
+
+BACKEND LOCAL (Replit):
+  ├── Express.js 4.21       → Framework web
+  ├── Node.js               → Runtime
+  └── MemStorage            → Armazenamento em memória
+
+BACKEND REMOTO (HostGator):
+  ├── PHP 8.x               → Linguagem servidor
+  ├── MySQL                 → Banco de dados
+  └── Apache                → Servidor web
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 3. ESTRUTURA DE DIRETÓRIOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+AMB-PORTAL/
+│
+├── client/                      # [FRONTEND] Aplicação React
+│   └── src/
+│       ├── assets/              # Imagens e recursos estáticos
+│       ├── components/          # Componentes reutilizáveis
+│       │   └── ui/              # Componentes Shadcn UI (47 arquivos)
+│       ├── context/             # Contextos React (Auth, Config)
+│       ├── hooks/               # Hooks customizados
+│       ├── lib/                 # Utilitários e configurações
+│       └── pages/               # Páginas da aplicação
+│           ├── admin/           # Páginas administrativas (15 arquivos)
+│           └── eleicoes/        # Sistema de eleições
+│
+├── server/                      # [BACKEND LOCAL] Express.js
+│   ├── index.ts                 # Ponto de entrada
+│   ├── routes.ts                # Rotas da API
+│   ├── storage.ts               # Interface de armazenamento
+│   └── vite.ts                  # Integração Vite/Express
+│
+├── shared/                      # [COMPARTILHADO] Tipos e schemas
+│   ├── schema.ts                # Schemas Drizzle/Zod
+│   └── Footer.tsx               # Componente legado
+│
+├── dist/                        # [BUILD] Arquivos de produção
+│   ├── public/                  # Frontend compilado
+│   └── index.js                 # Backend compilado
+│
+├── doc.amb/                     # [DOCUMENTAÇÃO]
+│   └── DOC.2.2.AMB.txt          # Este arquivo
+│
+└── attached_assets/             # Assets externos/anexados
+
+ESTATÍSTICAS:
+  • Total de arquivos TS/TSX: 120
+  • Arquivos no client/: 114
+  • Arquivos no server/: 4
+  • Arquivos no shared/: 2
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 4. ARQUIVOS DE CONFIGURAÇÃO (RAIZ)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ package.json                                                               │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Manifesto do projeto Node.js                                      │
+│ CONTEÚDO: Dependências, scripts, metadados do projeto                     │
+│ SCRIPTS:                                                                   │
+│   • dev     → Inicia desenvolvimento (tsx server/index.ts)                 │
+│   • build   → Compila para produção (vite build + esbuild)                 │
+│   • start   → Executa produção (node dist/index.js)                        │
+│   • check   → Verificação TypeScript                                       │
+│   • db:push → Push do schema Drizzle                                       │
+│ DEPENDÊNCIAS: 70+ pacotes (React, Express, Radix, Tailwind, etc.)         │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ vite.config.ts                                                 [BLOQUEADO]│
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Configuração do bundler Vite                                      │
+│ CONTEÚDO: Plugins, aliases, configuração de servidor                      │
+│ PORTA: 5000 (0.0.0.0 - bind para Replit)                                  │
+│ ALIASES:                                                                   │
+│   • @       → ./client/src                                                 │
+│   • @shared → ./shared                                                     │
+│   • @assets → ./attached_assets                                            │
+│ NOTA: NÃO MODIFICAR - Configuração otimizada para Replit                  │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ tailwind.config.ts                                                         │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Configuração do Tailwind CSS                                      │
+│ CONTEÚDO: Tema customizado, cores, extensões, plugins                     │
+│ DEPENDÊNCIAS: tailwindcss, tailwindcss-animate, @tailwindcss/typography   │
+│ CUSTOMIZAÇÕES: Cores AMB, tipografia Inter/Space Grotesk                  │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ tsconfig.json                                                              │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Configuração do compilador TypeScript                             │
+│ CONTEÚDO: Opções de compilação, paths, módulos                            │
+│ TARGET: ES2020 | MODULE: ESNext                                           │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ drizzle.config.ts                                              [BLOQUEADO]│
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Configuração do Drizzle ORM                                       │
+│ CONTEÚDO: Schema, conexão com banco de dados                              │
+│ NOTA: NÃO MODIFICAR                                                        │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ components.json                                                            │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Configuração do Shadcn UI                                         │
+│ CONTEÚDO: Estilo, aliases, caminhos dos componentes                       │
+│ STYLE: "default" | CSS Variables: true                                    │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ replit.md                                                                  │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Documentação para o Replit Agent                                  │
+│ CONTEÚDO: Arquitetura, status, preferências, histórico                    │
+│ USO: Memória persistente entre sessões do agente                          │
+└────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 5. BACKEND LOCAL (server/)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ server/index.ts                                                            │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Ponto de entrada do servidor Express                              │
+│ DESCRIÇÃO: Inicializa o app Express, configura middlewares, inicia        │
+│            o servidor na porta 5000                                        │
+│ DEPENDÊNCIAS: express, ./vite, ./routes                                   │
+│ MIDDLEWARES: json parser, cors, session                                   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ server/routes.ts                                                           │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Definição das rotas da API local                                  │
+│ DESCRIÇÃO: Endpoints REST para operações locais, validação com Zod        │
+│ DEPENDÊNCIAS: express, storage.ts, zod, shared/schema                     │
+│ ENDPOINTS:                                                                 │
+│   • POST /api/contact    → Criar mensagem de contato                       │
+│   • GET  /api/contact    → Listar mensagens                                │
+│   • GET  /api/contact/:id → Buscar mensagem por ID                         │
+│ NOTA: API local de fallback. Produção usa APIs PHP no HostGator           │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ server/storage.ts                                                          │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Interface de armazenamento em memória                             │
+│ DESCRIÇÃO: Implementa padrão Repository para CRUD de dados                │
+│ DEPENDÊNCIAS: shared/schema.ts                                            │
+│ CLASSE: MemStorage                                                         │
+│ INTERFACE: IStorage                                                        │
+│   • createContact(data) → Cria mensagem                                   │
+│   • getContacts()       → Lista mensagens                                  │
+│   • getContactById(id)  → Busca por ID                                     │
+│ NOTA: Dados perdidos ao reiniciar. Produção usa MySQL                     │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ server/vite.ts                                                 [BLOQUEADO]│
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Integração Vite com Express para desenvolvimento                  │
+│ DESCRIÇÃO: Middleware Vite, HMR, serve arquivos estáticos                 │
+│ DEPENDÊNCIAS: vite                                                         │
+│ NOTA: NÃO MODIFICAR - Configuração crítica do Replit                      │
+└────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 6. CÓDIGO COMPARTILHADO (shared/)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ shared/schema.ts                                                           │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Schemas Drizzle + Zod compartilhados entre frontend e backend     │
+│ DESCRIÇÃO: Define tabelas do banco, tipos TypeScript, validadores         │
+│ DEPENDÊNCIAS: drizzle-orm, drizzle-zod, zod                               │
+│ EXPORTS:                                                                   │
+│   • contactMessages      → Schema da tabela de contatos                    │
+│   • insertContactSchema  → Validação Zod para inserção                     │
+│   • InsertContact        → Tipo TypeScript para inserção                   │
+│   • SelectContact        → Tipo TypeScript para seleção                    │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ shared/Footer.tsx                                                          │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Componente Footer (versão legada)                                 │
+│ DESCRIÇÃO: Layout do rodapé compartilhado                                 │
+│ NOTA: Preferir usar client/src/components/Footer.tsx                      │
+└────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 7. FRONTEND - ENTRADA PRINCIPAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/main.tsx                                                        │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Ponto de entrada da aplicação React                               │
+│ DESCRIÇÃO: Inicializa React, renderiza App no DOM                         │
+│ DEPENDÊNCIAS: react, react-dom, App.tsx, index.css                        │
+│ CÓDIGO: ReactDOM.createRoot(document.getElementById('root')).render(<App/>)│
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/App.tsx                                              [238 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Componente raiz da aplicação                                      │
+│ DESCRIÇÃO: Configura providers, define rotas, layout principal            │
+│ DEPENDÊNCIAS:                                                              │
+│   • wouter            → Roteamento SPA                                     │
+│   • @tanstack/query   → QueryClientProvider                                │
+│   • ./context/*       → AuthProvider, SiteConfigProvider                   │
+│   • React.lazy()      → Lazy loading de páginas                            │
+│ COMPONENTES INTERNOS:                                                      │
+│   • LoadingFallback   → Spinner durante carregamento                       │
+│   • FloatingWhatsApp  → Botão WhatsApp flutuante                           │
+│ ROTAS DEFINIDAS:                                                           │
+│   /                   → Home                                               │
+│   /sobre              → SobrePage                                          │
+│   /contato            → Contact                                            │
+│   /eventos            → EventosPage                                        │
+│   /noticias           → NoticiasPage                                       │
+│   /parceiros          → ParceirosPage                                      │
+│   /diretoria          → DiretoriaPage                                      │
+│   /seja-parceiro      → SejaParceiroPage                                   │
+│   /prestacao-contas   → PrestacaoContasPage                                │
+│   /inteligencia       → InteligenciaPage                                   │
+│   /secretaria         → SecretariaDigitalPage                              │
+│   /eleicoes           → EleicoesPage                                       │
+│   /login              → LoginPage                                          │
+│   /cadastro           → CadastroPage                                       │
+│   /esqueci-senha      → EsqueciSenhaPage                                   │
+│   /redefinir-senha/:t → RedefinirSenhaPage                                 │
+│   /painel             → PainelPage                                         │
+│   /editar-perfil      → EditarPerfilPage                                   │
+│   /admin              → AdminPainelPage                                    │
+│   /admin/*            → Rotas administrativas (15+)                        │
+│   *                   → NotFound (404)                                     │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/index.css                                                       │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Estilos globais e variáveis CSS                                   │
+│ DESCRIÇÃO: Design tokens, cores, tipografia, utilities Tailwind           │
+│ DEPENDÊNCIAS: Tailwind CSS (@tailwind directives)                         │
+│ VARIÁVEIS CSS (HSL):                                                       │
+│   --background         → Cor de fundo principal                            │
+│   --foreground         → Cor de texto principal                            │
+│   --card               → Fundo de cards                                    │
+│   --card-foreground    → Texto em cards                                    │
+│   --primary            → Cor primária (CTAs)                               │
+│   --primary-foreground → Texto sobre primária                              │
+│   --secondary          → Cor secundária                                    │
+│   --muted              → Cor atenuada                                      │
+│   --accent             → Cor de destaque                                   │
+│   --destructive        → Cor de erro/delete                                │
+│   --border             → Cor de bordas                                     │
+│   --ring               → Cor de foco                                       │
+│   --radius             → Border radius padrão                              │
+│ UTILITIES CUSTOMIZADOS:                                                    │
+│   • hover-elevate      → Elevação sutil no hover                           │
+│   • active-elevate-2   → Elevação no click                                 │
+└────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 8. FRONTEND - CONTEXTOS REACT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/context/AuthContext.tsx                                         │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Contexto de autenticação global                                   │
+│ DESCRIÇÃO: Gerencia estado do usuário logado, login, logout, sessão       │
+│ DEPENDÊNCIAS: react, axios                                                │
+│ EXPORTS:                                                                   │
+│   • AuthProvider       → Provider do contexto                              │
+│   • useAuth            → Hook para acessar autenticação                    │
+│ INTEGRAÇÃO: API PHP (ambamazonas.com.br/api/auth.php)                     │
+│ DADOS DO USUÁRIO:                                                          │
+│   • id, nome, email, cpf, telefone                                        │
+│   • foto, categoria, status, tipo                                         │
+│   • associacao, mensalidade                                               │
+│ MÉTODOS:                                                                   │
+│   • login(email, senha)    → Autenticar usuário                           │
+│   • logout()               → Encerrar sessão                              │
+│   • checkSession()         → Verificar sessão ativa                       │
+│   • updateUser(data)       → Atualizar dados do usuário                   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/context/SiteConfigContext.tsx                                   │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Configurações dinâmicas do site                                   │
+│ DESCRIÇÃO: Dados de contato, redes sociais, configurações gerais          │
+│ EXPORTS:                                                                   │
+│   • SiteConfigProvider → Provider do contexto                              │
+│   • useSiteConfig      → Hook para acessar configurações                   │
+│ DADOS DISPONÍVEIS:                                                         │
+│   • whatsappNumber     → Número do WhatsApp (+55 92 9252-1345)            │
+│   • email              → Email de contato                                  │
+│   • telefone           → Telefone fixo                                     │
+│   • endereco           → Endereço da sede                                  │
+│   • instagram          → @ambamazonas                                      │
+│   • facebook           → Facebook page                                     │
+│   • youtube            → Canal do YouTube                                  │
+│ INTEGRAÇÃO: API PHP (config.php) ou valores hardcoded                     │
+└────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 9. FRONTEND - HOOKS CUSTOMIZADOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/hooks/use-toast.ts                                   [191 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Sistema de notificações toast                                     │
+│ DESCRIÇÃO: Exibe mensagens temporárias de feedback (sucesso, erro, info)  │
+│ EXPORTS:                                                                   │
+│   • useToast()  → Hook que retorna { toast, toasts, dismiss }             │
+│   • toast()     → Função para exibir toast                                │
+│ OPÇÕES DO TOAST:                                                           │
+│   • title       → Título da notificação                                   │
+│   • description → Descrição/mensagem                                      │
+│   • variant     → "default" | "destructive"                               │
+│   • duration    → Tempo de exibição (ms)                                  │
+│ USO: toast({ title: "Sucesso!", description: "Dados salvos." })           │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/hooks/use-mobile.tsx                                            │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Detecção de dispositivo móvel                                     │
+│ DESCRIÇÃO: Retorna boolean indicando se tela é mobile (<768px)            │
+│ EXPORTS:                                                                   │
+│   • useIsMobile() → Hook que retorna boolean                              │
+│ USO: const isMobile = useIsMobile();                                      │
+│ NOTA: Usa window.matchMedia para detecção                                 │
+└────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 10. FRONTEND - BIBLIOTECAS UTILITÁRIAS (lib/)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/lib/queryClient.ts                                              │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Configuração do TanStack Query                                    │
+│ DESCRIÇÃO: Cliente de queries configurado, helper para requisições        │
+│ EXPORTS:                                                                   │
+│   • queryClient   → Instância configurada do QueryClient                   │
+│   • apiRequest    → Função helper para POST/PATCH/DELETE                   │
+│ CONFIGURAÇÃO:                                                              │
+│   • staleTime: 5 minutos                                                  │
+│   • retry: 1 tentativa                                                    │
+│   • refetchOnWindowFocus: false                                           │
+│ USO apiRequest: await apiRequest('/api/contact', 'POST', data)            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/lib/utils.ts                                                    │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Funções utilitárias gerais                                        │
+│ DESCRIÇÃO: Merge de classes CSS, formatadores                             │
+│ DEPENDÊNCIAS: clsx, tailwind-merge                                        │
+│ EXPORTS:                                                                   │
+│   • cn(...inputs) → Merge inteligente de classes Tailwind                  │
+│ USO: cn("p-4", condition && "bg-red-500", "text-white")                   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/lib/canvasUtils.ts                                              │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Utilitários para manipulação de canvas/imagens                    │
+│ DESCRIÇÃO: Crop de imagem, redimensionamento, conversão                   │
+│ DEPENDÊNCIAS: Nenhuma (APIs nativas)                                      │
+│ EXPORTS:                                                                   │
+│   • getCroppedImg(imageSrc, crop) → Promise<Blob>                         │
+│ USO: Componente EditarPerfilForm para crop de foto                        │
+└────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 11. FRONTEND - COMPONENTES PRINCIPAIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/Navigation.tsx                            [270 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Barra de navegação principal do site                              │
+│ DESCRIÇÃO: Header fixo com logo, menu, links, auth, mobile menu           │
+│ DEPENDÊNCIAS: wouter, Shadcn UI, Lucide, react-icons, AuthContext         │
+│ FEATURES:                                                                  │
+│   • Menu desktop com dropdowns                                            │
+│   • Menu mobile hamburger (Sheet)                                         │
+│   • Links para redes sociais                                              │
+│   • Botões de login/cadastro                                              │
+│   • Avatar do usuário logado                                              │
+│   • Botão "Seja Associado" (CTA)                                          │
+│   • Logo FBBM integrada                                                   │
+│ RESPONSIVO: Adapta para mobile < 768px                                    │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/Footer.tsx                                           │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Rodapé do site                                                    │
+│ DESCRIÇÃO: Links rápidos, contato, redes sociais, copyright               │
+│ DEPENDÊNCIAS: SiteConfigContext, Lucide, react-icons                      │
+│ SEÇÕES:                                                                    │
+│   • Logo e descrição                                                      │
+│   • Links rápidos (Empresa)                                               │
+│   • Links de suporte                                                      │
+│   • Informações de contato                                                │
+│   • Ícones de redes sociais                                               │
+│   • Copyright dinâmico                                                    │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/Hero.tsx                                             │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Seção hero estática                                               │
+│ DESCRIÇÃO: Banner principal com título, subtítulo, CTAs                   │
+│ DEPENDÊNCIAS: Framer Motion                                               │
+│ ANIMAÇÕES: Fade in, slide up                                              │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/HeroBanner.tsx                                       │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Banner hero com imagem de fundo                                   │
+│ DESCRIÇÃO: Imagem full-width com overlay escuro e texto                   │
+│ PROPS: backgroundImage, title, subtitle                                   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/CarouselHero.tsx                                     │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Carrossel de banners na home                                      │
+│ DESCRIÇÃO: Slides automáticos com navegação, banners dinâmicos            │
+│ DEPENDÊNCIAS: Embla Carousel, Framer Motion                               │
+│ INTEGRAÇÃO: API PHP (banners.php)                                         │
+│ FEATURES:                                                                  │
+│   • Autoplay com intervalo configurável                                   │
+│   • Navegação por setas                                                   │
+│   • Indicadores de slide                                                  │
+│   • Fallback para banner estático                                         │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/About.tsx                                            │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Seção "Sobre Nós"                                                 │
+│ DESCRIÇÃO: Texto institucional, missão, visão, valores                    │
+│ ID: #sobre (para scroll suave)                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/Stats.tsx                                            │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Estatísticas em destaque                                          │
+│ DESCRIÇÃO: Contadores animados com métricas da AMB                        │
+│ DADOS:                                                                     │
+│   • Anos de história                                                      │
+│   • Associados ativos                                                     │
+│   • Campeonatos realizados                                                │
+│   • Times participantes                                                   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/Testimonials.tsx                                     │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Depoimentos de associados                                         │
+│ DESCRIÇÃO: Cards com testemunhos, foto, nome, cargo                       │
+│ LAYOUT: Grid responsivo de 3 colunas                                      │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/CTABanner.tsx                                        │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Banner de call-to-action                                          │
+│ DESCRIÇÃO: Seção com gradiente, título, descrição, botão                  │
+│ USO: "Solicitar Consulta", "Seja Associado"                               │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/ContactForm.tsx                                      │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Formulário de contato                                             │
+│ DESCRIÇÃO: Campos de contato com validação e envio                        │
+│ DEPENDÊNCIAS: React Hook Form, Zod, TanStack Query                        │
+│ CAMPOS:                                                                    │
+│   • Nome (obrigatório, min 2 chars)                                       │
+│   • Email (obrigatório, validação email)                                  │
+│   • Telefone (opcional)                                                   │
+│   • Assunto (obrigatório)                                                 │
+│   • Mensagem (obrigatório, min 10 chars)                                  │
+│ ESTADOS: Loading, sucesso, erro                                           │
+│ INTEGRAÇÃO: API de contato                                                │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/ContactPreview.tsx                                   │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Preview de contato na home                                        │
+│ DESCRIÇÃO: Resumo com informações e CTA para página de contato            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/LoginForm.tsx                                        │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Formulário de login                                               │
+│ DESCRIÇÃO: Autenticação de usuários existentes                            │
+│ DEPENDÊNCIAS: React Hook Form, AuthContext                                │
+│ CAMPOS: Email, Senha                                                      │
+│ FEATURES: Link "Esqueci minha senha", link para cadastro                  │
+│ INTEGRAÇÃO: API PHP (login.php)                                           │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/CadastroForm.tsx                                     │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Formulário de cadastro de associado                               │
+│ DESCRIÇÃO: Registro completo com todos os dados pessoais                  │
+│ DEPENDÊNCIAS: React Hook Form, Zod                                        │
+│ CAMPOS:                                                                    │
+│   • Nome completo, CPF, Data de nascimento                                │
+│   • Email, Telefone, WhatsApp                                             │
+│   • Endereço completo (CEP, rua, número, bairro, cidade, UF)              │
+│   • Categoria (Master 40+, 50+, 60+, etc.)                                │
+│   • Senha e confirmação                                                   │
+│   • Termos de uso e regulamento                                           │
+│ INTEGRAÇÃO: API PHP (cadastro.php)                                        │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/EditarPerfilForm.tsx                      [242 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Formulário de edição de perfil                                    │
+│ DESCRIÇÃO: Atualização de dados pessoais e foto                           │
+│ DEPENDÊNCIAS: React Hook Form, React Easy Crop, AuthContext               │
+│ FEATURES:                                                                  │
+│   • Upload de foto com preview                                            │
+│   • Crop de imagem interativo                                             │
+│   • Edição de todos os dados pessoais                                     │
+│   • Alteração de senha                                                    │
+│ INTEGRAÇÃO: API PHP (atualizar-perfil.php)                                │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/DiretoriaPremium.tsx                                 │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Exibição premium da diretoria                                     │
+│ DESCRIÇÃO: Cards elegantes dos membros da diretoria                       │
+│ FEATURES: Foto, nome, cargo, animações                                    │
+│ INTEGRAÇÃO: API PHP (diretoria.php)                                       │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/ParceirosCarrossel.tsx                               │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Carrossel de logos de parceiros                                   │
+│ DESCRIÇÃO: Logos em scroll automático infinito                            │
+│ DEPENDÊNCIAS: Swiper                                                       │
+│ INTEGRAÇÃO: API PHP (parceiros.php)                                       │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/ParceirosDestaque.tsx                                │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Parceiros em destaque                                             │
+│ DESCRIÇÃO: Grid de parceiros principais/patrocinadores                    │
+│ LAYOUT: Cards com logo, nome, categoria                                   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/PlacarDestaque.tsx                        [197 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Placares de jogos em destaque                                     │
+│ DESCRIÇÃO: Resultados recentes e próximos jogos                           │
+│ INTEGRAÇÃO: API PHP (jogos.php)                                           │
+│ FEATURES:                                                                  │
+│   • Jogos ao vivo                                                         │
+│   • Últimos resultados                                                    │
+│   • Próximos jogos                                                        │
+│   • Logos dos times                                                       │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/FloatingWhatsApp.tsx                                 │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Botão WhatsApp flutuante                                          │
+│ DESCRIÇÃO: Ícone fixo no canto da tela para contato rápido                │
+│ DEPENDÊNCIAS: SiteConfigContext                                           │
+│ POSIÇÃO: Canto inferior direito, z-index alto                             │
+│ LINK: wa.me/{numero}?text={mensagem}                                      │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/components/FerramentasModal.tsx                      [190 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Modal de ferramentas/ações rápidas                                │
+│ DESCRIÇÃO: Menu de ações rápidas para usuários/admins                     │
+│ DEPENDÊNCIAS: Shadcn Dialog, AuthContext                                  │
+│ ITENS:                                                                     │
+│   • Área do Associado                                                     │
+│   • Cadastro de Associado                                                 │
+│   • Gestão de Eventos                                                     │
+│   • Gestão de Notícias                                                    │
+│   • Painel Admin (se admin)                                               │
+└────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 12. FRONTEND - COMPONENTES UI (Shadcn)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Diretório: client/src/components/ui/
+Total: 47 componentes baseados em Radix UI
+
+COMPONENTES DE LAYOUT:
+  accordion.tsx       → Acordeão expansível com animação
+  aspect-ratio.tsx    → Mantém proporção de aspecto
+  card.tsx            → Container card com header/content/footer
+  collapsible.tsx     → Conteúdo colapsável
+  resizable.tsx       → Painéis redimensionáveis
+  scroll-area.tsx     → Área de scroll customizada
+  separator.tsx       → Linha separadora horizontal/vertical
+  sidebar.tsx         → Sidebar completa com collapso [727 LOC]
+
+COMPONENTES DE NAVEGAÇÃO:
+  breadcrumb.tsx      → Navegação breadcrumb
+  menubar.tsx         → Barra de menu horizontal
+  navigation-menu.tsx → Menu de navegação com dropdowns
+  pagination.tsx      → Paginação de listas
+  tabs.tsx            → Abas de navegação
+
+COMPONENTES DE FORMULÁRIO:
+  button.tsx          → Botão com variantes (default, outline, ghost, etc.)
+  calendar.tsx        → Calendário/date picker
+  checkbox.tsx        → Checkbox com label
+  form.tsx            → Wrapper para React Hook Form
+  input.tsx           → Campo de texto
+  input-otp.tsx       → Input para códigos OTP
+  label.tsx           → Label para inputs
+  radio-group.tsx     → Grupo de radio buttons
+  select.tsx          → Select/dropdown
+  slider.tsx          → Slider numérico
+  switch.tsx          → Toggle on/off
+  textarea.tsx        → Campo de texto multilinha
+
+COMPONENTES DE FEEDBACK:
+  alert.tsx           → Mensagens de alerta
+  alert-dialog.tsx    → Diálogo de confirmação
+  badge.tsx           → Badges/etiquetas
+  progress.tsx        → Barra de progresso
+  skeleton.tsx        → Loading skeleton
+  toast.tsx           → Notificações toast
+  toaster.tsx         → Container de toasts
+  tooltip.tsx         → Tooltip informativo
+
+COMPONENTES DE OVERLAY:
+  dialog.tsx          → Modal/diálogo
+  drawer.tsx          → Drawer lateral (mobile)
+  dropdown-menu.tsx   → Menu dropdown
+  hover-card.tsx      → Card exibido no hover
+  popover.tsx         → Popover posicionado
+  sheet.tsx           → Sheet/painel lateral
+  context-menu.tsx    → Menu de contexto (right-click)
+  command.tsx         → Command palette (Cmd+K)
+
+COMPONENTES DE DADOS:
+  avatar.tsx          → Avatar de usuário
+  carousel.tsx        → Carrossel de conteúdo
+  chart.tsx           → Gráficos (Recharts) [365 LOC]
+  table.tsx           → Tabela de dados
+  toggle.tsx          → Botão toggle
+  toggle-group.tsx    → Grupo de toggles
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 13. FRONTEND - PÁGINAS PÚBLICAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/Home.tsx                                       [238 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Página inicial do site                                            │
+│ ROTA: /                                                                    │
+│ DESCRIÇÃO: Landing page com todas as seções principais                    │
+│ COMPONENTES UTILIZADOS:                                                    │
+│   • Navigation          → Barra de navegação                              │
+│   • CarouselHero        → Banner rotativo                                 │
+│   • About               → Seção "Sobre Nós"                               │
+│   • Stats               → Estatísticas                                    │
+│   • ParceirosCarrossel  → Parceiros                                       │
+│   • PlacarDestaque      → Placares                                        │
+│   • CTABanner           → Call to action                                  │
+│   • Footer              → Rodapé                                          │
+│ SEÇÕES: Hero, Sobre, Stats, Parceiros, Placares, CTA, Footer              │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/SobrePage.tsx                                             │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Página "Sobre a AMB"                                              │
+│ ROTA: /sobre                                                               │
+│ DESCRIÇÃO: História completa, missão, visão, valores da associação        │
+│ CONTEÚDO: Texto institucional, timeline, fotos históricas                 │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/Contact.tsx                                               │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Página de contato                                                 │
+│ ROTA: /contato                                                             │
+│ DESCRIÇÃO: Formulário de contato e informações                            │
+│ COMPONENTES: ContactForm                                                   │
+│ INFORMAÇÕES: Endereço, telefone, email, mapa                              │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/EventosPage.tsx                                           │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Lista de eventos/campeonatos                                      │
+│ ROTA: /eventos                                                             │
+│ DESCRIÇÃO: Todos os campeonatos e eventos da AMB                          │
+│ FEATURES:                                                                  │
+│   • Cards de eventos com imagem                                           │
+│   • Filtro por status (ativo, encerrado, futuro)                          │
+│   • Modal de detalhes                                                     │
+│   • Hover effects                                                         │
+│ INTEGRAÇÃO: API PHP (campeonatos.php)                                     │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/NoticiasPage.tsx                                          │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Lista de notícias                                                 │
+│ ROTA: /noticias                                                            │
+│ DESCRIÇÃO: Feed de notícias e comunicados da AMB                          │
+│ FEATURES: Cards, paginação, filtro por categoria                          │
+│ INTEGRAÇÃO: API PHP (noticias.php)                                        │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/ParceirosPage.tsx                              [432 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Página de parceiros                                               │
+│ ROTA: /parceiros                                                           │
+│ DESCRIÇÃO: Lista completa de parceiros e patrocinadores                   │
+│ FEATURES:                                                                  │
+│   • Grid responsivo de parceiros                                          │
+│   • Filtro por categoria (Ouro, Prata, Bronze, Apoio)                     │
+│   • Modal com detalhes do parceiro                                        │
+│   • Links para sites dos parceiros                                        │
+│ INTEGRAÇÃO: API PHP (parceiros.php)                                       │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/DiretoriaPage.tsx                                         │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Diretoria da AMB                                                  │
+│ ROTA: /diretoria                                                           │
+│ DESCRIÇÃO: Membros da diretoria atual                                     │
+│ COMPONENTES: DiretoriaPremium                                             │
+│ INTEGRAÇÃO: API PHP (diretoria.php)                                       │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/SejaParceiroPage.tsx                           [421 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Formulário para novos parceiros                                   │
+│ ROTA: /seja-parceiro                                                       │
+│ DESCRIÇÃO: Landing page + formulário de interesse                         │
+│ FEATURES:                                                                  │
+│   • Benefícios de ser parceiro                                            │
+│   • Planos de parceria (Ouro, Prata, Bronze)                              │
+│   • Formulário de contato comercial                                       │
+│ INTEGRAÇÃO: API PHP (parceiros.php - POST)                                │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/PrestacaoContasPage.tsx                        [261 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Transparência e prestação de contas                               │
+│ ROTA: /prestacao-contas                                                    │
+│ DESCRIÇÃO: Documentos de transparência, relatórios, atas                  │
+│ FEATURES:                                                                  │
+│   • Lista de documentos por ano                                           │
+│   • Filtro por tipo (Ata, Relatório, Balanço)                             │
+│   • Download de PDFs                                                      │
+│ INTEGRAÇÃO: API PHP (transparencia.php)                                   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/InteligenciaPage.tsx                                      │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Inteligência esportiva (BI público)                               │
+│ ROTA: /inteligencia                                                        │
+│ DESCRIÇÃO: Estatísticas e análises do basquete master                     │
+│ FEATURES: Gráficos, rankings, histórico                                   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/SecretariaDigitalPage.tsx                                 │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Secretaria digital                                                │
+│ ROTA: /secretaria                                                          │
+│ DESCRIÇÃO: Downloads, formulários, guias, regulamentos                    │
+│ FEATURES:                                                                  │
+│   • Documentos para download                                              │
+│   • Formulários em PDF                                                    │
+│   • Regulamentos de campeonatos                                           │
+│   • Guias e manuais                                                       │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/eleicoes/EleicoesPage.tsx                      [378 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Sistema de eleições da diretoria                                  │
+│ ROTA: /eleicoes                                                            │
+│ DESCRIÇÃO: Votação online para diretoria                                  │
+│ FEATURES:                                                                  │
+│   • Lista de candidatos                                                   │
+│   • Votação por cargo                                                     │
+│   • Resultados parciais/finais                                            │
+│   • Verificação de elegibilidade                                          │
+│ PROTEÇÃO: Requer autenticação                                             │
+│ INTEGRAÇÃO: API PHP (eleicoes.php)                                        │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/not-found.tsx                                             │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Página 404 (não encontrado)                                       │
+│ ROTA: * (fallback)                                                         │
+│ DESCRIÇÃO: Mensagem de erro amigável, link para home                      │
+│ NOTA: Nome do arquivo com hífen (not-found.tsx)                           │
+└────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 14. FRONTEND - PÁGINAS DE AUTENTICAÇÃO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/LoginPage.tsx                                             │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Página de login                                                   │
+│ ROTA: /login                                                               │
+│ DESCRIÇÃO: Autenticação de usuários existentes                            │
+│ COMPONENTES: LoginForm                                                     │
+│ FEATURES:                                                                  │
+│   • Campos email e senha                                                  │
+│   • Link "Esqueci minha senha"                                            │
+│   • Link para cadastro                                                    │
+│   • Redirecionamento pós-login                                            │
+│ INTEGRAÇÃO: API PHP (login.php)                                           │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/CadastroPage.tsx                                          │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Cadastro de novos associados                                      │
+│ ROTA: /cadastro                                                            │
+│ DESCRIÇÃO: Formulário completo de registro                                │
+│ COMPONENTES: CadastroForm                                                  │
+│ CAMPOS: Nome, CPF, data nasc., email, telefone, endereço, categoria, senha│
+│ INTEGRAÇÃO: API PHP (cadastro.php)                                        │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/EsqueciSenhaPage.tsx                                      │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Solicitação de recuperação de senha                               │
+│ ROTA: /esqueci-senha                                                       │
+│ DESCRIÇÃO: Formulário para solicitar email de recuperação                 │
+│ CAMPOS: Email cadastrado                                                  │
+│ INTEGRAÇÃO: API PHP (esqueci-senha.php)                                   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/RedefinirSenhaPage.tsx                                    │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Redefinição de senha                                              │
+│ ROTA: /redefinir-senha/:token                                              │
+│ DESCRIÇÃO: Formulário para definir nova senha com token                   │
+│ CAMPOS: Nova senha, confirmação                                           │
+│ PARÂMETRO: token (validado no backend)                                    │
+│ INTEGRAÇÃO: API PHP (redefinir-senha.php)                                 │
+└────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 15. FRONTEND - PÁGINAS DO ASSOCIADO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/PainelPage.tsx                                            │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Painel do associado logado                                        │
+│ ROTA: /painel                                                              │
+│ PROTEÇÃO: Requer autenticação (redireciona para /login)                   │
+│ DESCRIÇÃO: Dashboard pessoal do associado                                 │
+│ FEATURES:                                                                  │
+│   • Dados do perfil                                                       │
+│   • Status da associação                                                  │
+│   • Status de mensalidade                                                 │
+│   • Ações rápidas                                                         │
+│   • Histórico de participação                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/EditarPerfilPage.tsx                                      │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Edição de perfil do associado                                     │
+│ ROTA: /editar-perfil                                                       │
+│ PROTEÇÃO: Requer autenticação                                             │
+│ COMPONENTES: EditarPerfilForm                                             │
+│ FEATURES:                                                                  │
+│   • Edição de dados pessoais                                              │
+│   • Upload e crop de foto                                                 │
+│   • Alteração de senha                                                    │
+│ INTEGRAÇÃO: API PHP (atualizar-perfil.php)                                │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ client/src/pages/GestaoAssociadosPage.tsx                       [201 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão de associados (visão usuário)                              │
+│ ROTA: /associados                                                          │
+│ DESCRIÇÃO: Lista de associados, status de mensalidade                     │
+│ NOTA: Versão simplificada para usuários comuns                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 16. FRONTEND - PÁGINAS ADMINISTRATIVAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Diretório: client/src/pages/admin/
+Total: 15 páginas administrativas
+Proteção: Requer autenticação + role admin
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ AdminPainelPage.tsx                                                        │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Painel administrativo principal                                   │
+│ ROTA: /admin                                                               │
+│ DESCRIÇÃO: Dashboard com estatísticas e acesso a todas as gestões         │
+│ FEATURES:                                                                  │
+│   • Cards de estatísticas (associados, eventos, etc.)                     │
+│   • Menu de navegação para gestões                                        │
+│   • Atalhos rápidos                                                       │
+│   • Notificações pendentes                                                │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GestaoEventosMaster.tsx                                         [314 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão master de eventos/campeonatos                              │
+│ ROTA: /admin/eventos-master                                                │
+│ DESCRIÇÃO: CRUD completo de campeonatos com configurações avançadas       │
+│ FEATURES:                                                                  │
+│   • Criar/editar/excluir campeonatos                                      │
+│   • Upload de banner/logo                                                 │
+│   • Configuração de datas                                                 │
+│   • Gestão de inscrições                                                  │
+│   • Configuração de regulamento                                           │
+│ INTEGRAÇÃO: API PHP (campeonatos.php)                                     │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GestaoEventosPage.tsx                                           [349 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão de eventos (simplificada)                                  │
+│ ROTA: /admin/eventos                                                       │
+│ DESCRIÇÃO: Lista e edição básica de eventos                               │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GestaoConteudoEventoPage.tsx                                    [303 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Conteúdo específico de cada evento                                │
+│ ROTA: /admin/evento/:id/conteudo                                           │
+│ DESCRIÇÃO: Gestão de descrições, regulamentos, mídia do evento            │
+│ FEATURES:                                                                  │
+│   • Editor de texto rico                                                  │
+│   • Upload de imagens                                                     │
+│   • Gestão de documentos                                                  │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GestaoNoticiasPage.tsx                                                     │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão de notícias                                                │
+│ ROTA: /admin/noticias                                                      │
+│ DESCRIÇÃO: CRUD de notícias e comunicados                                 │
+│ FEATURES:                                                                  │
+│   • Criar/editar/excluir notícias                                         │
+│   • Upload de imagem de capa                                              │
+│   • Editor de conteúdo                                                    │
+│   • Publicar/despublicar                                                  │
+│ INTEGRAÇÃO: API PHP (noticias.php)                                        │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GestaoAssociadosPage.tsx                                        [238 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão de associados (admin)                                      │
+│ ROTA: /admin/associados                                                    │
+│ DESCRIÇÃO: CRUD completo de associados                                    │
+│ FEATURES:                                                                  │
+│   • Lista com busca e filtros                                             │
+│   • Aprovar/rejeitar cadastros                                            │
+│   • Editar dados                                                          │
+│   • Gerenciar status                                                      │
+│   • Controle de mensalidade                                               │
+│ INTEGRAÇÃO: API PHP (associados.php)                                      │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GestaoTimesPage.tsx                                             [307 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão de times/equipes                                           │
+│ ROTA: /admin/times                                                         │
+│ DESCRIÇÃO: CRUD de times e seus jogadores                                 │
+│ FEATURES:                                                                  │
+│   • Criar/editar times                                                    │
+│   • Upload de logo/escudo                                                 │
+│   • Adicionar/remover jogadores                                           │
+│   • Vincular a campeonatos                                                │
+│ INTEGRAÇÃO: API PHP (times.php)                                           │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GestaoInscricaoTimesPage.tsx                                    [257 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Inscrição de times em campeonatos                                 │
+│ ROTA: /admin/inscricao-times                                               │
+│ DESCRIÇÃO: Vincular times a campeonatos específicos                       │
+│ FEATURES:                                                                  │
+│   • Selecionar campeonato                                                 │
+│   • Inscrever times                                                       │
+│   • Validar requisitos                                                    │
+│   • Confirmar inscrições                                                  │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GestaoJogosPage.tsx                                             [405 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão de jogos/partidas                                          │
+│ ROTA: /admin/jogos                                                         │
+│ DESCRIÇÃO: CRUD de jogos, tabela de campeonatos                           │
+│ FEATURES:                                                                  │
+│   • Criar/editar jogos                                                    │
+│   • Definir times, data, local                                            │
+│   • Montar tabela/chaves                                                  │
+│   • Gerar confrontos                                                      │
+│ INTEGRAÇÃO: API PHP (jogos.php)                                           │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GestaoPlacarPage.tsx                                            [299 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão de placares                                                │
+│ ROTA: /admin/placares                                                      │
+│ DESCRIÇÃO: Atualização de resultados                                      │
+│ FEATURES:                                                                  │
+│   • Atualizar placar em tempo real                                        │
+│   • Registrar estatísticas                                                │
+│   • Finalizar jogos                                                       │
+│ INTEGRAÇÃO: API PHP (placares.php)                                        │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GestaoParceirosPage.tsx                                         [539 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão de parceiros                                               │
+│ ROTA: /admin/parceiros                                                     │
+│ DESCRIÇÃO: CRUD completo de parceiros/patrocinadores                      │
+│ FEATURES:                                                                  │
+│   • Criar/editar parceiros                                                │
+│   • Upload de logo                                                        │
+│   • Definir categoria (Ouro, Prata, Bronze, Apoio)                        │
+│   • Ativar/desativar                                                      │
+│   • Ordenação                                                             │
+│ INTEGRAÇÃO: API PHP (parceiros.php)                                       │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GestaoBannersAMB.tsx                                            [229 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão de banners do site                                         │
+│ ROTA: /admin/banners                                                       │
+│ DESCRIÇÃO: CRUD de banners do carrossel                                   │
+│ FEATURES:                                                                  │
+│   • Upload de imagens                                                     │
+│   • Definir ordem                                                         │
+│   • Ativar/desativar                                                      │
+│   • Definir link de destino                                               │
+│ INTEGRAÇÃO: API PHP (banners.php)                                         │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GestaoTransparencia.tsx                                         [349 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão de documentos de transparência                             │
+│ ROTA: /admin/transparencia                                                 │
+│ DESCRIÇÃO: Upload e gestão de relatórios, atas, balanços                  │
+│ FEATURES:                                                                  │
+│   • Upload de PDFs                                                        │
+│   • Categorizar por tipo                                                  │
+│   • Definir ano/período                                                   │
+│   • Publicar/despublicar                                                  │
+│ INTEGRAÇÃO: API PHP (transparencia.php)                                   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ DiretoriaGestaoPage.tsx                                         [358 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão da diretoria                                               │
+│ ROTA: /admin/diretoria                                                     │
+│ DESCRIÇÃO: CRUD de membros da diretoria                                   │
+│ FEATURES:                                                                  │
+│   • Adicionar/editar membros                                              │
+│   • Upload de foto                                                        │
+│   • Definir cargo                                                         │
+│   • Ordenação                                                             │
+│   • Gestão de mandatos                                                    │
+│ INTEGRAÇÃO: API PHP (diretoria.php)                                       │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ DiretoriaBIPage.tsx                                                        │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Business Intelligence da diretoria                                │
+│ ROTA: /admin/bi                                                            │
+│ DESCRIÇÃO: Dashboard com métricas e análises                              │
+│ FEATURES:                                                                  │
+│   • Gráficos de associados                                                │
+│   • Métricas financeiras                                                  │
+│   • Análise de eventos                                                    │
+│   • Relatórios                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ EleicoesGestaoPage.tsx                                          [240 LOC] │
+├────────────────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: Gestão de eleições                                                │
+│ ROTA: /admin/eleicoes                                                      │
+│ DESCRIÇÃO: Configuração e gestão de processos eleitorais                  │
+│ FEATURES:                                                                  │
+│   • Criar eleição                                                         │
+│   • Definir cargos                                                        │
+│   • Registrar candidatos                                                  │
+│   • Abrir/fechar votação                                                  │
+│   • Apurar resultados                                                     │
+│ INTEGRAÇÃO: API PHP (eleicoes.php)                                        │
+└────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 17. ASSETS E RECURSOS ESTÁTICOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Diretório: client/src/assets/
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ ARQUIVO                          │ TAMANHO  │ DESCRIÇÃO                    │
+├────────────────────────────────────────────────────────────────────────────┤
+│ banner_logo_campeonato_05.png    │ 1.4 MB   │ Banner de campeonato         │
+│ fbbm-icone.jpg                   │ 61 KB    │ Ícone FBBM (navigation)      │
+│ foto-time-amb.jpg                │ 88 KB    │ Foto oficial do time         │
+│ gav1.jpg                         │ 215 KB   │ Imagem galeria 1             │
+│ gav2.jpg                         │ 278 KB   │ Imagem galeria 2             │
+│ logo-amb.jpg                     │ 784 KB   │ Logo AMB principal (JPG)     │
+│ logo-amb.png                     │ 784 KB   │ Logo AMB principal (PNG)     │
+│ todas-as-nacoes.png              │ 1.4 MB   │ Banner "Todas as Nações"     │
+└────────────────────────────────────────────────────────────────────────────┘
+
+TOTAL: 8 arquivos | ~5 MB
+
+IMPORTAÇÃO NO CÓDIGO:
+  import logo from '@/assets/logo-amb.png';
+  import fbbmIcon from '@/assets/fbbm-icone.jpg';
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 18. INTEGRAÇÃO COM BACKEND PHP (HostGator)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SERVIDOR:
+  • Domínio: ambamazonas.com.br
+  • Hospedagem: HostGator
+  • Stack: PHP 8.x + MySQL
+  • Base URL API: https://ambamazonas.com.br/api/
+
+COMUNICAÇÃO:
+  • Protocolo: HTTPS (SSL)
+  • Formato: JSON
+  • Autenticação: Cookies de sessão
+  • CORS: Configurado para aceitar requisições do frontend
+
+ESTRUTURA DE RESPOSTA PADRÃO:
+  {
+    "success": true|false,
+    "data": { ... },         // Dados quando sucesso
+    "message": "...",        // Mensagem (sucesso ou erro)
+    "error": "..."           // Detalhes do erro (quando aplicável)
+  }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 19. ENDPOINTS DA API PHP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+BASE: https://ambamazonas.com.br/api/
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            AUTENTICAÇÃO                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST login.php              │ Autenticar usuário                            │
+│                             │ Body: { email, senha }                        │
+│                             │ Response: { user, token }                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST logout.php             │ Encerrar sessão                               │
+│                             │ Response: { success }                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET verificar-sessao.php    │ Verificar sessão ativa                        │
+│                             │ Response: { logado, user }                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST esqueci-senha.php      │ Solicitar recuperação                         │
+│                             │ Body: { email }                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST redefinir-senha.php    │ Redefinir senha                               │
+│                             │ Body: { token, nova_senha }                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            CADASTRO                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST cadastro.php           │ Registrar novo associado                      │
+│                             │ Body: { nome, cpf, email, senha, ... }        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST atualizar-perfil.php   │ Atualizar dados do perfil                     │
+│                             │ Body: { dados + foto (base64) }               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            ASSOCIADOS                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET associados.php          │ Listar associados                             │
+│                             │ Query: ?status=&categoria=                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET associados.php?id=X     │ Buscar associado por ID                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST associados.php         │ Criar/atualizar associado                     │
+│                             │ Body: { id?, dados... }                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DELETE associados.php?id=X  │ Excluir associado                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            CAMPEONATOS/EVENTOS                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET campeonatos.php         │ Listar campeonatos                            │
+│                             │ Query: ?status=ativo|encerrado|futuro         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET campeonatos.php?id=X    │ Buscar campeonato por ID                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST campeonatos.php        │ Criar/atualizar campeonato                    │
+│                             │ Body: { id?, nome, data_inicio, ... }         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DELETE campeonatos.php?id=X │ Excluir campeonato                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            NOTÍCIAS                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET noticias.php            │ Listar notícias                               │
+│                             │ Query: ?limite=&pagina=                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET noticias.php?id=X       │ Buscar notícia por ID                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST noticias.php           │ Criar/atualizar notícia                       │
+│                             │ Body: { id?, titulo, conteudo, imagem }       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DELETE noticias.php?id=X    │ Excluir notícia                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            PARCEIROS                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET parceiros.php           │ Listar parceiros                              │
+│                             │ Query: ?categoria=ouro|prata|bronze|apoio     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST parceiros.php          │ Criar/atualizar parceiro                      │
+│                             │ Body: { nome, logo, categoria, ... }          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DELETE parceiros.php?id=X   │ Excluir parceiro                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            TIMES                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET times.php               │ Listar times                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST times.php              │ Criar/atualizar time                          │
+│                             │ Body: { nome, logo, jogadores[] }             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DELETE times.php?id=X       │ Excluir time                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            JOGOS                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET jogos.php               │ Listar jogos                                  │
+│                             │ Query: ?campeonato_id=&status=                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST jogos.php              │ Criar/atualizar jogo                          │
+│                             │ Body: { time1_id, time2_id, data, ... }       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST placares.php           │ Atualizar placar                              │
+│                             │ Body: { jogo_id, placar1, placar2 }           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            OUTROS                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET/POST banners.php        │ CRUD de banners do carrossel                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET/POST diretoria.php      │ CRUD de membros da diretoria                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET/POST transparencia.php  │ CRUD de documentos de transparência           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET/POST eleicoes.php       │ CRUD de eleições e votação                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GET config.php              │ Configurações do site (WhatsApp, etc.)        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 20. DEPENDÊNCIAS DO PROJETO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FRONTEND CORE:
+  react@18.3.1                    → Biblioteca UI principal
+  react-dom@18.3.1                → Renderização DOM
+  typescript                      → Tipagem estática
+
+BUILD & DEV:
+  vite@5.4.20                     → Bundler e dev server
+  tsx                             → Execução TypeScript
+  esbuild                         → Bundler rápido (backend)
+
+ROTEAMENTO & ESTADO:
+  wouter                          → Roteamento SPA leve
+  @tanstack/react-query           → Estado servidor, cache
+
+FORMULÁRIOS & VALIDAÇÃO:
+  react-hook-form@7.55.0          → Gerenciamento de formulários
+  @hookform/resolvers             → Resolvers de validação
+  zod@3.24.2                      → Schemas de validação
+
+HTTP & API:
+  axios@1.12.2                    → Cliente HTTP
+  express@4.21.2                  → Framework web (backend)
+  express-session                 → Sessões
+
+UI COMPONENTS (Radix/Shadcn):
+  @radix-ui/react-accordion       → Acordeão
+  @radix-ui/react-alert-dialog    → Diálogo de alerta
+  @radix-ui/react-avatar          → Avatar
+  @radix-ui/react-checkbox        → Checkbox
+  @radix-ui/react-dialog          → Modal
+  @radix-ui/react-dropdown-menu   → Menu dropdown
+  @radix-ui/react-label           → Label
+  @radix-ui/react-popover         → Popover
+  @radix-ui/react-select          → Select
+  @radix-ui/react-separator       → Separador
+  @radix-ui/react-slider          → Slider
+  @radix-ui/react-switch          → Switch
+  @radix-ui/react-tabs            → Tabs
+  @radix-ui/react-toast           → Toast
+  @radix-ui/react-tooltip         → Tooltip
+  (+ outros componentes Radix)
+
+ESTILIZAÇÃO:
+  tailwindcss@4.0                 → Framework CSS
+  tailwindcss-animate             → Animações Tailwind
+  tailwind-merge@2.6.0            → Merge de classes
+  class-variance-authority        → Variantes de classes
+  clsx@2.1.1                      → Utilitário de classes
+
+ANIMAÇÕES & UI:
+  framer-motion@11.13.1           → Animações avançadas
+  lucide-react@0.453.0            → Ícones
+  react-icons@5.4.0               → Ícones adicionais
+
+CARROSSÉIS & MÍDIA:
+  embla-carousel-react@8.6.0      → Carrossel hero
+  embla-carousel-autoplay         → Autoplay carrossel
+  swiper@12.0.3                   → Carrossel parceiros
+  react-easy-crop@5.5.6           → Crop de imagens
+
+UTILITÁRIOS:
+  date-fns@3.6.0                  → Manipulação de datas
+  recharts@2.15.2                 → Gráficos
+  vaul@1.1.2                      → Drawer mobile
+  cmdk@1.1.1                      → Command palette
+  input-otp@1.4.2                 → Input OTP
+
+DATABASE (não utilizado em prod):
+  drizzle-orm@0.39.1              → ORM
+  drizzle-zod                     → Schema validation
+  @neondatabase/serverless        → PostgreSQL serverless
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 21. COMANDOS DE DESENVOLVIMENTO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Iniciar desenvolvimento
+npm run dev
+
+# Build de produção
+npm run build
+
+# Executar produção
+npm run start
+
+# Verificação TypeScript
+npm run check
+
+# Limpar cache Vite
+rm -rf node_modules/.vite
+
+# Push schema Drizzle
+npm run db:push
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 22. NOTAS DE IMPLEMENTAÇÃO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ARQUIVOS BLOQUEADOS (não modificar):
+  • vite.config.ts      → Configuração crítica Replit
+  • drizzle.config.ts   → Configuração ORM
+  • server/vite.ts      → Integração Vite/Express
+
+CONVENÇÕES:
+  • Comunicação: Português (Brasil)
+  • Porta: 5000 (0.0.0.0)
+  • FloatingWhatsApp: Usa whatsappNumber do SiteConfigContext
+  • NotFound: Arquivo em not-found.tsx (com hífen)
+
+LAZY LOADING:
+  • Todas as páginas usam React.lazy() + Suspense
+  • Reduz bundle inicial
+  • Carrega sob demanda
+
+CACHE:
+  • TanStack Query: staleTime 5 minutos
+  • Limpar node_modules/.vite para resolver erros de compilação
+
+BACKEND PHP (HostGator):
+  • Estrutura de APIs em desenvolvimento no servidor
+  • Documentação separada no servidor HostGator
+
+BUILD STATS:
+  • Módulos: 1884
+  • Bundle JS: 414 KB (137 KB gzip)
+  • CSS: 139 KB (20.6 KB gzip)
+  • Backend: 7.8 KB
+  • Tempo: ~10s
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           FIM DA DOCUMENTAÇÃO                                ║
+║                                                                              ║
+║                    AMB Portal 2.2 - Amazonas Basquete Master                 ║
+║                         https://ambamazonas.com.br                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝

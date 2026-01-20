@@ -1,147 +1,114 @@
-/*
- * ==========================================================
- * PORTAL AMB DO AMAZONAS
- * ==========================================================
- *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 1 de novembro de 2025
- * Hora: 19:40
- * Versão: 1.0
- *
- * Descrição: Página para o associado solicitar a redefinição de senha.
- * (Parte 1 do Módulo 23 - Frontend)
- *
- * ==========================================================
- */
+// Nome: EsqueciSenhaPage.tsx
+// Caminho: client/src/pages/EsqueciSenhaPage.tsx
+// Data: 2026-01-22
+// Hora: 00:35
+// Função: Solicitação de reset com debug de path
+// Versão: v6.0 Path Debug
+
+import { useState } from 'react';
+import axios from 'axios';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Loader2, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import axios from 'axios';
-import { Mail, Send, Loader2 } from 'lucide-react';
 
-// TODO: (Tarefa 172) Criar este endpoint no backend
-const SOLICITAR_API_URL = 'https://www.ambamazonas.com.br/api/solicitar_redefinicao.php';
+const API_URL = '[https://www.ambamazonas.com.br/api/auth/solicitar_redefinicao.php](https://www.ambamazonas.com.br/api/auth/solicitar_redefinicao.php)';
 
 export default function EsqueciSenhaPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsSubmitting(true);
-    setIsSuccess(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
 
+    setLoading(true);
     try {
-      // O backend (a ser criado) espera um JSON com o email
-      const response = await axios.post(SOLICITAR_API_URL, { email });
+      // Timeout aumentado para 20s (SMTP pode ser lento)
+      const res = await axios.post(API_URL, { email }, { timeout: 20000 });
 
-      if (response.data.status === 'sucesso') {
-        toast({
-          title: 'Verifique seu E-mail',
-          description: response.data.mensagem,
+      if (res.data.status === 'sucesso') {
+        setSent(true);
+        toast({ 
+            title: "Processado!", 
+            description: res.data.mensagem,
+            className: "bg-green-600 text-white"
         });
-        setIsSuccess(true); // Mostra a mensagem de sucesso na página
       } else {
-        throw new Error(response.data.mensagem || 'Erro desconhecido');
+        // Erro de Negócio ou Infra (Ex: Lib não encontrada)
+        console.error("Erro Backend:", res.data);
+        toast({ 
+            title: "Erro no Servidor", 
+            description: res.data.mensagem, 
+            variant: "destructive" 
+        });
       }
-
     } catch (error: any) {
-      console.error("Erro ao solicitar redefinição:", error);
-      let mensagemErro = 'Não foi possível conectar ao servidor.';
-      if (error.response?.data?.mensagem) {
-        // Ex: "E-mail não encontrado."
-        mensagemErro = error.response.data.mensagem;
-      }
-      toast({
-        title: 'Erro na Solicitação',
-        description: mensagemErro,
-        variant: 'destructive',
-      });
+      console.error("Erro de Rede:", error);
+      const msg = error.message || "Erro de conexão.";
+      toast({ title: "Falha de Conexão", description: msg, variant: "destructive" });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       <Navigation />
-      <main className="pt-16"> 
-        <section className="py-16 lg:py-20">
-          <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10">
-              <h1 className="text-3xl font-semibold font-accent text-foreground mb-4">
-                Redefinir Senha
-              </h1>
-              <p className="text-muted-foreground">
-                Digite seu e-mail e enviaremos um link para você
-                voltar a acessar sua conta.
-              </p>
+      <main className="flex-grow flex items-center justify-center px-4 py-20">
+        <div className="w-full max-w-md">
+            <div className="mb-6">
+                <Link to="/login" className="text-slate-500 hover:text-blue-600 text-sm flex items-center gap-1">
+                    <ArrowLeft className="h-4 w-4" /> Voltar para Login
+                </Link>
             </div>
 
-            {/* Se o email foi enviado com sucesso, esconde o form e mostra a msg */}
-            {isSuccess ? (
-              <div className="bg-card p-6 rounded-lg shadow-sm border border-border text-center">
-                <Mail className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-foreground mb-2">Email enviado!</h2>
-                <p className="text-muted-foreground">
-                  Um link de redefinição foi enviado para <strong>{email}</strong>. 
-                  Por favor, verifique sua caixa de entrada e spam.
-                </p>
-                <Button variant="outline" className="mt-6" asChild>
-                  <Link to="/login">Voltar para o Login</Link>
-                </Button>
-              </div>
-            ) : (
-              // Formulário de solicitação
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    name="email" 
-                    type="email" 
-                    placeholder="seu@email.com" 
-                    required 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
+            <Card className="shadow-2xl border-slate-200">
+                <CardHeader className="text-center pb-2">
+                    <div className={`mx-auto p-4 rounded-full w-fit mb-4 ${sent ? 'bg-green-100' : 'bg-blue-50'}`}>
+                        {sent ? <CheckCircle2 className="h-8 w-8 text-green-600" /> : <Mail className="h-8 w-8 text-blue-600" />}
+                    </div>
+                    <CardTitle className="text-2xl font-black text-slate-900 uppercase">
+                        {sent ? "Solicitação Recebida" : "Recuperar Senha"}
+                    </CardTitle>
+                    <CardDescription>
+                        {sent ? "Verifique sua caixa de entrada e SPAM." : "Informe seu e-mail cadastrado."}
+                    </CardDescription>
+                </CardHeader>
 
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 text-base"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="mr-2 h-4 w-4" />
-                  )}
-                  {isSubmitting ? 'Aguarde...' : 'Enviar Link de Redefinição'}
-                </Button>
-
-                <div className="text-center text-muted-foreground text-sm">
-                  Lembrou a senha?{' '}
-                  <Link to="/login" className="text-primary hover:underline font-medium">
-                    Faça login aqui
-                  </Link>
-                </div>
-              </form>
-            )}
-          </div>
-        </section>
+                <CardContent className="pt-6">
+                    {!sent ? (
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <Input 
+                                type="email" 
+                                placeholder="seu@email.com" 
+                                className="h-12 text-lg"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                disabled={loading}
+                            />
+                            <Button type="submit" className="w-full h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700" disabled={loading}>
+                                {loading ? <Loader2 className="animate-spin" /> : "Enviar Link"}
+                            </Button>
+                        </form>
+                    ) : (
+                        <Button variant="outline" className="w-full h-12" onClick={() => setSent(false)}>
+                            Tentar outro e-mail
+                        </Button>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
       </main>
       <Footer />
     </div>
   );
 }
+// linha 105 EsqueciSenhaPage.tsx
