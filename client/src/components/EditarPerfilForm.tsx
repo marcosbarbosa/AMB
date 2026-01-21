@@ -1,26 +1,14 @@
-/*
- * ==========================================================
- * PORTAL AMB DO AMAZONAS
- * ==========================================================
- *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 2 de novembro de 2025
- * Hora: 21:30
- * Versão: 1.4 (Corrige Token Body e Checkbox)
- * Tarefa: 271
- *
- * Descrição: Formulário para o associado editar seus dados.
- * CORRIGIDO: 
- * 1. Lógica de carregamento do Checkbox (Autoriza Imagem).
- * 2. Estrutura do payload para {token:..., data: {...}} (para o backend corrigido).
- *
- * ==========================================================
- */
+// Nome: EditarPerfilForm.tsx
+// Caminho: client/src/components/EditarPerfilForm.tsx
+// Data: 2026-01-20
+// Hora: 22:15 (America/Sao_Paulo)
+// Função: Formulário Completo de Edição de Perfil (Todos os Campos da Base)
+// Versão: v3.0 Full Fields Restoration
+// Alteração: Restauração de telefone, filiação, naturalidade e lógica de loading robusta.
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '@/context/AuthContext'; 
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,216 +16,217 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Save } from 'lucide-react'; 
+import { Save, Loader2, RefreshCw } from 'lucide-react';
 
-const API_URL = 'https://www.ambamazonas.com.br/api/atualizar_perfil.php';
+const API_UPDATE_URL = 'https://www.ambamazonas.com.br/api/admin/admin_update_associado.php';
+const API_GET_PROFILE = 'https://www.ambamazonas.com.br/api/get_profile.php';
 
 export function EditarPerfilForm() {
-  const { atleta, token, login } = useAuth(); 
+  const { atleta, token, login } = useAuth();
   const { toast } = useToast();
+
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Estado do formulário
+  // Estado inicial mapeando TODOS os campos da tabela 'atletas'
   const [formData, setFormData] = useState({
-    nome_completo: '', data_nascimento: '', endereco: '', rg: '',
-    nacionalidade: '', naturalidade: '', filiacao: '',
-    autoriza_imagem: false, preferencia_newsletter: 'nenhum',
+    nome_completo: '',
+    email: '',
+    cpf: '',
+    rg: '',
+    data_nascimento: '',
+    telefone_whatsapp: '',
+    nacionalidade: 'Brasileira',
+    naturalidade: '',
+    filiacao: '',
+    endereco: '',
+    autoriza_imagem: false,
+    preferencia_newsletter: 'email'
   });
 
-  // 1. CORREÇÃO: Carrega dados do atleta no formulário
+  // Busca dados frescos do banco ao montar o componente
   useEffect(() => {
-    if (atleta) {
-      setFormData({
-        nome_completo: atleta.nome_completo || '',
-        data_nascimento: atleta.data_nascimento ? atleta.data_nascimento.split('T')[0] : '', 
-        endereco: atleta.endereco || '',
-        rg: atleta.rg || '',
-        nacionalidade: atleta.nacionalidade || '',
-        naturalidade: atleta.naturalidade || '',
-        filiacao: atleta.filiacao || '',
-        // CORREÇÃO CRÍTICA DO CHECKBOX: O backend envia agora um boolean, mas o JavaScript precisa de garantias.
-        autoriza_imagem: !!atleta.autoriza_imagem, // Garante que 1, "1", ou true se torna true.
-        // Garante que o valor inicial não é 'whatsapp'
-        preferencia_newsletter: atleta.preferencia_newsletter === 'whatsapp' ? 'email' : (atleta.preferencia_newsletter || 'nenhum'),
-      });
-    }
-  }, [atleta]);
+    const fetchProfile = async () => {
+      if (!token) return;
+      setIsLoadingData(true);
+      try {
+        // Tenta buscar do endpoint dedicado primeiro
+        const res = await axios.get(API_GET_PROFILE, { headers: { Authorization: token } });
+        if (res.data.status === 'sucesso') {
+            const d = res.data.dados;
+            setFormData({
+                nome_completo: d.nome_completo || '',
+                email: d.email || '',
+                cpf: d.cpf || '',
+                rg: d.rg || '',
+                data_nascimento: d.data_nascimento || '',
+                telefone_whatsapp: d.telefone_whatsapp || '',
+                nacionalidade: d.nacionalidade || 'Brasileira',
+                naturalidade: d.naturalidade || '',
+                filiacao: d.filiacao || '',
+                endereco: d.endereco || '',
+                autoriza_imagem: d.autoriza_imagem == 1,
+                preferencia_newsletter: d.preferencia_newsletter || 'email'
+            });
+        } else {
+            // Fallback para o contexto se a API falhar
+            loadFromContext();
+        }
+      } catch (error) {
+        console.error("Erro ao carregar perfil, usando cache local.", error);
+        loadFromContext();
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
 
+    fetchProfile();
+  }, [token]);
 
-  // Handlers de mudança (Mantidos)
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = event.target;
-    setFormData(prevState => ({ ...prevState, [name]: value, }));
+  const loadFromContext = () => {
+      if (atleta) {
+          setFormData(prev => ({
+              ...prev,
+              nome_completo: atleta.nome_completo || '',
+              email: atleta.email || '',
+              cpf: atleta.cpf || '',
+              // Outros campos podem não estar no contexto leve do login
+          }));
+      }
   };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleCheckboxChange = (checked: boolean | 'indeterminate') => {
-      setFormData(prevState => ({ 
-        ...prevState, 
-        autoriza_imagem: checked === true, // Salva como true/false
-      }));
-  };
-  const handleRadioChange = (value: string) => {
-      setFormData(prevState => ({ ...prevState, preferencia_newsletter: value, }));
+    setFormData(prev => ({ ...prev, autoriza_imagem: checked === true }));
   };
 
-
-  // Função de Envio
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
 
-    if (!token) {
-      toast({ title: 'Erro', description: 'Você não está autenticado.', variant: 'destructive' });
-      setIsSubmitting(false);
-      return;
-    }
-
     try {
-      // 2. CORREÇÃO PAYLOAD: Estrutura o JSON para o Backend
-      const payloadCompleto = {
+      const payload = {
+        id: atleta?.id,
         token: token,
-        data: { // Os dados do formulário vão para o sub-objeto 'data'
-            nome_completo: formData.nome_completo,
-            data_nascimento: formData.data_nascimento,
-            endereco: formData.endereco,
-            rg: formData.rg,
-            nacionalidade: formData.nacionalidade,
-            naturalidade: formData.naturalidade,
-            filiacao: formData.filiacao,
-            autoriza_imagem: formData.autoriza_imagem, 
-            preferencia_newsletter: formData.preferencia_newsletter,
-        }
+        ...formData,
+        autoriza_imagem: formData.autoriza_imagem ? 1 : 0
       };
 
-      const response = await axios.post(API_URL, payloadCompleto, { 
-        headers: {
-          'Content-Type': 'application/json',
-          // O token está no BODY, não precisa de cabeçalho aqui
-        },
-      });
+      const res = await axios.post(API_UPDATE_URL, payload);
 
-      toast({
-        title: 'Sucesso!',
-        description: response.data.mensagem, 
-      });
-
-      // 4. ATUALIZA O "CÉREBRO" (AuthContext)
-      if (atleta && (response.data.status === 'sucesso' || response.data.status === 'info')) { 
-           // O PHP só atualiza o que enviamos, então combinamos os objetos
-           const atletaAtualizado = { ...atleta, ...payloadCompleto.data };
-           // Forçamos a atualização do booleano e fazemos o login
-           atletaAtualizado.autoriza_imagem = payloadCompleto.data.autoriza_imagem; 
-           login(atletaAtualizado as any, token); 
+      if (res.data.status === 'sucesso') {
+        toast({ title: "Sucesso", description: "Perfil atualizado com sucesso!", className: "bg-green-600 text-white" });
+        // Atualiza contexto global para refletir mudança na UI (ex: Nome no menu)
+        if (atleta) login({ ...atleta, ...formData } as any, token!);
+      } else {
+        throw new Error(res.data.mensagem);
       }
-
     } catch (error: any) {
-      console.error("Erro ao atualizar perfil:", error);
-      let mensagemErro = 'Não foi possível conectar ao servidor.';
-      if (error.response?.data?.mensagem) {
-        mensagemErro = error.response.data.mensagem;
-      }
-      toast({
-        title: 'Erro ao atualizar',
-        description: mensagemErro,
-        variant: 'destructive',
-      });
+      toast({ title: "Erro", description: error.message || "Falha ao salvar.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-   if (!atleta) return <p className="text-muted-foreground">Carregando dados...</p>;
+  if (isLoadingData) return <div className="p-10 text-center flex flex-col items-center"><Loader2 className="animate-spin h-8 w-8 text-blue-600"/><span className="mt-2 text-slate-500">Carregando seus dados...</span></div>;
 
-  // JSX do Formulário (Mantido)
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* --- Secções Dados Pessoais --- */}
-      <h3 className="text-xl font-semibold text-foreground border-b pb-2">Dados Pessoais</h3>
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="nome_completo">Nome Completo</Label>
-          <Input id="nome_completo" name="nome_completo" value={formData.nome_completo} onChange={handleChange} required />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-            <Input id="data_nascimento" name="data_nascimento" type="date" value={formData.data_nascimento} onChange={handleChange} required />
-          </div>
-          <div className="space-y-2">
-             <Label htmlFor="cpf_display">CPF (Não editável)</Label>
-             <Input id="cpf_display" value={atleta.cpf || 'N/A'} disabled className="bg-muted/50"/>
-          </div>
-        </div>
-         <div className="space-y-2">
-             <Label htmlFor="email_display">Email (Não editável)</Label>
-             <Input id="email_display" value={atleta.email || 'N/A'} disabled className="bg-muted/50"/>
-         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="rg">RG</Label>
-            <Input id="rg" name="rg" value={formData.rg} onChange={handleChange} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="nacionalidade">Nacionalidade</Label>
-            <Input id="nacionalidade" name="nacionalidade" value={formData.nacionalidade} onChange={handleChange} />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="naturalidade">Naturalidade (Cidade/Estado)</Label>
-          <Input id="naturalidade" name="naturalidade" value={formData.naturalidade} onChange={handleChange} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="filiacao">Filiação (Nome do Pai e Mãe)</Label>
-          <Textarea id="filiacao" name="filiacao" value={formData.filiacao} onChange={handleChange} rows={3} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="endereco">Endereço Completo</Label>
-          <Textarea id="endereco" name="endereco" value={formData.endereco} onChange={handleChange} rows={3} />
+    <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+      {/* Bloco 1: Identificação */}
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4 flex items-center gap-2">
+            <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs uppercase">1</span> Dados Pessoais
+        </h3>
+
+        <div className="grid gap-5">
+            <div className="space-y-2">
+                <Label>Nome Completo</Label>
+                <Input name="nome_completo" value={formData.nome_completo} onChange={handleChange} className="font-bold text-slate-700" required />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                    <Label>CPF <span className="text-xs text-slate-400">(Fixo)</span></Label>
+                    <Input value={formData.cpf} disabled className="bg-slate-50 text-slate-500 font-mono" />
+                </div>
+                <div className="space-y-2">
+                    <Label>RG</Label>
+                    <Input name="rg" value={formData.rg} onChange={handleChange} placeholder="Número do RG" />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                    <Label>Data de Nascimento</Label>
+                    <Input type="date" name="data_nascimento" value={formData.data_nascimento} onChange={handleChange} />
+                </div>
+                <div className="space-y-2">
+                    <Label>Telefone / WhatsApp</Label>
+                    <Input name="telefone_whatsapp" value={formData.telefone_whatsapp} onChange={handleChange} placeholder="(92) 90000-0000" />
+                </div>
+            </div>
         </div>
       </div>
 
-      {/* --- Checkbox Autorizo Imagem (CORRIGIDO) --- */}
-      <div className="flex items-center space-x-2 pt-4">
-        <Checkbox 
-            id="autoriza_imagem" 
-            name="autoriza_imagem" 
-            checked={formData.autoriza_imagem} 
-            onCheckedChange={handleCheckboxChange} 
-        />
-        <Label htmlFor="autoriza_imagem" className="text-sm font-medium leading-none cursor-pointer">
-          Autorizo o direito de imagem
-        </Label>
+      {/* Bloco 2: Origem e Filiação */}
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4 flex items-center gap-2">
+            <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs uppercase">2</span> Origem
+        </h3>
+        <div className="grid gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                    <Label>Nacionalidade</Label>
+                    <Input name="nacionalidade" value={formData.nacionalidade} onChange={handleChange} />
+                </div>
+                <div className="space-y-2">
+                    <Label>Naturalidade (Cidade/Estado)</Label>
+                    <Input name="naturalidade" value={formData.naturalidade} onChange={handleChange} placeholder="Ex: Manaus - AM" />
+                </div>
+            </div>
+            <div className="space-y-2">
+                <Label>Filiação (Nome do Pai e da Mãe)</Label>
+                <Input name="filiacao" value={formData.filiacao} onChange={handleChange} placeholder="Nome dos pais" />
+            </div>
+        </div>
       </div>
 
-      {/* --- Comunicações (REMOVIDO WHATSAPP) --- */}
-      <h3 className="text-xl font-semibold text-foreground border-b pb-2 mt-6">Comunicações</h3>
-      <div className="space-y-3">
-         <Label>Deseja receber a Newsletter da AMB?</Label>
-         <RadioGroup 
-            name="preferencia_newsletter" 
-            value={formData.preferencia_newsletter} 
-            onValueChange={handleRadioChange} 
-            className="flex flex-col sm:flex-row gap-4 sm:gap-6 pt-2"
-         >
-           <div className="flex items-center space-x-2">
-             <RadioGroupItem value="email" id="edit-news-email" />
-             <Label htmlFor="edit-news-email" className="cursor-pointer">Por E-mail</Label>
-           </div>
-           <div className="flex items-center space-x-2">
-             <RadioGroupItem value="nenhum" id="edit-news-nenhum" />
-             <Label htmlFor="edit-news-nenhum" className="cursor-pointer">Não desejo receber</Label>
-           </div>
-         </RadioGroup>
+      {/* Bloco 3: Endereço */}
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4 flex items-center gap-2">
+            <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs uppercase">3</span> Localização
+        </h3>
+        <div className="space-y-2">
+            <Label>Endereço Completo</Label>
+            <Textarea name="endereco" value={formData.endereco} onChange={handleChange} rows={3} placeholder="Rua, Número, Bairro, Cidade, CEP" />
+        </div>
       </div>
 
-      {/* --- Ação --- */}
-      <Button 
-        type="submit" 
-        className="w-full h-12 text-base mt-8"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? 'Salvando Alterações...' : 'Salvar Alterações'}
-        <Save className="ml-2 h-4 w-4" />
-      </Button>
+      {/* Bloco 4: Privacidade */}
+      <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+        <div className="flex items-start space-x-3">
+            <Checkbox id="terms" checked={formData.autoriza_imagem} onCheckedChange={handleCheckboxChange} className="mt-1" />
+            <div className="grid gap-1.5 leading-none">
+                <Label htmlFor="terms" className="text-sm font-bold text-slate-700 cursor-pointer">Autorização de Imagem</Label>
+                <p className="text-xs text-slate-500">
+                    Autorizo a AMB Amazonas a utilizar minha imagem em fotos e vídeos de eventos esportivos para divulgação no site e redes sociais oficiais.
+                </p>
+            </div>
+        </div>
+      </div>
+
+      <div className="flex gap-4 pt-4">
+        <Button type="submit" className="w-full h-14 text-lg font-black bg-blue-600 hover:bg-blue-700 shadow-xl" disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-5 w-5"/>}
+            {isSubmitting ? 'Salvando...' : 'SALVAR ALTERAÇÕES'}
+        </Button>
+      </div>
     </form>
   );
 }
+// linha 195 EditarPerfilForm.tsx

@@ -1,379 +1,489 @@
 // Nome: EleicoesPage.tsx
 // Caminho: client/src/pages/eleicoes/EleicoesPage.tsx
 // Data: 2026-01-20
-// Hora: 10:00
-// Função: Urna Eletrônica Completa (Check -> 2FA -> Voto -> Recibo)
-// Versão: v4.0 Full Voting Cycle
+// Hora: 21:00 (America/Sao_Paulo)
+// Função: Urna Eletrônica de Alta Segurança (IP Lock + Anti-Bot + 2FA + Audit)
+// Versão: v13.0 Fortress Edition
+// Alteração: Reimplementação detalhada de todos os estados de segurança e feedback de UI.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader2, Lock, CheckCircle2, XCircle, AlertTriangle, Fingerprint, ArrowRight, UserCheck, FileCheck } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { 
+    Loader2, Lock, CheckCircle2, XCircle, AlertTriangle, Fingerprint, 
+    ArrowRight, User, Users, Clock, ShieldAlert, FileCheck, 
+    ShieldCheck, MonitorOff, Globe, LogOut 
+} from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
-const API_BASE = 'https://www.ambamazonas.com.br/api/eleicoes';
+const API_BASE = 'https://www.ambamazonas.com.br/api';
 
-type Step = 'CHECKING' | 'BLOCKED' | 'READY_TO_START' | 'AWAITING_2FA' | 'VOTING' | 'RECEIPT';
+// Estados da Máquina de Votação
+type ElectionStep = 
+    | 'CHECKING'        // Validando IP e Elegibilidade
+    | 'BLOCKED'         // Acesso Negado (IP, CPF, Tentativas)
+    | 'CAPTCHA'         // Desafio Anti-Robô
+    | 'READY_TO_START'  // Confirmado, pronto para 2FA
+    | 'AWAITING_2FA'    // Aguardando Código
+    | 'VOTING'          // Cabine de Votação
+    | 'RECEIPT';        // Comprovante
 
 interface Chapa {
     numero_chapa: number;
     nome_chapa: string;
     nome_presidente: string;
     nome_vice: string;
-    foto_url: string;
+    foto_url?: string;
 }
 
 export default function EleicoesPage() {
-  const { token, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { token, isAuthenticated, logout, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [step, setStep] = useState<Step>('CHECKING');
-  const [motivoBloqueio, setMotivoBloqueio] = useState('');
-  const [dadosEleitor, setDadosEleitor] = useState<{ nome: string; cpf_masked: string } | null>(null);
+  // Máquina de Estados
+  const [step, setStep] = useState<ElectionStep>('CHECKING');
+  const [errorDetails, setErrorDetails] = useState({ title: '', msg: '', type: '' });
 
-  // 2FA
+  // Dados do Eleitor
+  const [dadosEleitor, setDadosEleitor] = useState<any>(null);
+  const [userIp, setUserIp] = useState<string>('...');
+
+  // Segurança
+  const [captchaSolved, setCaptchaSolved] = useState(false);
   const [tokenInput, setTokenInput] = useState('');
-  const [loading2FA, setLoading2FA] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(120); // 2 minutos
+  const [tentativas, setTentativas] = useState<number | null>(null);
+
+  // Loadings
+  const [isRequesting2FA, setIsRequesting2FA] = useState(false);
+  const [isSubmittingVote, setIsSubmittingVote] = useState(false);
 
   // Votação
   const [chapas, setChapas] = useState<Chapa[]>([]);
-  const [votoSelecionado, setVotoSelecionado] = useState<number | null>(null); // numero da chapa, 0 (branco), -1 (nulo)
-  const [isSubmittingVote, setIsSubmittingVote] = useState(false);
-  const [comprovante, setComprovante] = useState<{hash: string, data: string} | null>(null);
+  const [votoSel, setVotoSel] = useState<number | null>(null);
+  const [recibo, setRecibo] = useState<any>(null);
 
+  // 1. Cronômetro de Segurança (2FA)
   useEffect(() => {
-    if (!isAuthLoading && !isAuthenticated) {
-        navigate('/login?redirect=/eleicoes');
-        return;
+    let timer: NodeJS.Timeout;
+    if (step === 'AWAITING_2FA' && timeLeft > 0) {
+      timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
+    } else if (timeLeft === 0 && step === 'AWAITING_2FA') {
+      handleBlock('Sessão Expirada', 'O tempo limite de segurança (2 min) foi excedido.', 'TIMEOUT');
     }
-    if (token && step === 'CHECKING') {
-        checkElegibilidade();
+    return () => clearInterval(timer);
+  }, [step, timeLeft]);
+
+  // 2. Inicialização e Check de Segurança
+  useEffect(() => {
+    if (!isAuthLoading) {
+        if (!isAuthenticated) {
+            navigate('/login?redirect=/eleicoes');
+        } else if (token && step === 'CHECKING') {
+            runSafetyCheck();
+        }
     }
   }, [token, isAuthenticated, isAuthLoading]);
 
-  // Carrega chapas quando entra no modo de votação
+  // 3. Carregamento da Cédula (Lazy Load)
   useEffect(() => {
-      if (step === 'VOTING') {
-          carregarChapas();
-      }
+      if (step === 'VOTING') loadBallot();
   }, [step]);
 
- const checkElegibilidade = async () => {
-    setStep('CHECKING');
-    try {
-        const res = await axios.post(`${API_BASE}/check_elegibilidade.php`, { token });
-        
-        console.log("Status Eleição:", res.data); // LOG PARA DEBUG
+  // --- FUNÇÕES DE LÓGICA ---
 
-        if (res.data.status === 'sucesso' && res.data.pode_votar) {
-            setDadosEleitor(res.data.dados_eleitor);
-            setStep('READY_TO_START');
+  const handleBlock = (title: string, msg: string, type: string) => {
+      setErrorDetails({ title, msg, type });
+      setStep('BLOCKED');
+  };
+
+  const runSafetyCheck = async () => {
+    try {
+        // Chamada ao Backend Blindado
+        const res = await axios.post(`${API_BASE}/eleicoes.php?action=check_safety`, { token }, {
+            headers: { Authorization: token }
+        });
+
+        if (res.data.status === 'sucesso') {
+            setDadosEleitor(res.data.eleitor);
+            setUserIp(res.data.user_ip);
+            setStep('CAPTCHA'); // Sucesso vai para o Anti-Robô
         } else {
-            setMotivoBloqueio(res.data.motivo || "Critérios não atendidos.");
-            setStep('BLOCKED');
+            // Tratamento de Erros Granulares
+            const msg = res.data.mensagem;
+            if (msg.includes("SESSAO_DUPLICADA") || msg.includes("CONFLITO")) {
+                handleBlock('Conflito de Sessão', msg, 'IP_LOCK');
+            } else if (msg.includes("CPF_INVALIDO")) {
+                handleBlock('Cadastro Irregular', msg, 'CPF');
+            } else if (msg.includes("VOTO_DUPLICADO")) {
+                handleBlock('Voto Registrado', 'Sua participação já foi auditada nesta eleição.', 'VOTED');
+            } else {
+                handleBlock('Acesso Negado', msg, 'ADMIN');
+            }
         }
     } catch (error: any) {
-        console.error("Erro Check:", error);
-        
-        // Tenta extrair mensagem de erro real do PHP (caso seja 500 ou 404)
-        let msg = "Erro de conexão com o Tribunal Eleitoral.";
-        if (error.response && error.response.data) {
-             // Se o PHP retornou HTML de erro ou JSON de erro
-             msg = typeof error.response.data === 'string' 
-                ? `Erro do Servidor (${error.response.status})` 
-                : error.response.data.motivo || error.response.data.mensagem || msg;
-        }
-        setMotivoBloqueio(msg);
-        setStep('BLOCKED');
+        console.error("Erro Crítico:", error);
+        handleBlock('Falha de Conexão', 'Não foi possível estabelecer link seguro com o Tribunal Eleitoral.', 'NETWORK');
     }
   };
 
-  const iniciarProtocolo2FA = async () => {
-    setLoading2FA(true);
+  const request2FA = async () => {
+    if (!captchaSolved) return;
+    setIsRequesting2FA(true);
     try {
-        const res = await axios.post(`${API_BASE}/enviar_2fa.php`, { token });
+        const res = await axios.post(`${API_BASE}/eleicoes/enviar_2fa.php`, { token });
         if (res.data.status === 'sucesso') {
+            setTentativas(res.data.tentativas_restantes);
+            setTimeLeft(120); // Reseta timer
             setStep('AWAITING_2FA');
-            if (res.data.debug_token) {
-                toast({ title: "Debug Mode", description: `Código: ${res.data.debug_token}`, className: "bg-yellow-100 text-yellow-900" });
-            } else {
-                toast({ title: "Código Enviado", description: "Verifique seu e-mail/WhatsApp." });
-            }
+            toast({ 
+                title: "Código Enviado", 
+                description: "Verifique sua caixa de entrada (e spam).", 
+                className: "bg-blue-600 text-white border-none"
+            });
         } else {
-            toast({ title: "Erro", description: res.data.mensagem, variant: "destructive" });
+            handleBlock('Erro de Segurança', res.data.mensagem, 'LOCK');
         }
-    } catch (error) {
-        toast({ title: "Erro", description: "Falha ao gerar token.", variant: "destructive" });
+    } catch (e) {
+        toast({ title: "Erro", description: "Falha no serviço de e-mail.", variant: "destructive" });
     } finally {
-        setLoading2FA(false);
+        setIsRequesting2FA(false);
     }
   };
 
-  const validarTokenClientSide = () => {
-      if (tokenInput.length === 6) {
-          setStep('VOTING'); // O token será validado de verdade no submit do voto
-      } else {
-          toast({ title: "Inválido", description: "Digite os 6 números.", variant: "destructive" });
-      }
-  };
-
-  const carregarChapas = async () => {
+  const loadBallot = async () => {
       try {
-          const res = await axios.get(`${API_BASE}/get_chapas.php`);
+          const res = await axios.get(`${API_BASE}/eleicoes.php?action=get_ballot`, { 
+              headers: { Authorization: token } 
+          });
           if (res.data.status === 'sucesso') {
-              setChapas(res.data.dados);
+              setChapas(res.data.chapas);
           }
-      } catch (error) {
+      } catch (e) {
           toast({ title: "Erro", description: "Falha ao carregar candidatos.", variant: "destructive" });
       }
   };
 
-  const confirmarVoto = async () => {
-      if (votoSelecionado === null) return;
+  const castVote = async () => {
+      if (votoSel === null) return;
       setIsSubmittingVote(true);
-
       try {
-          const payload = {
-              token: token,
-              token_2fa: tokenInput, // Envia o 2FA junto para validar no ato do voto
-              voto: votoSelecionado
-          };
-
-          const res = await axios.post(`${API_BASE}/registrar_voto.php`, payload);
+          const res = await axios.post(`${API_BASE}/eleicoes.php?action=vote`, {
+              token, 
+              token_2fa: tokenInput, 
+              voto: votoSel
+          }, { headers: { Authorization: token } });
 
           if (res.data.status === 'sucesso') {
-              setComprovante({ hash: res.data.comprovante, data: res.data.data });
+              setRecibo(res.data);
               setStep('RECEIPT');
-              toast({ title: "Sucesso!", description: "Voto computado.", className: "bg-green-600 text-white" });
+              toast({ title: "Sucesso", description: "Voto confirmado!", className: "bg-green-600 text-white" });
           } else {
-              toast({ title: "Erro no Registro", description: res.data.mensagem, variant: "destructive" });
-              // Se o token 2FA estiver errado ou expirado, volta pra tela anterior
-              if (res.data.mensagem.includes("segurança")) {
-                  setStep('AWAITING_2FA');
+              toast({ title: "Erro na Urna", description: res.data.mensagem, variant: "destructive" });
+              // Se o erro for de código, volta para tentar de novo (se tiver tentativas)
+              if (res.data.mensagem.includes("Código") || res.data.mensagem.includes("expirado")) {
+                  // Mantém na tela de 2FA ou checa tentativas
+              } else {
+                  handleBlock('Erro Fatal', res.data.mensagem, 'FATAL');
               }
           }
       } catch (error) {
-          toast({ title: "Erro Crítico", description: "Não foi possível conectar à urna.", variant: "destructive" });
+          handleBlock('Erro de Rede', 'Conexão perdida durante o voto. Verifique se o voto foi computado.', 'NETWORK');
       } finally {
           setIsSubmittingVote(false);
       }
   };
 
-  const getNomeVoto = () => {
-      if (votoSelecionado === 0) return "VOTO EM BRANCO";
-      if (votoSelecionado === -1) return "VOTO NULO";
-      const chapa = chapas.find(c => c.numero_chapa === votoSelecionado);
-      return chapa ? `CHAPA ${chapa.numero_chapa} - ${chapa.nome_chapa}` : "DESCONHECIDO";
+  // Formatador de Tempo (MM:SS)
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  if (isAuthLoading || step === 'CHECKING') {
+  // --- RENDERIZAÇÃO CONDICIONAL (VIEW LAYERS) ---
+
+  if (step === 'CHECKING') {
       return (
-        <div className="h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
-            <Loader2 className="h-12 w-12 text-blue-600 animate-spin"/>
-            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest animate-pulse">Auditando Credenciais...</p>
+        <div className="h-screen flex flex-col items-center justify-center bg-slate-50 gap-6">
+            <div className="relative">
+                <div className="h-24 w-24 rounded-full border-4 border-slate-200 border-t-blue-600 animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <ShieldCheck className="h-8 w-8 text-blue-600" />
+                </div>
+            </div>
+            <div className="text-center">
+                <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest">Auditando Acesso</h2>
+                <p className="text-sm text-slate-500 font-bold mt-2">Validando IP e Sessão...</p>
+            </div>
         </div>
       );
   }
 
-  // --- TELA DA URNA (VOTING) ---
-  if (step === 'VOTING') {
+  if (step === 'BLOCKED') {
       return (
-          <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col">
-              <div className="bg-slate-800 p-4 shadow-md flex justify-between items-center px-8">
-                  <div className="flex items-center gap-3">
-                      <Fingerprint className="h-6 w-6 text-green-400" />
-                      <div>
-                          <h1 className="font-bold text-lg leading-none">Ambiente de Votação Seguro</h1>
-                          <p className="text-xs text-slate-400">Identificação: {dadosEleitor?.cpf_masked}</p>
-                      </div>
-                  </div>
-                  <div className="text-right">
-                      <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">ELEIÇÕES 2026</span>
-                  </div>
-              </div>
-
-              <div className="flex-1 container mx-auto px-4 py-8 max-w-5xl flex flex-col justify-center">
-                  <h2 className="text-2xl font-light text-center mb-8 text-slate-300">Escolha sua representação</h2>
-
-                  {/* GRID DE CHAPAS */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                      {chapas.map(chapa => (
-                          <div 
-                            key={chapa.numero_chapa}
-                            onClick={() => setVotoSelecionado(chapa.numero_chapa)}
-                            className={`cursor-pointer rounded-xl p-6 border-2 transition-all relative overflow-hidden group ${votoSelecionado === chapa.numero_chapa ? 'border-green-500 bg-slate-800 shadow-lg shadow-green-900/20' : 'border-slate-700 bg-slate-800/50 hover:border-slate-500'}`}
-                          >
-                              <div className="flex items-center justify-between mb-4">
-                                  <span className="text-4xl font-black text-slate-200">{chapa.numero_chapa}</span>
-                                  {votoSelecionado === chapa.numero_chapa && <CheckCircle2 className="h-8 w-8 text-green-500 animate-in zoom-in" />}
-                              </div>
-                              <h3 className="text-xl font-bold text-white uppercase mb-1">{chapa.nome_chapa}</h3>
-                              <div className="text-sm text-slate-400 space-y-1">
-                                  <p><span className="font-bold text-slate-500">PRESIDENTE:</span> {chapa.nome_presidente}</p>
-                                  {chapa.nome_vice && <p><span className="font-bold text-slate-500">VICE:</span> {chapa.nome_vice}</p>}
-                              </div>
-                          </div>
-                      ))}
-                  </div>
-
-                  {/* OPÇÕES EXTRAS */}
-                  <div className="flex justify-center gap-4 mb-12">
-                      <button 
-                        onClick={() => setVotoSelecionado(0)}
-                        className={`px-6 py-3 rounded-lg font-bold uppercase transition-all ${votoSelecionado === 0 ? 'bg-white text-black ring-4 ring-white/50' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                      >
-                          Votar em Branco
-                      </button>
-                      <button 
-                        onClick={() => setVotoSelecionado(-1)}
-                        className={`px-6 py-3 rounded-lg font-bold uppercase transition-all ${votoSelecionado === -1 ? 'bg-red-600 text-white ring-4 ring-red-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                      >
-                          Votar Nulo
-                      </button>
-                  </div>
-
-                  {/* BARRA DE CONFIRMAÇÃO */}
-                  <div className="bg-slate-800 border-t border-slate-700 p-6 fixed bottom-0 left-0 right-0 z-50">
-                      <div className="container mx-auto max-w-5xl flex justify-between items-center">
-                          <div className="hidden md:block">
-                              <p className="text-xs text-slate-500 uppercase font-bold">Seleção Atual</p>
-                              <p className="text-lg font-bold text-white">{getNomeVoto()}</p>
-                          </div>
-                          <div className="flex gap-4 w-full md:w-auto">
-                              <Button variant="ghost" className="flex-1 md:flex-none text-slate-400 hover:text-white" onClick={() => window.location.reload()}>Cancelar</Button>
-                              <Button 
-                                className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white font-black uppercase tracking-wide h-12 px-8"
-                                disabled={votoSelecionado === null || isSubmittingVote}
-                                onClick={confirmarVoto}
-                              >
-                                  {isSubmittingVote ? <Loader2 className="animate-spin mr-2"/> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-                                  Confirmar Voto
-                              </Button>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      );
-  }
-
-  // --- TELA DE RECIBO (RECEIPT) ---
-  if (step === 'RECEIPT') {
-      return (
-          <div className="min-h-screen bg-slate-50 font-sans flex items-center justify-center p-4">
-              <Card className="w-full max-w-md shadow-2xl border-t-8 border-t-green-600">
-                  <CardHeader className="text-center pb-2">
-                      <div className="mx-auto bg-green-100 p-4 rounded-full w-fit mb-4">
-                          <FileCheck className="h-10 w-10 text-green-600" />
-                      </div>
-                      <CardTitle className="text-2xl font-black text-slate-900 uppercase">Voto Computado</CardTitle>
-                      <CardDescription>Seu exercício democrático foi registrado com sucesso.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6 pt-6">
-                      <div className="bg-slate-100 p-4 rounded-lg border border-slate-200 space-y-2">
-                          <div>
-                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Hash do Comprovante</p>
-                              <p className="font-mono text-xs break-all text-slate-800 font-bold">{comprovante?.hash}</p>
-                          </div>
-                          <div className="flex justify-between pt-2 border-t border-slate-200 mt-2">
-                              <div>
-                                  <p className="text-[10px] font-bold text-slate-500 uppercase">Data</p>
-                                  <p className="text-xs font-bold text-slate-800">{comprovante?.data}</p>
-                              </div>
-                              <div className="text-right">
-                                  <p className="text-[10px] font-bold text-slate-500 uppercase">Eleitor</p>
-                                  <p className="text-xs font-bold text-slate-800">{dadosEleitor?.cpf_masked}</p>
-                              </div>
-                          </div>
-                      </div>
-                      <div className="text-center">
-                          <p className="text-xs text-slate-400 mb-4">Salve este comprovante para fins de auditoria.</p>
-                          <Button className="w-full" variant="outline" onClick={() => navigate('/')}>Voltar ao Início</Button>
-                      </div>
-                  </CardContent>
-              </Card>
-          </div>
-      );
-  }
-
-  // --- TELAS DE FLUXO ANTERIOR (CHECK, BLOCKED, 2FA) ---
-  return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      <Navigation />
-      <main className="pt-32 pb-20 px-4 flex items-center justify-center min-h-[80vh]">
-        <div className="max-w-lg w-full">
-            <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center p-4 bg-white rounded-full shadow-lg mb-6 border border-slate-100">
-                    <Fingerprint className={`h-10 w-10 ${step === 'BLOCKED' ? 'text-red-500' : 'text-blue-600'}`} />
-                </div>
-                <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight leading-none">Eleições AMB 2026</h1>
-                <div className="flex justify-center items-center gap-2 mt-3">
-                    <Lock className="h-3 w-3 text-slate-400" />
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Ambiente Seguro & Auditado</p>
-                </div>
-            </div>
-
-            <Card className={`border-0 shadow-2xl overflow-hidden ${step === 'BLOCKED' ? 'ring-4 ring-red-500/10' : 'ring-4 ring-blue-500/20'}`}>
-                <div className={`p-6 ${step === 'BLOCKED' ? 'bg-red-600' : 'bg-slate-900'} text-white transition-colors duration-500`}>
-                    <div className="flex items-center gap-3">
-                        {step === 'BLOCKED' ? <XCircle className="h-8 w-8 text-white/80"/> : <CheckCircle2 className="h-8 w-8 text-green-400"/>}
-                        <div>
-                            <h2 className="text-lg font-bold leading-none">{step === 'BLOCKED' ? "Acesso Negado" : "Credenciais Validadas"}</h2>
-                            <p className="text-xs opacity-80 mt-1 font-medium">{step === 'BLOCKED' ? "Irregularidade encontrada" : "Identificação confirmada"}</p>
-                        </div>
+        <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4">
+            <Navigation />
+            <Card className="max-w-md w-full border-t-8 border-t-red-600 shadow-2xl mt-10 animate-in fade-in zoom-in duration-300">
+                <CardContent className="p-8 text-center space-y-6">
+                    <div className="bg-red-100 p-6 rounded-full w-fit mx-auto">
+                        {errorDetails.type === 'IP_LOCK' ? <MonitorOff className="h-12 w-12 text-red-600"/> : 
+                         errorDetails.type === 'VOTED' ? <FileCheck className="h-12 w-12 text-green-600"/> :
+                         <ShieldAlert className="h-12 w-12 text-red-600" />}
                     </div>
-                </div>
 
-                <CardContent className="p-8 space-y-6 bg-white">
-                    {step === 'BLOCKED' && (
-                        <div className="bg-red-50 p-4 rounded-xl border border-red-100 flex gap-4 items-start">
-                            <AlertTriangle className="h-6 w-6 text-red-600 shrink-0 mt-0.5" />
-                            <div><h4 className="font-black text-red-900 text-sm uppercase">Motivo do Bloqueio</h4><p className="text-red-700 text-sm mt-1">{motivoBloqueio}</p></div>
-                        </div>
-                    )}
+                    <h2 className="text-2xl font-black uppercase text-slate-900 leading-tight">{errorDetails.title}</h2>
 
-                    {step === 'READY_TO_START' && (
-                        <div className="space-y-6">
-                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 text-sm text-slate-700">
-                                <p className="mb-2"><strong className="text-slate-900">Eleitor:</strong> {dadosEleitor?.nome}</p>
-                                <p><strong className="text-slate-900">CPF:</strong> {dadosEleitor?.cpf_masked}</p>
-                            </div>
-                            <Button className="w-full h-14 text-lg font-black bg-blue-600 hover:bg-blue-700 shadow-xl rounded-xl" onClick={iniciarProtocolo2FA} disabled={loading2FA}>
-                                {loading2FA ? <Loader2 className="animate-spin" /> : "Receber Código de Acesso"}
+                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 text-slate-700 font-medium text-sm leading-relaxed">
+                        {errorDetails.msg}
+                    </div>
+
+                    <div className="pt-4">
+                        {errorDetails.type === 'CPF' ? (
+                            <Button className="w-full h-12 bg-blue-600 hover:bg-blue-700 font-bold" onClick={() => navigate('/editar-perfil')}>
+                                CORRIGIR MEU CADASTRO
                             </Button>
-                        </div>
-                    )}
-
-                    {step === 'AWAITING_2FA' && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="text-center space-y-2">
-                                <h3 className="font-bold text-slate-900">Digite o Código de 6 Dígitos</h3>
-                                <p className="text-xs text-slate-500">Enviado para seus contatos cadastrados.</p>
-                            </div>
-                            <div className="flex justify-center">
-                                <Input className="text-center text-3xl font-mono tracking-[0.5em] h-16 w-48 font-black border-2 border-slate-200 focus:border-blue-600" maxLength={6} placeholder="000000" value={tokenInput} onChange={(e) => setTokenInput(e.target.value.replace(/\D/g, ''))} />
-                            </div>
-                            <Button className="w-full h-14 text-lg font-black bg-green-600 hover:bg-green-700 shadow-xl rounded-xl" onClick={validarTokenClientSide}>
-                                Acessar Cabine de Votação <ArrowRight className="ml-2 h-5 w-5"/>
+                        ) : (
+                            <Button variant="outline" className="w-full h-12 font-bold border-slate-300 hover:bg-slate-50 text-slate-600" onClick={() => logout()}>
+                                <LogOut className="mr-2 h-4 w-4"/> ENCERRAR SESSÃO
                             </Button>
-                            <div className="text-center"><button onClick={() => setStep('READY_TO_START')} className="text-xs text-slate-400 hover:text-blue-600 underline">Reenviar Código</button></div>
-                        </div>
-                    )}
-
-                    {step === 'BLOCKED' && <Button variant="ghost" className="w-full" onClick={() => navigate('/contato')}>Contestar</Button>}
+                        )}
+                    </div>
                 </CardContent>
             </Card>
         </div>
-      </main>
-      <Footer />
-    </div>
-  );
+      );
+  }
+
+  if (step === 'CAPTCHA') {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col">
+            <Navigation />
+            <main className="flex-1 flex items-center justify-center p-4">
+                <Card className="max-w-md w-full shadow-2xl border-none overflow-hidden animate-in slide-in-from-bottom-10">
+                    <div className="bg-slate-900 p-8 text-white text-center">
+                        <div className="flex justify-center mb-6">
+                            <div className="bg-white/10 p-4 rounded-full backdrop-blur-sm border border-white/20">
+                                <Lock className="h-10 w-10 text-blue-400" />
+                            </div>
+                        </div>
+                        <CardTitle className="text-xl uppercase font-black tracking-tight">Portaria Digital</CardTitle>
+                        <div className="mt-4 inline-flex items-center gap-2 bg-black/30 px-4 py-1.5 rounded-full text-[10px] font-mono border border-white/10 text-slate-300">
+                            <Globe className="h-3 w-3" /> IP REGISTRADO: {userIp}
+                        </div>
+                    </div>
+                    <CardContent className="p-8 space-y-8 text-center bg-white">
+                        <div className="bg-slate-50 p-4 rounded-lg border text-left text-sm space-y-1">
+                            <p className="text-slate-500 font-bold uppercase text-[10px] tracking-wider">Identidade Confirmada</p>
+                            <p className="font-bold text-slate-800 text-lg">{dadosEleitor?.nome}</p>
+                            <p className="text-slate-500 font-mono">{dadosEleitor?.cpf_masked}</p>
+                        </div>
+
+                        <div 
+                            className={`p-6 rounded-xl border-2 cursor-pointer transition-all duration-300 ${captchaSolved ? 'bg-green-50 border-green-500' : 'bg-white border-slate-200 hover:border-blue-400'}`}
+                            onClick={() => setCaptchaSolved(!captchaSolved)}
+                        >
+                            <div className="flex items-center justify-center gap-4">
+                                <div className={`h-6 w-6 rounded border-2 flex items-center justify-center transition-colors ${captchaSolved ? 'bg-green-500 border-green-500' : 'border-slate-300'}`}>
+                                    {captchaSolved && <CheckCircle2 className="h-4 w-4 text-white" />}
+                                </div>
+                                <span className={`font-bold text-sm uppercase tracking-wide ${captchaSolved ? 'text-green-700' : 'text-slate-600'}`}>Não sou um robô</span>
+                            </div>
+                        </div>
+
+                        <Button 
+                            disabled={!captchaSolved} 
+                            className="w-full h-14 bg-blue-600 hover:bg-blue-700 font-black text-lg shadow-xl rounded-xl transition-all active:scale-95 disabled:opacity-50" 
+                            onClick={() => setStep('READY_TO_START')}
+                        >
+                            AVANÇAR
+                        </Button>
+                    </CardContent>
+                </Card>
+            </main>
+            <Footer />
+        </div>
+      );
+  }
+
+  if (step === 'READY_TO_START') {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col">
+            <Navigation />
+            <main className="flex-1 flex items-center justify-center p-4">
+                <Card className="max-w-md w-full shadow-2xl overflow-hidden border-0 animate-in zoom-in-95">
+                    <div className="bg-blue-600 p-8 text-white text-center">
+                        <CheckCircle2 className="h-16 w-16 text-white mx-auto mb-4 opacity-90" />
+                        <CardTitle className="text-2xl font-black uppercase">Tudo Pronto</CardTitle>
+                        <p className="text-blue-100 text-sm mt-2">Vamos iniciar o protocolo de segurança.</p>
+                    </div>
+                    <CardContent className="p-8 space-y-6 bg-white text-center">
+                        <p className="text-slate-600 text-sm leading-relaxed">
+                            Ao clicar abaixo, enviaremos um <strong>código único de 6 dígitos</strong> para o seu e-mail cadastrado. Você terá <strong>2 minutos</strong> para usá-lo.
+                        </p>
+                        <Button 
+                            className="w-full h-16 bg-slate-900 hover:bg-slate-800 text-white font-black text-lg shadow-xl rounded-xl" 
+                            onClick={request2FA} 
+                            disabled={isRequesting2FA}
+                        >
+                            {isRequesting2FA ? <Loader2 className="animate-spin mr-2" /> : "RECEBER CÓDIGO DE ACESSO"}
+                        </Button>
+                    </CardContent>
+                </Card>
+            </main>
+        </div>
+      );
+  }
+
+  if (step === 'AWAITING_2FA') {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col">
+            <Navigation />
+            <main className="flex-1 flex items-center justify-center p-4">
+                <Card className="max-w-md w-full shadow-2xl border-none overflow-hidden">
+                    <div className="bg-slate-900 p-6 text-white text-center relative">
+                        <div className={`absolute top-4 right-4 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-colors duration-500 ${timeLeft < 30 ? 'bg-red-600 animate-pulse' : 'bg-slate-700'}`}>
+                            <Clock className="h-3 w-3" /> {formatTime(timeLeft)}
+                        </div>
+                        <Fingerprint className="h-12 w-12 mx-auto mb-3 text-blue-400" />
+                        <CardTitle className="text-xl font-black uppercase tracking-tight">Validar Acesso</CardTitle>
+                    </div>
+                    <CardContent className="p-8 space-y-8 bg-white text-center">
+                        <div className="space-y-2">
+                            <Input 
+                                className="text-center text-5xl h-24 font-mono tracking-[0.3em] font-black border-2 border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all rounded-xl" 
+                                maxLength={6} 
+                                placeholder="000000" 
+                                value={tokenInput} 
+                                onChange={e => setTokenInput(e.target.value.replace(/\D/g,''))} 
+                            />
+                            {tentativas !== null && (
+                                <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mt-2">
+                                    Tentativas Restantes: <span className="text-red-600">{5 - (5 - tentativas)}</span>
+                                </div>
+                            )}
+                        </div>
+                        <Button 
+                            className="w-full h-16 bg-green-600 hover:bg-green-700 font-black text-white text-lg shadow-xl rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" 
+                            disabled={tokenInput.length !== 6} 
+                            onClick={() => { setStep('VOTING'); loadBallot(); }}
+                        >
+                            ACESSAR CABINE <ArrowRight className="ml-2 h-5 w-5"/>
+                        </Button>
+                    </CardContent>
+                </Card>
+            </main>
+        </div>
+      );
+  }
+
+  if (step === 'VOTING') {
+      return (
+        <div className="min-h-screen bg-slate-900 text-white flex flex-col font-sans">
+            <div className="bg-slate-800 p-4 shadow-md flex justify-between items-center px-4 md:px-8 border-b border-slate-700 sticky top-0 z-40">
+                <div className="flex items-center gap-3">
+                    <div className="bg-green-500/20 p-2 rounded-full"><ShieldCheck className="h-6 w-6 text-green-400" /></div>
+                    <div>
+                        <h1 className="font-black text-lg uppercase tracking-tighter leading-none">Cabine Virtual</h1>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase mt-1">Sessão: {dadosEleitor?.cpf_masked}</p>
+                    </div>
+                </div>
+            </div>
+
+            <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
+                <div className="text-center mb-10">
+                    <Badge variant="outline" className="mb-4 border-slate-600 text-slate-400 px-4 py-1 uppercase tracking-widest text-[10px]">Eleições AMB 2026</Badge>
+                    <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">Selecione seu Candidato</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                    {chapas.map(c => (
+                        <div 
+                            key={c.numero_chapa} 
+                            onClick={() => setVotoSel(c.numero_chapa)} 
+                            className={`cursor-pointer rounded-2xl p-6 border-2 transition-all duration-300 group relative overflow-hidden ${votoSel === c.numero_chapa ? 'border-green-500 bg-slate-800 shadow-2xl shadow-green-500/20 scale-[1.02]' : 'border-slate-800 bg-slate-800/40 hover:border-slate-600 hover:bg-slate-800'}`}
+                        >
+                            <div className="flex justify-between items-start mb-6 relative z-10">
+                                <span className="text-6xl font-black text-slate-200 opacity-90">{c.numero_chapa}</span>
+                                {votoSel === c.numero_chapa && <div className="bg-green-500 p-2 rounded-full animate-in zoom-in"><CheckCircle2 className="h-6 w-6 text-slate-900" /></div>}
+                            </div>
+                            <div className="relative z-10">
+                                <h3 className="text-2xl font-black text-white uppercase leading-tight mb-2">{c.nome_chapa}</h3>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-bold text-slate-400 uppercase flex items-center gap-2"><User className="h-4 w-4"/> {c.nome_presidente}</p>
+                                    {c.nome_vice && <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2 ml-1"><Users className="h-3 w-3"/> {c.nome_vice}</p>}
+                                </div>
+                            </div>
+                            {/* Efeito de Fundo */}
+                            {votoSel === c.numero_chapa && <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent pointer-events-none"/>}
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-4 mb-32">
+                    <Button variant="outline" className={`h-14 px-8 font-black uppercase tracking-wider ${votoSel === 0 ? 'bg-white text-black border-white' : 'bg-transparent text-slate-400 border-slate-700 hover:border-white hover:text-white'}`} onClick={() => setVotoSel(0)}>Votar em Branco</Button>
+                    <Button variant="outline" className={`h-14 px-8 font-black uppercase tracking-wider ${votoSel === -1 ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-slate-400 border-slate-700 hover:border-red-500 hover:text-red-500'}`} onClick={() => setVotoSel(-1)}>Anular Voto</Button>
+                </div>
+            </main>
+
+            <div className="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-md border-t border-slate-800 p-6 z-50">
+                <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div className="hidden md:block">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">Confirmação:</span>
+                        <span className="text-xl font-black text-white">
+                            {votoSel !== null ? (votoSel > 0 ? `CHAPA ${votoSel}` : votoSel === 0 ? "VOTO EM BRANCO" : "VOTO NULO") : "NENHUM SELECIONADO"}
+                        </span>
+                    </div>
+                    <Button 
+                        disabled={votoSel === null || isSubmittingVote} 
+                        className="w-full md:w-auto bg-green-600 hover:bg-green-700 font-black px-12 h-16 rounded-full text-lg shadow-xl shadow-green-900/50 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100" 
+                        onClick={castVote}
+                    >
+                        {isSubmittingVote ? <Loader2 className="animate-spin mr-2" /> : "CONFIRMAR VOTO AGORA"}
+                    </Button>
+                </div>
+            </div>
+        </div>
+      );
+  }
+
+  if (step === 'RECEIPT') {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+            <Card className="w-full max-w-md shadow-2xl border-t-8 border-t-green-600 animate-in zoom-in duration-500">
+                <CardHeader className="text-center pb-2">
+                    <div className="mx-auto bg-green-100 p-6 rounded-full w-fit mb-6 animate-bounce">
+                        <FileCheck className="h-12 w-12 text-green-600" />
+                    </div>
+                    <CardTitle className="text-3xl font-black text-slate-900 uppercase tracking-tight">Voto Computado</CardTitle>
+                    <CardDescription className="text-slate-500 font-medium">Sua participação foi auditada com sucesso.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8 pt-6">
+                    <div className="bg-slate-100 p-6 rounded-2xl border-2 border-slate-200/50 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 bg-slate-200 px-3 py-1 rounded-bl-xl text-[10px] font-bold text-slate-500">SHA-256</div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Hash de Auditoria</p>
+                        <p className="font-mono text-xs break-all text-slate-800 font-bold leading-relaxed">{recibo?.hash}</p>
+                        <div className="h-px bg-slate-300 my-4"></div>
+                        <div className="flex justify-between items-center text-xs font-bold text-slate-600">
+                            <span>DATA:</span>
+                            <span>{recibo?.data}</span>
+                        </div>
+                    </div>
+                    <Button className="w-full h-14 font-black bg-slate-900 text-white hover:bg-slate-800 rounded-xl" onClick={() => navigate('/')}>VOLTAR AO INÍCIO</Button>
+                </CardContent>
+            </Card>
+        </div>
+      );
+  }
+
+  return null;
 }
-// linha 300 EleicoesPage.tsx
+// linha 380 EleicoesPage.tsx
