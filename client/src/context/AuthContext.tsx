@@ -27,7 +27,7 @@ interface AtletaInfo {
   status_cadastro: 'pendente' | 'aprovado' | 'rejeitado';
   role: 'atleta' | 'admin';
   categoria_atual: string | null;
-  // Adiciona campos que sabemos que vêm do backend (para evitar erros)
+  is_superuser?: string | number;
   cpf?: string;
   data_nascimento?: string;
   endereco?: string;
