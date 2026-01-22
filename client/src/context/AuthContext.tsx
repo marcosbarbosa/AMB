@@ -1,14 +1,14 @@
 // Nome: AuthContext.tsx
-// Caminho: client/src/context/AuthContext.tsx
-// Data: 2026-01-21
-// Hora: 12:10 (America/Sao_Paulo)
-// Função: Contexto Global de Autenticação
-// Versão: v1.3 Type Fix
-// Alteração: Inclusão explícita de 'is_superuser' na interface AtletaInfo.
+// Nro de linhas+ Caminho: 105 client/src/context/AuthContext.tsx
+// Data: 2026-01-22
+// Hora: 20:30 (America/Sao_Paulo)
+// Função: Contexto Global de Autenticação e Sessão
+// Versão: v1.7 Superuser Fix
+// Alteração: Adição oficial do campo is_superuser na interface e tratamento de sessão.
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-// Interface do Atleta (Refletindo o Banco de Dados)
+// Interface do Atleta (Refletindo o Banco de Dados SQL)
 interface AtletaInfo {
   id: number;
   nome_completo: string;
@@ -16,8 +16,8 @@ interface AtletaInfo {
   status_cadastro: 'pendente' | 'aprovado' | 'rejeitado';
   role: 'atleta' | 'admin';
   categoria_atual: string | null;
-  // Campo crucial para diferenciar Admin Geral de Admin Simples
-  is_superuser?: string | number | boolean; 
+  // Correção Crítica: Aceita múltiplos formatos retornados pelo PHP
+  is_superuser?: string | number | boolean | null; 
   cpf?: string;
   data_nascimento?: string;
   endereco?: string;
@@ -45,23 +45,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Carga Inicial do LocalStorage
+  // Carga Inicial Segura
   useEffect(() => {
-    try {
-      const storedToken = localStorage.getItem('authToken');
-      const storedAtleta = localStorage.getItem('atletaInfo');
+    const restoreSession = () => {
+      try {
+        const storedToken = localStorage.getItem('authToken');
+        const storedAtleta = localStorage.getItem('atletaInfo');
 
-      if (storedToken && storedAtleta) {
-        setToken(storedToken);
-        setAtleta(JSON.parse(storedAtleta));
+        if (storedToken && storedAtleta) {
+          const parsedAtleta = JSON.parse(storedAtleta);
+          if (parsedAtleta && parsedAtleta.id) {
+            setToken(storedToken);
+            setAtleta(parsedAtleta);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao restaurar sessão:", error);
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('atletaInfo');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Erro ao restaurar sessão:", error);
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('atletaInfo');
-    } finally {
-      setIsLoading(false);
-    }
+    };
+    restoreSession();
   }, []);
 
   const login = (data: AtletaInfo, token: string) => {
@@ -97,4 +103,4 @@ export function useAuth() {
   }
   return context;
 }
-// linha 95 AuthContext.tsx
+// linha 105 client/src/context/AuthContext.tsx

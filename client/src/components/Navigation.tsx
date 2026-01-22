@@ -1,10 +1,10 @@
 // Nome: Navigation.tsx
-// Caminho: client/src/components/Navigation.tsx
-// Data: 2026-01-21
-// Hora: 12:15 (America/Sao_Paulo)
+// Nro de linhas+ Caminho: 260 client/src/components/Navigation.tsx
+// Data: 2026-01-22
+// Hora: 20:55 (America/Sao_Paulo)
 // Função: Navbar Master
-// Versão: v49.0 Structure Patch
-// Alteração: Verificação rigorosa do fechamento de DIVs e Sheet.
+// Versão: v54.0 Null Safety
+// Alteração: Implementação de safeConfig para prevenir crash quando config ainda é null.
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -23,10 +23,19 @@ import ambLogo from '../assets/logo-amb.png';
 
 export function Navigation() {
   const { isAuthenticated, atleta, logout } = useAuth();
-  const { config } = useSiteConfig();
+  const { config } = useSiteConfig(); // Pode retornar null inicialmente
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // --- SAFE CONFIG (CORREÇÃO DO CRASH) ---
+  // Se config for null (ainda carregando), usa valores padrão seguros
+  const safeConfig = config || {
+      eleicoes_ativas: false,
+      social_instagram: '#',
+      social_facebook: '#',
+      whatsapp_number: ''
+  };
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -52,11 +61,13 @@ export function Navigation() {
     { key: 'contato', label: 'Contato', href: '/contato', icon: Mail },
   ];
 
-  if (config.eleicoes_ativas) {
+  // Usa safeConfig em vez de config direto
+  if (safeConfig.eleicoes_ativas) {
       navItems.push({ key: 'eleicoes', label: 'Eleições 2026', href: '/eleicoes', icon: Crown });
   }
 
-  const isSuperUser = String(atleta?.is_superuser) === '1';
+  // Lógica Robusta para Admin/SuperUser
+  const isSuperUser = String(atleta?.is_superuser) === '1' || atleta?.is_superuser === true || atleta?.is_superuser === 1;
   const isAdmin = atleta?.role === 'admin' || isSuperUser;
 
   return (
@@ -117,11 +128,12 @@ export function Navigation() {
                 })}
             </nav>
 
-            {/* ACTIONS RIGHT (USER + MOBILE) */}
+            {/* ACTIONS RIGHT */}
             <div className="flex items-center gap-3">
               <div className="hidden xl:flex items-center gap-2 mr-4 border-r border-slate-200 pr-4">
-                  <a href={config.social_instagram} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-pink-600 transition-colors"><Instagram className="w-4 h-4" /></a>
-                  <a href={config.social_facebook} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600 transition-colors"><Facebook className="w-4 h-4" /></a>
+                  {/* Usa safeConfig para evitar crash nos links sociais */}
+                  <a href={safeConfig.social_instagram} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-pink-600 transition-colors"><Instagram className="w-4 h-4" /></a>
+                  <a href={safeConfig.social_facebook} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600 transition-colors"><Facebook className="w-4 h-4" /></a>
               </div>
 
               {isAuthenticated ? (
@@ -159,7 +171,7 @@ export function Navigation() {
                   </Button>
               )}
 
-              {/* MOBILE MENU TRIGGER */}
+              {/* MOBILE MENU */}
               <div className="lg:hidden">
                 <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                     <SheetTrigger asChild>
@@ -190,12 +202,12 @@ export function Navigation() {
                         </div>
                     </SheetContent>
                 </Sheet>
-              </div> {/* Fim Mobile Menu */}
+              </div> {/* Fim LG Hidden (Mobile) */}
             </div> {/* Fim Actions Right */}
-          </div> {/* Fim Flex Container */}
-        </div> {/* Fim Container MX */}
+          </div> {/* Fim Flex Between */}
+        </div> {/* Fim Container */}
       </div> {/* Fim Fixed Top */}
     </TooltipProvider>
   );
 }
-// linha 230 Navigation.tsx
+// linha 260 client/src/components/Navigation.tsx
