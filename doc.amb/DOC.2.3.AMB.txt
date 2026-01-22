@@ -1,0 +1,771 @@
+================================================================================
+                    DOCUMENTAÇÃO TÉCNICA COMPLETA - AMB PORTAL 2.3
+================================================================================
+                    Associação Amazonense Master de Basquetebol
+================================================================================
+
+Data de Geração: 21 de Janeiro de 2026
+Versão: 2.3.0
+Autor: Sistema de Documentação Automática
+Copyright: © 2025-2026 Marcos Barbosa @mbelitecoach
+
+================================================================================
+                              ÍNDICE
+================================================================================
+
+01. VISÃO GERAL DO PROJETO
+02. STACK TECNOLÓGICO
+03. ESTRUTURA DE DIRETÓRIOS
+04. ARQUIVOS DE CONFIGURAÇÃO
+05. BACKEND (SERVER)
+06. FRONTEND - CORE
+07. FRONTEND - CONTEXTOS
+08. FRONTEND - COMPONENTES UI (SHADCN)
+09. FRONTEND - COMPONENTES CUSTOMIZADOS
+10. FRONTEND - PÁGINAS PÚBLICAS
+11. FRONTEND - PÁGINAS INSTITUCIONAIS
+12. FRONTEND - PÁGINAS DE AUTENTICAÇÃO
+13. FRONTEND - ÁREA DO ASSOCIADO
+14. FRONTEND - ÁREA ADMINISTRATIVA
+15. FRONTEND - MÓDULO ELEIÇÕES
+16. ASSETS E RECURSOS
+17. DEPENDÊNCIAS DO PROJETO
+18. APIS EXTERNAS (HOSTGATOR)
+19. CRONOLOGIA DE ATUALIZAÇÕES
+20. MAPA DE DEPENDÊNCIAS
+21. NOTAS TÉCNICAS IMPORTANTES
+22. PRÓXIMOS PASSOS
+
+================================================================================
+                    01. VISÃO GERAL DO PROJETO
+================================================================================
+
+O AMB Portal é um sistema web institucional completo desenvolvido para a 
+Associação Amazonense Master de Basquetebol. O sistema oferece:
+
+- Site institucional público com informações da associação
+- Sistema de autenticação para associados
+- Painel administrativo completo
+- Gestão de eventos e campeonatos
+- Sistema de eleições online
+- Área de transparência e prestação de contas
+- Integração com APIs PHP no HostGator
+
+================================================================================
+                    02. STACK TECNOLÓGICO
+================================================================================
+
+FRONTEND:
+- React 18.3.1 com TypeScript
+- Vite 5.4.20 (Build Tool)
+- Tailwind CSS 4.x
+- Shadcn UI (Componentes)
+- React Router DOM (Roteamento)
+- TanStack Query v5 (Estado Servidor)
+- React Hook Form + Zod (Formulários)
+- Axios (HTTP Client)
+- Framer Motion (Animações)
+- Lucide React (Ícones)
+
+BACKEND LOCAL (Desenvolvimento):
+- Express.js 4.21.2
+- TypeScript
+- In-Memory Storage (MemStorage)
+
+BACKEND PRODUÇÃO:
+- PHP 8.x (HostGator)
+- MySQL (Banco de Dados)
+- APIs REST em ambamazonas.com.br/api/
+
+================================================================================
+                    03. ESTRUTURA DE DIRETÓRIOS
+================================================================================
+
+/
+├── client/
+│   ├── src/
+│   │   ├── assets/              # Imagens e recursos estáticos
+│   │   ├── components/          # Componentes React
+│   │   │   └── ui/              # Componentes Shadcn UI
+│   │   ├── context/             # Contextos React (Auth, Config)
+│   │   ├── hooks/               # Hooks customizados
+│   │   ├── lib/                 # Utilitários e configurações
+│   │   ├── pages/               # Páginas da aplicação
+│   │   │   ├── admin/           # Páginas administrativas
+│   │   │   │   └── components/  # Componentes admin específicos
+│   │   │   ├── eleicoes/        # Módulo de eleições
+│   │   │   └── institucional/   # Páginas institucionais
+│   │   ├── App.tsx              # Componente raiz e rotas
+│   │   ├── main.tsx             # Entry point
+│   │   └── index.css            # Estilos globais
+│   └── index.html               # Template HTML
+├── server/
+│   ├── index.ts                 # Entry point servidor
+│   ├── routes.ts                # Rotas da API
+│   ├── storage.ts               # Interface de armazenamento
+│   └── vite.ts                  # Configuração Vite dev
+├── shared/
+│   └── schema.ts                # Schemas Drizzle/Zod
+├── doc.amb/                     # Documentação
+├── dist/                        # Build de produção
+├── package.json                 # Dependências
+├── vite.config.ts               # Configuração Vite
+├── tailwind.config.ts           # Configuração Tailwind
+└── tsconfig.json                # Configuração TypeScript
+
+================================================================================
+                    04. ARQUIVOS DE CONFIGURAÇÃO
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Arquivo              │ Função                          │ Última Atualização │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ package.json         │ Dependências e scripts NPM      │ 2026-01-12         │
+│ vite.config.ts       │ Build e dev server (NÃO EDITAR) │ 2025-10-26         │
+│ tailwind.config.ts   │ Tema e estilos Tailwind         │ 2025-10-26         │
+│ tsconfig.json        │ Configuração TypeScript         │ 2025-10-26         │
+│ drizzle.config.ts    │ Configuração Drizzle ORM        │ 2025-10-26         │
+│ .replit              │ Configuração Replit             │ 2025-10-26         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+IMPORTANTE: Não modificar vite.config.ts - configuração Replit otimizada
+
+================================================================================
+                    05. BACKEND (SERVER)
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Arquivo              │ Função                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ server/index.ts      │ Entry point, inicialização Express, porta 5000      │
+│ server/routes.ts     │ Definição de rotas API REST                         │
+│ server/storage.ts    │ Interface IStorage, implementação MemStorage        │
+│ server/vite.ts       │ Integração Vite dev server com Express              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+NOTA: O backend de produção utiliza APIs PHP no HostGator.
+Documentação das APIs PHP será providenciada separadamente.
+
+================================================================================
+                    06. FRONTEND - CORE
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Arquivo                    │ Função                    │ Última Atualização │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ client/src/main.tsx        │ Entry point React         │ 2025-10-28         │
+│ client/src/App.tsx         │ Router central, rotas     │ 2026-01-21 14:35   │
+│ client/src/index.css       │ Estilos globais, tema     │ 2026-01-12         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+DEPENDÊNCIAS DO App.tsx:
+- react-router-dom (Routes, Route, Navigate)
+- @/components/ui/toaster
+- @/context/AuthContext
+- @/context/SiteConfigContext
+- Todas as páginas via lazy loading
+
+================================================================================
+                    07. FRONTEND - CONTEXTOS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Arquivo                              │ Função              │ Atualização    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ client/src/context/AuthContext.tsx   │ Autenticação,       │ 2026-01-21     │
+│                                      │ login/logout,       │ 14:22          │
+│                                      │ dados do atleta     │                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ client/src/context/SiteConfigContext │ Configurações do    │ 2026-01-19     │
+│                                      │ site, menu dinâmico,│ 03:06          │
+│                                      │ WhatsApp, social    │                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+INTERFACE AtletaInfo (AuthContext):
+{
+  id: number
+  nome_completo: string
+  email: string
+  status_cadastro: 'pendente' | 'aprovado' | 'rejeitado'
+  role: 'atleta' | 'admin'
+  categoria_atual: string | null
+  is_superuser?: string | number
+  cpf?: string
+  data_nascimento?: string
+  endereco?: string
+  rg?: string
+  nacionalidade?: string
+  naturalidade?: string
+  filiacao?: string
+  autoriza_imagem?: boolean
+  preferencia_newsletter?: string
+}
+
+INTERFACE SiteConfig (SiteConfigContext):
+{
+  whatsappNumber: string
+  email: string
+  social_instagram: string
+  social_facebook: string
+  eleicoes_ativas: boolean
+  menu: { [key: string]: number }
+}
+
+================================================================================
+                    08. FRONTEND - COMPONENTES UI (SHADCN)
+================================================================================
+
+Localização: client/src/components/ui/
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Componente           │ Função                              │ Radix UI Base │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ accordion.tsx        │ Painéis expansíveis                 │ Accordion     │
+│ alert.tsx            │ Alertas e notificações              │ -             │
+│ alert-dialog.tsx     │ Diálogos de confirmação             │ AlertDialog   │
+│ aspect-ratio.tsx     │ Proporção de aspecto                │ AspectRatio   │
+│ avatar.tsx           │ Avatares de usuário                 │ Avatar        │
+│ badge.tsx            │ Badges e etiquetas                  │ -             │
+│ breadcrumb.tsx       │ Navegação breadcrumb                │ -             │
+│ button.tsx           │ Botões estilizados                  │ Slot          │
+│ calendar.tsx         │ Calendário/Date picker              │ -             │
+│ card.tsx             │ Cards e containers                  │ -             │
+│ carousel.tsx         │ Carrossel de imagens                │ Embla         │
+│ chart.tsx            │ Gráficos (Recharts)                 │ -             │
+│ checkbox.tsx         │ Caixas de seleção                   │ Checkbox      │
+│ collapsible.tsx      │ Conteúdo colapsável                 │ Collapsible   │
+│ command.tsx          │ Palette de comandos                 │ cmdk          │
+│ context-menu.tsx     │ Menu de contexto                    │ ContextMenu   │
+│ dialog.tsx           │ Modais/Diálogos                     │ Dialog        │
+│ drawer.tsx           │ Drawer lateral                      │ Vaul          │
+│ dropdown-menu.tsx    │ Menus dropdown                      │ DropdownMenu  │
+│ form.tsx             │ Formulários (React Hook Form)       │ -             │
+│ hover-card.tsx       │ Cards ao hover                      │ HoverCard     │
+│ input.tsx            │ Campos de entrada                   │ -             │
+│ input-otp.tsx        │ Input OTP                           │ input-otp     │
+│ label.tsx            │ Labels de formulário                │ Label         │
+│ menubar.tsx          │ Barra de menu                       │ Menubar       │
+│ navigation-menu.tsx  │ Menu de navegação                   │ NavigationMenu│
+│ pagination.tsx       │ Paginação                           │ -             │
+│ popover.tsx          │ Popovers                            │ Popover       │
+│ progress.tsx         │ Barras de progresso                 │ Progress      │
+│ radio-group.tsx      │ Grupos de radio                     │ RadioGroup    │
+│ resizable.tsx        │ Painéis redimensionáveis            │ react-resizable│
+│ scroll-area.tsx      │ Área com scroll customizado         │ ScrollArea    │
+│ select.tsx           │ Selects estilizados                 │ Select        │
+│ separator.tsx        │ Separadores visuais                 │ Separator     │
+│ sheet.tsx            │ Painéis laterais                    │ Dialog        │
+│ sidebar.tsx          │ Sidebar responsivo                  │ -             │
+│ skeleton.tsx         │ Loading skeletons                   │ -             │
+│ slider.tsx           │ Sliders de valor                    │ Slider        │
+│ switch.tsx           │ Toggles on/off                      │ Switch        │
+│ table.tsx            │ Tabelas estilizadas                 │ -             │
+│ tabs.tsx             │ Abas de navegação                   │ Tabs          │
+│ textarea.tsx         │ Áreas de texto                      │ -             │
+│ toast.tsx            │ Notificações toast                  │ Toast         │
+│ toaster.tsx          │ Container de toasts                 │ -             │
+│ toggle.tsx           │ Botões toggle                       │ Toggle        │
+│ toggle-group.tsx     │ Grupos de toggle                    │ ToggleGroup   │
+│ tooltip.tsx          │ Tooltips                            │ Tooltip       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Total: 47 componentes UI
+
+================================================================================
+                    09. FRONTEND - COMPONENTES CUSTOMIZADOS
+================================================================================
+
+Localização: client/src/components/
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Componente              │ Função                          │ Atualização    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Navigation.tsx          │ Header/Navbar principal,        │ 2026-01-21     │
+│                         │ menu desktop/mobile, submenu,   │ 14:22          │
+│                         │ dropdown usuário                │                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Footer.tsx              │ Rodapé do site, links,          │ 2026-01-19     │
+│                         │ redes sociais, copyright        │ 01:34          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ FloatingWhatsApp.tsx    │ Botão WhatsApp flutuante        │ 2026-01-19     │
+│                         │ (usa whatsappNumber do config)  │ 01:34          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Hero.tsx                │ Banner hero da home             │ 2026-01-10     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ HeroBanner.tsx          │ Banner hero alternativo         │ 2026-01-15     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ CarouselHero.tsx        │ Carrossel de banners            │ 2026-01-11     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ About.tsx               │ Seção "Sobre" na home           │ 2026-01-19     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Stats.tsx               │ Estatísticas animadas           │ 2025-10-27     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ CTABanner.tsx           │ Banner call-to-action           │ 2026-01-10     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Testimonials.tsx        │ Depoimentos de associados       │ 2025-10-27     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ContactPreview.tsx      │ Preview de contato na home      │ 2025-10-28     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ContactForm.tsx         │ Formulário de contato           │ 2025-10-27     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PlacarDestaque.tsx      │ Placar de jogos em destaque     │ 2026-01-10     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ParceirosDestaque.tsx   │ Parceiros em destaque           │ 2026-01-12     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ParceirosCarrossel.tsx  │ Carrossel de parceiros          │ 2026-01-16     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DiretoriaPremium.tsx    │ Exibição da diretoria           │ 2026-01-19     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ LoginForm.tsx           │ Formulário de login             │ 2026-01-20     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ CadastroForm.tsx        │ Formulário de cadastro          │ 2026-01-11     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ EditarPerfilForm.tsx    │ Formulário edição de perfil     │ 2026-01-21     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ FerramentasModal.tsx    │ Modal de ferramentas admin      │ 2026-01-19     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Total: 20 componentes customizados
+
+DEPENDÊNCIAS PRINCIPAIS DO Navigation.tsx:
+- react-router-dom (Link, useLocation)
+- @/context/AuthContext
+- @/context/SiteConfigContext
+- @/components/ui/button
+- @/components/ui/dropdown-menu
+- @/components/ui/sheet
+- @/components/ui/tooltip
+- lucide-react (ícones)
+
+================================================================================
+                    10. FRONTEND - PÁGINAS PÚBLICAS
+================================================================================
+
+Localização: client/src/pages/
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Arquivo                  │ Rota         │ Função              │ Atualização │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Home.tsx                 │ /            │ Página inicial      │ 2026-01-19  │
+│                          │              │ completa            │ 03:34       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ AboutPage.tsx            │ /sobre       │ Sobre a associação  │ 2026-01-15  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Contact.tsx              │ /contato     │ Página de contato   │ 2026-01-10  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ NoticiasPage.tsx         │ /noticias    │ Lista de notícias   │ 2026-01-18  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ EventosPage.tsx          │ /eventos     │ Lista de eventos    │ 2026-01-18  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DiretoriaPage.tsx        │ /diretoria   │ Membros diretoria   │ 2026-01-18  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ParceirosPage.tsx        │ /parceiros   │ Lista de parceiros  │ 2026-01-16  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SecretariaDigitalPage.tsx│ /secretaria  │ Documentos e atas   │ 2026-01-18  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SejaParceiroPage.tsx     │ /seja-parceiro│ Form parceria      │ 2026-01-12  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SobrePage.tsx            │ (legado)     │ Sobre (alternativo) │ 2026-01-12  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PrestacaoContasPage.tsx  │ /transparencia│ Prestação contas   │ 2026-01-16  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ InteligenciaPage.tsx     │ /inteligencia│ BI público          │ 2026-01-16  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ not-found.tsx            │ /*           │ Página 404          │ 2025-10-26  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                    11. FRONTEND - PÁGINAS INSTITUCIONAIS
+================================================================================
+
+Localização: client/src/pages/institucional/
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Arquivo                  │ Rota         │ Função              │ Atualização │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ HistoricoPage.tsx        │ /historico   │ História da AMB,    │ 2026-01-21  │
+│                          │              │ timeline, marcos    │ 14:08       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DiretoriaPage.tsx        │ (redirect)   │ Redirect diretoria  │ 2026-01-21  │
+│                          │              │                     │ 14:08       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SecretariaPage.tsx       │ (redirect)   │ Redirect secretaria │ 2026-01-21  │
+│                          │              │                     │ 14:09       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ParceirosPage.tsx        │ (redirect)   │ Redirect parceiros  │ 2026-01-21  │
+│                          │              │                     │ 14:09       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+NOTA: DiretoriaPage, SecretariaPage e ParceirosPage na pasta institucional/
+são redirecionamentos para as páginas principais em pages/
+
+================================================================================
+                    12. FRONTEND - PÁGINAS DE AUTENTICAÇÃO
+================================================================================
+
+Localização: client/src/pages/
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Arquivo                  │ Rota              │ Função          │ Atualização│
+├─────────────────────────────────────────────────────────────────────────────┤
+│ LoginPage.tsx            │ /login            │ Tela de login   │ 2026-01-12 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ CadastroPage.tsx         │ /cadastro         │ Cadastro novo   │ 2026-01-12 │
+│                          │                   │ associado       │            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ EsqueciSenhaPage.tsx     │ /esqueci-senha    │ Solicitar reset │ 2026-01-20 │
+│                          │                   │ de senha        │ 17:30      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ RedefinirSenhaPage.tsx   │ /redefinir-senha  │ Redefinir senha │ 2026-01-20 │
+│                          │                   │ com token       │ 17:30      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+FLUXO DE RECUPERAÇÃO DE SENHA:
+1. Usuário acessa /esqueci-senha
+2. Informa email cadastrado
+3. Sistema envia email com link + token
+4. Usuário acessa /redefinir-senha?token=XXX
+5. Define nova senha
+
+================================================================================
+                    13. FRONTEND - ÁREA DO ASSOCIADO
+================================================================================
+
+Localização: client/src/pages/
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Arquivo                  │ Rota              │ Função          │ Atualização│
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PainelPage.tsx           │ /painel           │ Dashboard do    │ 2026-01-15 │
+│                          │ /area-associado   │ associado       │            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ EditarPerfilPage.tsx     │ /editar-perfil    │ Edição de dados │ 2025-10-28 │
+│                          │                   │ pessoais        │            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+DEPENDÊNCIAS DO PainelPage:
+- @/context/AuthContext (dados do usuário logado)
+- @/components/ui/card
+- @/components/ui/button
+- @/components/ui/tabs
+- lucide-react
+
+================================================================================
+                    14. FRONTEND - ÁREA ADMINISTRATIVA
+================================================================================
+
+Localização: client/src/pages/admin/
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Arquivo                    │ Rota                  │ Função      │ Atualiz. │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ AdminPainelPage.tsx        │ /admin/painel         │ Dashboard   │ 2026-01-20│
+│                            │                       │ admin       │ 01:01    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GestaoAssociadosPage.tsx   │ /admin/associados     │ CRUD        │ 2026-01-21│
+│                            │                       │ associados  │ 02:17    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ConfiguracoesPage.tsx      │ /admin/configuracoes  │ Config      │ 2026-01-21│
+│                            │                       │ gerais      │ 01:47    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ EleicoesGestaoPage.tsx     │ /admin/eleicoes       │ Gestão      │ 2026-01-20│
+│                            │                       │ eleições    │ 01:01    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DiretoriaGestaoPage.tsx    │ /admin/diretoria      │ Gestão      │ 2026-01-19│
+│                            │                       │ diretoria   │ 21:04    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GestaoEventosMaster.tsx    │ /admin/eventos-master │ Eventos     │ 2026-01-18│
+│                            │                       │ completos   │ 02:13    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GestaoEventosPage.tsx      │ /admin/eventos        │ Eventos     │ 2026-01-15│
+│                            │                       │ simples     │ 16:34    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GestaoNoticiasPage.tsx     │ /admin/noticias       │ CRUD        │ 2026-01-16│
+│                            │                       │ notícias    │ 17:41    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GestaoParceirosPage.tsx    │ /admin/parceiros      │ CRUD        │ 2026-01-14│
+│                            │                       │ parceiros   │ 21:04    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GestaoTimesPage.tsx        │ /admin/times          │ CRUD times  │ 2026-01-14│
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GestaoBannersAMB.tsx       │ /admin/banners        │ Banners     │ 2026-01-15│
+│                            │                       │ carrossel   │ 00:56    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GestaoTransparencia.tsx    │ /admin/transparencia  │ Documentos  │ 2026-01-15│
+│                            │                       │ públicos    │ 15:21    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DiretoriaBIPage.tsx        │ /admin/bi             │ Business    │ 2026-01-11│
+│                            │                       │ Intelligence│ 02:29    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GestaoJogosPage.tsx        │ /admin/jogos          │ Gestão      │ 2026-01-10│
+│                            │                       │ de jogos    │ 19:24    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GestaoPlacarPage.tsx       │ /admin/placar         │ Placar ao   │ 2026-01-10│
+│                            │                       │ vivo        │ 19:24    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GestaoConteudoEventoPage   │ /admin/evento-conteudo│ Conteúdo    │ 2025-11-08│
+│                            │                       │ eventos     │ 02:31    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GestaoInscricaoTimesPage   │ /admin/inscricao-times│ Inscrições  │ 2025-11-08│
+│                            │                       │ times       │ 02:55    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+COMPONENTES ADMIN AUXILIARES:
+Localização: client/src/pages/admin/components/
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Arquivo                  │ Função                          │ Atualização   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ AssociadosTable.tsx      │ Tabela de associados com        │ 2026-01-20    │
+│                          │ filtros, paginação, ações       │ 19:22         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ AssociadoModal.tsx       │ Modal visualização/edição       │ 2026-01-20    │
+│                          │ de associado individual         │ 19:22         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                    15. FRONTEND - MÓDULO ELEIÇÕES
+================================================================================
+
+Localização: client/src/pages/eleicoes/
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Arquivo                  │ Rota         │ Função              │ Atualização │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ EleicoesPage.tsx         │ /eleicoes    │ Sistema de votação  │ 2026-01-20  │
+│                          │              │ online, candidatos, │ 23:35       │
+│                          │              │ resultados          │             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+FUNCIONALIDADES:
+- Exibição de chapas/candidatos
+- Votação online autenticada
+- Visualização de resultados
+- Controle de período de votação
+- Ativação via config.eleicoes_ativas
+
+================================================================================
+                    16. ASSETS E RECURSOS
+================================================================================
+
+Localização: client/src/assets/
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Arquivo                       │ Tipo      │ Uso                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ logo-amb.png                  │ PNG       │ Logo principal (784KB)         │
+│ logo-amb.jpg                  │ JPG       │ Logo alternativo               │
+│ fbbm-icone.jpg                │ JPG       │ Ícone FBBM (61KB)              │
+│ foto-time-amb.jpg             │ JPG       │ Foto time (89KB)               │
+│ banner_logo_campeonato_05.png │ PNG       │ Banner campeonato (1.4MB)      │
+│ todas-as-nacoes.png           │ PNG       │ Evento especial (1.4MB)        │
+│ gav1.jpg                      │ JPG       │ Imagem auxiliar (216KB)        │
+│ gav2.jpg                      │ JPG       │ Imagem auxiliar (279KB)        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                    17. DEPENDÊNCIAS DO PROJETO
+================================================================================
+
+DEPENDÊNCIAS DE PRODUÇÃO (principais):
+├── react: ^18.3.1
+├── react-dom: ^18.3.1
+├── react-router-dom: ^7.1.5
+├── @tanstack/react-query: ^5.60.5
+├── react-hook-form: ^7.55.0
+├── @hookform/resolvers: ^3.10.0
+├── zod: ^3.23.8
+├── axios: ^1.12.2
+├── express: ^4.21.2
+├── tailwindcss: ^4.1.3
+├── framer-motion: ^11.13.1
+├── lucide-react: ^0.453.0
+├── date-fns: ^3.6.0
+├── class-variance-authority: ^0.7.1
+├── clsx: ^2.1.1
+└── (+ 40 dependências @radix-ui para Shadcn UI)
+
+DEPENDÊNCIAS DE DESENVOLVIMENTO:
+├── vite: ^5.4.20
+├── typescript: ^5.6.3
+├── @types/react: ^18.3.11
+├── @vitejs/plugin-react: ^4.7.0
+├── @tailwindcss/typography: ^0.5.15
+├── autoprefixer: ^10.4.20
+├── esbuild: ^0.24.0
+└── tsx: ^4.19.1
+
+================================================================================
+                    18. APIS EXTERNAS (HOSTGATOR)
+================================================================================
+
+Base URL: https://ambamazonas.com.br/api/
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Endpoint                    │ Método │ Função                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ /api/load.php               │ GET    │ Carrega config do site              │
+│ /api/login.php              │ POST   │ Autenticação de usuário             │
+│ /api/cadastro.php           │ POST   │ Registro de novo associado          │
+│ /api/atletas.php            │ GET    │ Lista de atletas/associados         │
+│ /api/atleta-update.php      │ POST   │ Atualização de dados                │
+│ /api/esqueci-senha.php      │ POST   │ Solicitar reset de senha            │
+│ /api/redefinir-senha.php    │ POST   │ Redefinir senha com token           │
+│ /api/eventos.php            │ GET    │ Lista de eventos                    │
+│ /api/noticias.php           │ GET    │ Lista de notícias                   │
+│ /api/parceiros.php          │ GET    │ Lista de parceiros                  │
+│ /api/diretoria.php          │ GET    │ Membros da diretoria                │
+│ /api/banners.php            │ GET    │ Banners do carrossel                │
+│ /api/transparencia.php      │ GET    │ Documentos de transparência         │
+│ /api/eleicoes.php           │ GET/POST│ Sistema de eleições                │
+│ /api/jogos.php              │ GET    │ Jogos e placares                    │
+│ /api/times.php              │ GET    │ Times cadastrados                   │
+│ /api/admin/*.php            │ VARIOUS│ Endpoints administrativos           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+NOTA: Documentação completa das APIs PHP será providenciada separadamente
+direto do servidor HostGator.
+
+================================================================================
+                    19. CRONOLOGIA DE ATUALIZAÇÕES
+================================================================================
+
+ARQUIVOS MAIS RECENTEMENTE ATUALIZADOS (Top 30):
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ #  │ Data/Hora           │ Arquivo                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 01 │ 2026-01-21 14:35    │ client/src/App.tsx                              │
+│ 02 │ 2026-01-21 14:22    │ client/src/components/Navigation.tsx            │
+│ 03 │ 2026-01-21 14:22    │ client/src/context/AuthContext.tsx              │
+│ 04 │ 2026-01-21 14:09    │ client/src/pages/institucional/ParceirosPage    │
+│ 05 │ 2026-01-21 14:09    │ client/src/pages/institucional/SecretariaPage   │
+│ 06 │ 2026-01-21 14:08    │ client/src/pages/institucional/DiretoriaPage    │
+│ 07 │ 2026-01-21 14:08    │ client/src/pages/institucional/HistoricoPage    │
+│ 08 │ 2026-01-21 02:17    │ client/src/pages/admin/GestaoAssociadosPage     │
+│ 09 │ 2026-01-21 01:47    │ client/src/pages/admin/ConfiguracoesPage        │
+│ 10 │ 2026-01-21 00:34    │ client/src/components/EditarPerfilForm          │
+│ 11 │ 2026-01-20 23:35    │ client/src/pages/eleicoes/EleicoesPage          │
+│ 12 │ 2026-01-20 19:22    │ client/src/pages/admin/components/AssociadoModal│
+│ 13 │ 2026-01-20 19:22    │ client/src/pages/admin/components/AssociadosTable│
+│ 14 │ 2026-01-20 18:09    │ client/src/components/LoginForm                 │
+│ 15 │ 2026-01-20 17:30    │ client/src/pages/RedefinirSenhaPage             │
+│ 16 │ 2026-01-20 17:30    │ client/src/pages/EsqueciSenhaPage               │
+│ 17 │ 2026-01-20 01:01    │ client/src/pages/admin/EleicoesGestaoPage       │
+│ 18 │ 2026-01-20 01:01    │ client/src/pages/admin/AdminPainelPage          │
+│ 19 │ 2026-01-19 22:40    │ client/src/components/FerramentasModal          │
+│ 20 │ 2026-01-19 21:09    │ client/src/components/DiretoriaPremium          │
+│ 21 │ 2026-01-19 21:04    │ client/src/pages/admin/DiretoriaGestaoPage      │
+│ 22 │ 2026-01-19 03:43    │ client/src/components/About                     │
+│ 23 │ 2026-01-19 03:34    │ client/src/pages/Home                           │
+│ 24 │ 2026-01-19 03:06    │ client/src/context/SiteConfigContext            │
+│ 25 │ 2026-01-19 02:19    │ client/src/pages/GestaoAssociadosPage (legacy)  │
+│ 26 │ 2026-01-19 01:34    │ client/src/components/FloatingWhatsApp          │
+│ 27 │ 2026-01-19 01:34    │ client/src/components/Footer                    │
+│ 28 │ 2026-01-18 02:13    │ client/src/pages/admin/GestaoEventosMaster      │
+│ 29 │ 2026-01-18 02:13    │ client/src/pages/EventosPage                    │
+│ 30 │ 2026-01-18 00:43    │ client/src/pages/NoticiasPage                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                    20. MAPA DE DEPENDÊNCIAS
+================================================================================
+
+ÁRVORE DE DEPENDÊNCIAS PRINCIPAIS:
+
+App.tsx
+├── AuthProvider (AuthContext.tsx)
+│   └── localStorage (token, atleta)
+├── SiteConfigProvider (SiteConfigContext.tsx)
+│   └── API: /api/load.php
+├── TooltipProvider (Radix UI)
+├── Toaster (Toast notifications)
+└── Routes
+    ├── Home.tsx
+    │   ├── Navigation.tsx
+    │   │   ├── AuthContext
+    │   │   ├── SiteConfigContext
+    │   │   ├── DropdownMenu
+    │   │   └── Sheet (mobile menu)
+    │   ├── HeroBanner/CarouselHero
+    │   ├── About
+    │   ├── Stats
+    │   ├── PlacarDestaque
+    │   ├── ParceirosCarrossel
+    │   ├── CTABanner
+    │   ├── Testimonials
+    │   ├── ContactPreview
+    │   ├── FloatingWhatsApp
+    │   └── Footer
+    ├── Páginas Públicas
+    │   └── (sem autenticação)
+    ├── Páginas Auth
+    │   ├── LoginPage → AuthContext.login()
+    │   └── CadastroPage → API cadastro
+    ├── Área Associado
+    │   └── AuthContext.isAuthenticated
+    └── Área Admin
+        └── AuthContext.atleta.role === 'admin'
+
+================================================================================
+                    21. NOTAS TÉCNICAS IMPORTANTES
+================================================================================
+
+1. VITE CONFIG
+   - NÃO MODIFICAR vite.config.ts
+   - Configuração Replit otimizada
+   - Servidor em 0.0.0.0:5000
+
+2. FLOATING WHATSAPP
+   - Usa whatsappNumber do SiteConfigContext
+   - NÃO usar config.whatsapp (campo inexistente)
+
+3. NOT-FOUND PAGE
+   - Arquivo: not-found.tsx (COM hífen)
+   - Importar como: @/pages/not-found
+
+4. LIMPEZA DE CACHE
+   - Comando: rm -rf node_modules/.vite
+   - Usar quando houver erros de transform
+
+5. IS_SUPERUSER
+   - Campo adicionado ao AtletaInfo (string | number)
+   - Verificar com: String(atleta?.is_superuser) === '1'
+
+6. LAZY LOADING
+   - Todas as páginas usam React.lazy()
+   - Suspense wrapper com PageLoader
+
+7. BUILD DE PRODUÇÃO
+   - Gera chunks otimizados automaticamente
+   - ~1880 módulos transformados
+   - Bundle JS: ~433KB (142KB gzip)
+   - CSS: ~142KB (21KB gzip)
+
+================================================================================
+                    22. PRÓXIMOS PASSOS
+================================================================================
+
+PENDENTES:
+□ Documentação completa das APIs PHP (HostGator)
+□ Migração de MemStorage para PostgreSQL (se necessário)
+□ Implementação de dark mode toggle
+□ Animações de scroll (reveal on scroll)
+□ Mapa real na página de contato
+□ Cases de sucesso reais
+□ Newsletter subscription
+□ SEO optimization (meta tags, sitemap)
+□ Analytics integration
+□ Performance optimization (lazy loading imagens)
+□ Accessibility audit completo (WCAG AA)
+
+================================================================================
+                    FIM DA DOCUMENTAÇÃO
+================================================================================
+Gerado automaticamente em: 21 de Janeiro de 2026 às 14:40 (UTC)
+Versão: 2.3.0
+Total de arquivos documentados: 125+
+Total de componentes UI: 47
+Total de componentes customizados: 20
+Total de páginas: 30+
+================================================================================

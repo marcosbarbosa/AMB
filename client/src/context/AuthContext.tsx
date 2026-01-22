@@ -1,25 +1,14 @@
-/*
- * ==========================================================
- * PORTAL AMB DO AMAZONAS
- * ==========================================================
- *
- * Copyright (c) 2025 Marcos Barbosa @mbelitecoach
- * Todos os direitos reservados.
- *
- * Data: 1 de novembro de 2025
- * Hora: 19:45
- * Versão: 1.2 (Adiciona Estado de 'isLoading')
- *
- * Descrição: Contexto de Autenticação (AuthContext).
- * ATUALIZADO para incluir um estado 'isLoading', que nos diz
- * quando o contexto terminou de ler o localStorage.
- *
- * ==========================================================
- */
+// Nome: AuthContext.tsx
+// Caminho: client/src/context/AuthContext.tsx
+// Data: 2026-01-21
+// Hora: 12:10 (America/Sao_Paulo)
+// Função: Contexto Global de Autenticação
+// Versão: v1.3 Type Fix
+// Alteração: Inclusão explícita de 'is_superuser' na interface AtletaInfo.
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-// Interface AtletaInfo (sem mudança)
+// Interface do Atleta (Refletindo o Banco de Dados)
 interface AtletaInfo {
   id: number;
   nome_completo: string;
@@ -27,7 +16,8 @@ interface AtletaInfo {
   status_cadastro: 'pendente' | 'aprovado' | 'rejeitado';
   role: 'atleta' | 'admin';
   categoria_atual: string | null;
-  is_superuser?: string | number;
+  // Campo crucial para diferenciar Admin Geral de Admin Simples
+  is_superuser?: string | number | boolean; 
   cpf?: string;
   data_nascimento?: string;
   endereco?: string;
@@ -39,12 +29,11 @@ interface AtletaInfo {
   preferencia_newsletter?: string;
 }
 
-// Interface do Contexto (Adiciona isLoading)
 interface AuthContextType {
   isAuthenticated: boolean;
   atleta: AtletaInfo | null;
   token: string | null;
-  isLoading: boolean; // <-- NOVO: Estado de carregamento
+  isLoading: boolean;
   login: (data: AtletaInfo, token: string) => void;
   logout: () => void;
 }
@@ -54,11 +43,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [atleta, setAtleta] = useState<AtletaInfo | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // <-- NOVO: Começa como 'a carregar'
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Efeito: Tenta carregar os dados do localStorage ao iniciar a App
+  // Carga Inicial do LocalStorage
   useEffect(() => {
-    setIsLoading(true); // Define a carregar
     try {
       const storedToken = localStorage.getItem('authToken');
       const storedAtleta = localStorage.getItem('atletaInfo');
@@ -68,15 +56,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAtleta(JSON.parse(storedAtleta));
       }
     } catch (error) {
-      console.error("Falha ao carregar dados de autenticação do associado", error);
+      console.error("Erro ao restaurar sessão:", error);
       localStorage.removeItem('authToken');
       localStorage.removeItem('atletaInfo');
     } finally {
-      setIsLoading(false); // <-- NOVO: Terminou de carregar (com ou sem dados)
+      setIsLoading(false);
     }
-  }, []); // Executa apenas uma vez
+  }, []);
 
-  // Função de Login (sem mudança)
   const login = (data: AtletaInfo, token: string) => {
     setAtleta(data);
     setToken(token);
@@ -84,7 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('atletaInfo', JSON.stringify(data));
   };
 
-  // Função de Logout (sem mudança)
   const logout = () => {
     setAtleta(null);
     setToken(null);
@@ -96,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: !!token && !!atleta, 
     atleta, 
     token,
-    isLoading, // <-- NOVO: Partilha o estado de carregamento
+    isLoading,
     login,
     logout,
   };
@@ -104,7 +90,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// Hook 'useAuth' (sem mudança)
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -112,3 +97,4 @@ export function useAuth() {
   }
   return context;
 }
+// linha 95 AuthContext.tsx

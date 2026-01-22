@@ -1,10 +1,10 @@
 // Nome: Navigation.tsx
 // Caminho: client/src/components/Navigation.tsx
 // Data: 2026-01-21
-// Hora: 11:50 (America/Sao_Paulo)
-// Função: Navbar Master (Preservando Lógica de Config + Links Corretos)
-// Versão: v48.0 Safe Navigation
-// Alteração: Mantida a lógica complexa original, corrigindo apenas os links do submenu.
+// Hora: 12:15 (America/Sao_Paulo)
+// Função: Navbar Master
+// Versão: v49.0 Structure Patch
+// Alteração: Verificação rigorosa do fechamento de DIVs e Sheet.
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -23,19 +23,17 @@ import ambLogo from '../assets/logo-amb.png';
 
 export function Navigation() {
   const { isAuthenticated, atleta, logout } = useAuth();
-  const { config } = useSiteConfig(); // Preservado uso do Contexto de Config
+  const { config } = useSiteConfig();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Efeito de Scroll original
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Estrutura de Menu (Corrigida e Expandida)
   const navItems = [
     { key: 'inicio', label: 'Início', href: '/', icon: Home },
     { 
@@ -43,10 +41,10 @@ export function Navigation() {
       label: 'Institucional', 
       icon: Building2,
       submenu: [
-        { key: 'historico', label: 'Histórico', href: '/historico', icon: Info }, // Rota Real
-        { key: 'diretoria', label: 'Diretoria', href: '/diretoria', icon: Users }, // Rota Real
-        { key: 'secretaria', label: 'Secretaria Digital', href: '/secretaria', icon: FileText }, // Rota Real
-        { key: 'parceiros', label: 'Parceiros', href: '/parceiros', icon: Trophy }, // Rota Real
+        { key: 'historico', label: 'Histórico', href: '/historico', icon: Info },
+        { key: 'diretoria', label: 'Diretoria', href: '/diretoria', icon: Users },
+        { key: 'secretaria', label: 'Secretaria Digital', href: '/secretaria', icon: FileText },
+        { key: 'parceiros', label: 'Parceiros', href: '/parceiros', icon: Trophy },
       ]
     },
     { key: 'noticias', label: 'Notícias', href: '/noticias', icon: Newspaper },
@@ -54,7 +52,6 @@ export function Navigation() {
     { key: 'contato', label: 'Contato', href: '/contato', icon: Mail },
   ];
 
-  // Injeção Dinâmica de Eleições via Config
   if (config.eleicoes_ativas) {
       navItems.push({ key: 'eleicoes', label: 'Eleições 2026', href: '/eleicoes', icon: Crown });
   }
@@ -80,7 +77,7 @@ export function Navigation() {
               </div>
             </Link>
 
-            {/* DESKTOP NAV (Renderização Dinâmica) */}
+            {/* DESKTOP NAV */}
             <nav className="hidden lg:flex items-center gap-1 bg-slate-50/50 p-1 rounded-full border border-slate-100">
                 {navItems.map((item) => {
                     const Icon = item.icon;
@@ -120,7 +117,7 @@ export function Navigation() {
                 })}
             </nav>
 
-            {/* ACTIONS RIGHT */}
+            {/* ACTIONS RIGHT (USER + MOBILE) */}
             <div className="flex items-center gap-3">
               <div className="hidden xl:flex items-center gap-2 mr-4 border-r border-slate-200 pr-4">
                   <a href={config.social_instagram} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-pink-600 transition-colors"><Instagram className="w-4 h-4" /></a>
@@ -133,9 +130,6 @@ export function Navigation() {
                           <Button variant="ghost" className="rounded-full pl-2 pr-4 border border-slate-200 hover:bg-slate-50 flex items-center gap-3 h-10">
                               <div className="h-7 w-7 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 ring-2 ring-white">
                                   <UserIcon className="h-4 w-4" />
-                              </div>
-                              <div className="text-left hidden md:block">
-                                  <span className="block text-xs font-bold text-slate-700 leading-none">Minha Conta</span>
                               </div>
                               <ChevronDown className="h-3 w-3 text-slate-400" />
                           </Button>
@@ -165,7 +159,7 @@ export function Navigation() {
                   </Button>
               )}
 
-              {/* MOBILE MENU */}
+              {/* MOBILE MENU TRIGGER */}
               <div className="lg:hidden">
                 <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                     <SheetTrigger asChild>
@@ -196,11 +190,11 @@ export function Navigation() {
                         </div>
                     </SheetContent>
                 </Sheet>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+              </div> {/* Fim Mobile Menu */}
+            </div> {/* Fim Actions Right */}
+          </div> {/* Fim Flex Container */}
+        </div> {/* Fim Container MX */}
+      </div> {/* Fim Fixed Top */}
     </TooltipProvider>
   );
 }
