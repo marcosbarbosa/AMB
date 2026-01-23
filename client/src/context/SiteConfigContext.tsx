@@ -1,133 +1,99 @@
 // Nome: SiteConfigContext.tsx
-// Caminho: client/src/context/SiteConfigContext.tsx
-// Data: 2026-01-19
-// Hora: 12:00
-// Função: Contexto com Cliente Axios Dedicado
-// Versão: v19.0 Axios Instance
+// Nro de linhas+ Caminho: 150 client/src/context/SiteConfigContext.tsx
+// Data: 2026-01-23
+// Hora: 15:00
+// Função: Contexto Híbrido (Suporte a Legado + Nova Estrutura)
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_BASE = 'https://www.ambamazonas.com.br/api';
-
-// Configuração do Axios para evitar problemas de CORS com Wildcard (*)
-const apiClient = axios.create({
-  baseURL: API_BASE,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  // IMPORTANTE: Isso evita envio de cookies que quebram CORS com "*"
-  withCredentials: false 
-});
-
-interface UpdateResponse {
-  success: boolean;
-  msg: string;
+// Interface espelhando o banco de dados
+interface DBSettings {
+  email_official: string;
+  endereco_sede: string;
+  facebook_url: string;
+  instagram_url: string;
+  whatsapp_official: string;
+  youtube_url: string;
+  [key: string]: string; // Permite chaves extras
 }
 
-interface SiteConfigContextData {
-  config: any;
-  menuConfig: Record<string, boolean>;
+interface SiteConfig {
+  settings: DBSettings;   // Dados crus de site_settings
+  menu: Record<string, boolean>;
+  flags: {
+    eleicoes_ativas: boolean;
+    modo_manutencao: boolean;
+  };
+  sistema: {
+    dia_vencimento: string;
+  };
+}
+
+interface SiteConfigContextType {
+  config: SiteConfig | null;
+  loading: boolean;
+  refreshConfig: () => Promise<void>;
+
+  // Helpers para compatibilidade com componentes antigos (Footer, etc)
   whatsappNumber: string;
   emailContact: string;
-  isLoading: boolean;
-  updateConfig: (newConfig: Record<string, boolean>) => Promise<UpdateResponse>;
-  updateWhatsapp: (newNumber: string) => Promise<UpdateResponse>;
-  updateEmail: (newEmail: string) => Promise<UpdateResponse>;
+  menuConfig: Record<string, boolean>;
 }
 
-const SiteConfigContext = createContext<SiteConfigContextData>({} as SiteConfigContextData);
+const SiteConfigContext = createContext<SiteConfigContextType | undefined>(undefined);
 
 export function SiteConfigProvider({ children }: { children: React.ReactNode }) {
-  const DEFAULT_WHATSAPP = '559292521345';
+  const [config, setConfig] = useState<SiteConfig | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [config, setConfig] = useState<any>(null);
-  const [menuConfig, setMenuConfig] = useState<Record<string, boolean>>({});
-  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP); 
-  const [emailContact, setEmailContact] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-
-  const loadConfig = async () => {
+  const fetchConfig = async () => {
     try {
-      // Timestamp para evitar cache
-      const response = await apiClient.get(`/get_site_config.php?t=${Date.now()}`);
+      const res = await axios.get('https://www.ambamazonas.com.br/api/get_full_config.php');
+      if (res.data && res.data.status === 'sucesso') {
+        const d = res.data.data;
 
-      console.log("📥 Dados (Load):", response.data);
-
-      if (response.data) {
-        setConfig(response.data);
-
-        if (response.data.menu) {
-            const rawMenu = response.data.menu;
-            const normalizedMenu: Record<string, boolean> = {};
-            Object.keys(rawMenu).forEach(key => {
-                const val = rawMenu[key];
-                normalizedMenu[key] = (Number(val) === 1);
-            });
-            setMenuConfig(normalizedMenu);
-        }
-
-        if (response.data.whatsapp) setWhatsappNumber(response.data.whatsapp);
-        if (response.data.email) setEmailContact(response.data.email);
+        setConfig({
+            settings: d.settings || {},
+            menu: d.menu || {},
+            flags: {
+                eleicoes_ativas: d.flags?.eleicoes_ativas == 1 || d.flags?.eleicoes_ativas === 'true',
+                modo_manutencao: d.flags?.modo_manutencao == 1 || d.flags?.modo_manutencao === 'true'
+            },
+            sistema: d.sistema || { dia_vencimento: '10' }
+        });
       }
     } catch (error) {
-      console.error("❌ Falha Load:", error);
+      console.error('Config fetch error:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  useEffect(() => { loadConfig(); }, []);
+  useEffect(() => { fetchConfig(); }, []);
 
-  const updateWhatsapp = async (newNumber: string): Promise<UpdateResponse> => {
-    try {
-      const cleanNumber = newNumber.replace(/\D/g, '');
-      const response = await apiClient.post(`/update_whatsapp.php`, { number: cleanNumber });
-      if (response.data.status === 'sucesso') {
-        setWhatsappNumber(cleanNumber);
-        return { success: true, msg: 'Salvo' };
-      }
-      return { success: false, msg: response.data.mensagem };
-    } catch (e: any) { return { success: false, msg: e.message }; }
-  };
-
-  const updateEmail = async (newEmail: string): Promise<UpdateResponse> => {
-    try {
-      const response = await apiClient.post(`/update_email.php`, { email: newEmail });
-      if (response.data.status === 'sucesso') {
-        setEmailContact(newEmail);
-        return { success: true, msg: 'Salvo' };
-      }
-      return { success: false, msg: response.data.mensagem };
-    } catch (e: any) { return { success: false, msg: e.message }; }
-  };
-
-  const updateConfig = async (newConfig: Record<string, boolean>): Promise<UpdateResponse> => {
-    try {
-        console.log("📤 Enviando Menu:", newConfig);
-        const response = await apiClient.post(`/update_menu_config.php`, { config: newConfig });
-
-        if (response.data.status === 'sucesso') {
-            setMenuConfig(newConfig);
-            setTimeout(() => loadConfig(), 300); // Reload de segurança
-            return { success: true, msg: 'Sucesso' };
-        }
-        return { success: false, msg: response.data.mensagem };
-    } catch(e: any) { 
-        console.error("❌ Erro Update:", e);
-        return { success: false, msg: e.message || "Erro de Rede" }; 
-    }
-  };
+  // Valores Computados para compatibilidade
+  const whatsappNumber = config?.settings?.whatsapp_official || '';
+  const emailContact = config?.settings?.email_official || '';
+  const menuConfig = config?.menu || {};
 
   return (
     <SiteConfigContext.Provider value={{ 
-        config, menuConfig, whatsappNumber, emailContact, isLoading, 
-        updateConfig, updateWhatsapp, updateEmail 
+        config, 
+        loading, 
+        refreshConfig: fetchConfig,
+        whatsappNumber,
+        emailContact,
+        menuConfig
     }}>
       {children}
     </SiteConfigContext.Provider>
   );
 }
 
-export const useSiteConfig = () => useContext(SiteConfigContext);
-// linha 110 SiteConfigContext.tsx
+export function useSiteConfig() {
+  const context = useContext(SiteConfigContext);
+  if (context === undefined) throw new Error('useSiteConfig error');
+  return context;
+}
+// linha 150 client/src/context/SiteConfigContext.tsx

@@ -1,7 +1,7 @@
 // Nome: ParceirosPage.tsx
 // Caminho: client/src/pages/institucional/ParceirosPage.tsx
-// Data: 2026-01-21
-// Hora: 12:00
+// Data: 2026-01-23
+// Hora: 11:00
 // Função: Página Institucional - Parceiros
 
 import { Navigation } from '@/components/Navigation';
@@ -39,4 +39,4 @@ export default function ParceirosPage() {
     </div>
   );
 }
-// linha 40 ParceirosPage.tsx
+// linha 40 client/src/pages/institucional/ParceirosPage.tsx

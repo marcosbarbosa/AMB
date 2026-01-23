@@ -1,7 +1,7 @@
 // Nome: HistoricoPage.tsx
 // Caminho: client/src/pages/institucional/HistoricoPage.tsx
-// Data: 2026-01-21
-// Hora: 12:00
+// Data: 2026-01-23
+// Hora: 11:00
 // Função: Página Institucional - Histórico
 
 import { Navigation } from '@/components/Navigation';
@@ -28,4 +28,4 @@ export default function HistoricoPage() {
     </div>
   );
 }
-// linha 35 HistoricoPage.tsx
+// linha 35 client/src/pages/institucional/HistoricoPage.tsx

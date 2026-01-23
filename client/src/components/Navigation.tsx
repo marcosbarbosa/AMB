@@ -1,17 +1,17 @@
 // Nome: Navigation.tsx
-// Nro de linhas+ Caminho: 260 client/src/components/Navigation.tsx
-// Data: 2026-01-22
-// Hora: 22:15 (America/Sao_Paulo)
-// Função: Navbar Master
-// Versão: v55.0 Admin Menu Boost
-// Alteração: Inclusão de "Eleições" no dropdown do Admin para acesso rápido.
+// Nro de linhas+ Caminho: 285 client/src/components/Navigation.tsx
+// Data: 2026-01-23
+// Hora: 14:35 (America/Sao_Paulo)
+// Função: Navbar Master (Dynamic Menu Visibility)
+// Versão: v59.0 Menu Control
+// Alteração: Filtragem dos itens de menu com base no config.menu do banco de dados.
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Menu, ChevronDown, Settings, Newspaper, 
   Home, Facebook, Instagram, Info, Mail, Trophy, Building2, Crown,
-  ShieldCheck, UserCog, UserPlus, User as UserIcon, LogOut, Users, FileText
+  ShieldCheck, UserCog, UserPlus, User as UserIcon, LogOut, Users, FileText, Loader2, Handshake
 } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,15 +23,17 @@ import ambLogo from '../assets/logo-amb.png';
 
 export function Navigation() {
   const { isAuthenticated, atleta, logout } = useAuth();
-  const { config } = useSiteConfig();
+  const { config, loading } = useSiteConfig();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Safe Fallback
   const safeConfig = config || {
+      menu: {},
       eleicoes_ativas: false,
-      social_instagram: '#',
-      social_facebook: '#',
+      social_instagram: '',
+      social_facebook: '',
       whatsapp_number: ''
   };
 
@@ -41,7 +43,13 @@ export function Navigation() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems = [
+  // Helper para checar visibilidade (True por padrão se undefined)
+  const isVisible = (key: string) => {
+      return safeConfig.menu[key] !== false;
+  };
+
+  // Definição Completa dos Itens (Serão filtrados)
+  const allNavItems = [
     { key: 'inicio', label: 'Início', href: '/', icon: Home },
     { 
       key: 'institucional', 
@@ -50,21 +58,39 @@ export function Navigation() {
       submenu: [
         { key: 'historico', label: 'Histórico', href: '/historico', icon: Info },
         { key: 'diretoria', label: 'Diretoria', href: '/diretoria', icon: Users },
-        { key: 'secretaria', label: 'Secretaria Digital', href: '/secretaria', icon: FileText },
-        { key: 'parceiros', label: 'Parceiros', href: '/parceiros', icon: Trophy },
+        { key: 'secretaria_digital', label: 'Secretaria Digital', href: '/secretaria', icon: FileText },
+        { key: 'parceiros', label: 'Parceiros', href: '/parceiros', icon: Handshake },
       ]
     },
     { key: 'noticias', label: 'Notícias', href: '/noticias', icon: Newspaper },
     { key: 'eventos', label: 'Eventos', href: '/eventos', icon: Trophy },
+    { key: 'eleicoes', label: 'Eleições 2026', href: '/eleicoes', icon: Crown, special: true }, // Special check
     { key: 'contato', label: 'Contato', href: '/contato', icon: Mail },
   ];
 
-  if (safeConfig.eleicoes_ativas) {
-      navItems.push({ key: 'eleicoes', label: 'Eleições 2026', href: '/eleicoes', icon: Crown });
-  }
+  // Filtra itens visíveis
+  const visibleItems = allNavItems.filter(item => {
+      // Regra especial para Eleições (depende da flag E do menu)
+      if (item.special) {
+          return safeConfig.eleicoes_ativas && isVisible(item.key);
+      }
 
-  const isSuperUser = String(atleta?.is_superuser) === '1' || atleta?.is_superuser === true || atleta?.is_superuser === 1;
+      // Se tem submenu, filtra os subitens também
+      if (item.submenu) {
+          item.submenu = item.submenu.filter(sub => isVisible(sub.key));
+          // Se todos os subitens forem ocultos, oculta o pai? (Opcional, aqui mantemos o pai se for visivel)
+          return isVisible(item.key) && item.submenu.length > 0;
+      }
+
+      return isVisible(item.key);
+  });
+
+  const isSuperUser = String(atleta?.is_superuser) === '1' || atleta?.is_superuser === true;
   const isAdmin = atleta?.role === 'admin' || isSuperUser;
+
+  if (loading && !config) {
+     return <div className="fixed top-0 w-full h-20 bg-white z-50 border-b flex items-center justify-center"><Loader2 className="animate-spin text-blue-600"/></div>;
+  }
 
   return (
     <TooltipProvider>
@@ -72,7 +98,6 @@ export function Navigation() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
 
-            {/* LOGO */}
             <Link to="/" className="flex items-center gap-3 group">
               <div className="relative">
                 <img src={ambLogo} alt="AMB Logo" className="h-10 w-auto transition-transform group-hover:scale-105" />
@@ -84,9 +109,8 @@ export function Navigation() {
               </div>
             </Link>
 
-            {/* DESKTOP NAV */}
             <nav className="hidden lg:flex items-center gap-1 bg-slate-50/50 p-1 rounded-full border border-slate-100">
-                {navItems.map((item) => {
+                {visibleItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = location.pathname === item.href || (item.submenu && item.submenu.some(sub => location.pathname === sub.href));
 
@@ -112,11 +136,7 @@ export function Navigation() {
                     }
 
                     return (
-                        <Link 
-                            key={item.key} 
-                            to={item.href || '#'} 
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${isActive ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-blue-600 hover:bg-white/50'}`}
-                        >
+                        <Link key={item.key} to={item.href || '#'} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${isActive ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-blue-600 hover:bg-white/50'}`}>
                             <Icon className="w-4 h-4" />
                             {item.label}
                         </Link>
@@ -124,20 +144,17 @@ export function Navigation() {
                 })}
             </nav>
 
-            {/* ACTIONS RIGHT */}
             <div className="flex items-center gap-3">
               <div className="hidden xl:flex items-center gap-2 mr-4 border-r border-slate-200 pr-4">
-                  <a href={safeConfig.social_instagram} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-pink-600 transition-colors"><Instagram className="w-4 h-4" /></a>
-                  <a href={safeConfig.social_facebook} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600 transition-colors"><Facebook className="w-4 h-4" /></a>
+                  <a href={safeConfig.social_instagram} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-pink-600"><Instagram className="w-4 h-4" /></a>
+                  <a href={safeConfig.social_facebook} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600"><Facebook className="w-4 h-4" /></a>
               </div>
 
               {isAuthenticated ? (
                   <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="rounded-full pl-2 pr-4 border border-slate-200 hover:bg-slate-50 flex items-center gap-3 h-10">
-                              <div className="h-7 w-7 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 ring-2 ring-white">
-                                  <UserIcon className="h-4 w-4" />
-                              </div>
+                              <div className="h-7 w-7 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 ring-2 ring-white"><UserIcon className="h-4 w-4" /></div>
                               <ChevronDown className="h-3 w-3 text-slate-400" />
                           </Button>
                       </DropdownMenuTrigger>
@@ -146,53 +163,27 @@ export function Navigation() {
                           <DropdownMenuSeparator />
                           {isAdmin && (
                               <>
-                                  <DropdownMenuItem asChild>
-                                      <Link to="/admin/painel" className="cursor-pointer font-bold text-indigo-600">
-                                          <ShieldCheck className="mr-2 h-4 w-4"/> Painel Admin
-                                      </Link>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem asChild>
-                                      <Link to="/admin/associados" className="cursor-pointer">
-                                          <Users className="mr-2 h-4 w-4"/> Associados
-                                      </Link>
-                                  </DropdownMenuItem>
-                                  {/* Item Adicionado: Eleições (Crítico) */}
-                                  <DropdownMenuItem asChild>
-                                      <Link to="/admin/eleicoes" className="cursor-pointer">
-                                          <Crown className="mr-2 h-4 w-4"/> Eleições
-                                      </Link>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem asChild>
-                                      <Link to="/admin/configuracoes" className="cursor-pointer">
-                                          <Settings className="mr-2 h-4 w-4"/> Configurações
-                                      </Link>
-                                  </DropdownMenuItem>
+                                  <DropdownMenuItem asChild><Link to="/admin/painel"><ShieldCheck className="mr-2 h-4 w-4"/> Painel Admin</Link></DropdownMenuItem>
+                                  <DropdownMenuItem asChild><Link to="/admin/associados"><Users className="mr-2 h-4 w-4"/> Associados</Link></DropdownMenuItem>
+                                  <DropdownMenuItem asChild><Link to="/admin/configuracoes"><Settings className="mr-2 h-4 w-4"/> Configurações</Link></DropdownMenuItem>
                                   <DropdownMenuSeparator />
                               </>
                           )}
                           <DropdownMenuItem asChild><Link to="/painel"><UserCog className="mr-2 h-4 w-4"/> Área do Associado</Link></DropdownMenuItem>
-                          <DropdownMenuItem asChild><Link to="/editar-perfil"><UserPlus className="mr-2 h-4 w-4"/> Meus Dados</Link></DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={logout} className="text-red-600 cursor-pointer font-bold bg-red-50 hover:bg-red-100">
-                              <LogOut className="mr-2 h-4 w-4"/> Sair
-                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={logout} className="text-red-600 cursor-pointer font-bold bg-red-50 hover:bg-red-100"><LogOut className="mr-2 h-4 w-4"/> Sair</DropdownMenuItem>
                       </DropdownMenuContent>
                   </DropdownMenu>
               ) : (
-                  <Button asChild className="rounded-full bg-slate-900 text-white font-bold hover:bg-slate-800 shadow-lg shadow-slate-200/50">
-                      <Link to="/login">ÁREA DO ASSOCIADO</Link>
-                  </Button>
+                  <Button asChild className="rounded-full bg-slate-900 text-white font-bold hover:bg-slate-800 shadow-lg shadow-slate-200/50"><Link to="/login">ÁREA DO ASSOCIADO</Link></Button>
               )}
 
               {/* MOBILE MENU */}
               <div className="lg:hidden">
                 <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-                    <SheetTrigger asChild>
-                        <Button variant="ghost" size="icon"><Menu className="w-6 h-6 text-slate-700" /></Button>
-                    </SheetTrigger>
+                    <SheetTrigger asChild><Button variant="ghost" size="icon"><Menu className="w-6 h-6 text-slate-700" /></Button></SheetTrigger>
                     <SheetContent side="right" className="w-[300px] sm:w-[400px] overflow-y-auto">
                         <div className="flex flex-col gap-6 mt-10">
-                            {navItems.map(item => (
+                            {visibleItems.map(item => (
                                 <div key={item.key} className="space-y-3">
                                     <div className="font-black text-slate-900 uppercase text-sm tracking-widest border-b pb-2 flex items-center gap-2">
                                         <item.icon className="h-4 w-4 text-slate-400" /> {item.label}
@@ -200,15 +191,11 @@ export function Navigation() {
                                     {item.submenu ? (
                                         <div className="flex flex-col gap-2 pl-4 border-l-2 border-slate-100 ml-1">
                                             {item.submenu.map(sub => (
-                                                <Link key={sub.key} to={sub.href} className="text-sm font-bold text-slate-500 hover:text-blue-600 py-1" onClick={() => setIsMenuOpen(false)}>
-                                                    {sub.label}
-                                                </Link>
+                                                <Link key={sub.key} to={sub.href} className="text-sm font-bold text-slate-500 hover:text-blue-600 py-1" onClick={() => setIsMenuOpen(false)}>{sub.label}</Link>
                                             ))}
                                         </div>
                                     ) : (
-                                        <Link to={item.href || '#'} className="text-sm font-bold text-slate-500 hover:text-blue-600 block pl-4" onClick={() => setIsMenuOpen(false)}>
-                                            Acessar {item.label}
-                                        </Link>
+                                        <Link to={item.href || '#'} className="text-sm font-bold text-slate-500 hover:text-blue-600 block pl-4" onClick={() => setIsMenuOpen(false)}>Acessar {item.label}</Link>
                                     )}
                                 </div>
                             ))}
@@ -223,4 +210,4 @@ export function Navigation() {
     </TooltipProvider>
   );
 }
-// linha 265 client/src/components/Navigation.tsx
+// linha 285 client/src/components/Navigation.tsx

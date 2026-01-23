@@ -1,21 +1,23 @@
 // Nome: About.tsx
-// Caminho: client/src/components/About.tsx
-// Data: 2026-01-19
-// Hora: 20:00
-// Função: História com Controle Condicional de Diretoria
-// Versão: v8.0 Config Aware
+// Nro de linhas+ Caminho: 130 client/src/components/About.tsx
+// Data: 2026-01-23
+// Hora: 13:00 (America/Sao_Paulo)
+// Função: Seção Sobre Nós (Robust Null Safety)
+// Versão: v9.0 Crash Proof
+// Alteração: Implementação de Defensive Coding para leitura de config.menu.
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Users, Trophy, HeartHandshake, MapPin, ArrowRight, FileText, Download, Loader2 } from 'lucide-react'; 
-import { useNavigate } from 'react-router-dom';
+import { Users, Trophy, HeartHandshake, MapPin, ArrowRight, FileText, Download, Loader2, History } from 'lucide-react'; 
+import { useNavigate, Link } from 'react-router-dom';
 import { DiretoriaPremium } from '@/components/DiretoriaPremium'; 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
-import { useSiteConfig } from '@/context/SiteConfigContext'; // 1. Importar Contexto
+import { useSiteConfig } from '@/context/SiteConfigContext'; 
+import { motion } from 'framer-motion';
 
 const API_BASE = 'https://www.ambamazonas.com.br/api';
 
@@ -23,8 +25,15 @@ export function About() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // 2. Acessar configuração global
-  const { menuConfig } = useSiteConfig(); 
+  // 1. Extração segura do contexto
+  const { config, loading } = useSiteConfig(); 
+
+  // 2. Lógica de Exibição Blindada
+  // Se estiver carregando, assume true para evitar layout shift.
+  // Se config existir, tenta ler menu.diretoria.
+  // Se menu.diretoria for undefined, assume true.
+  // Só esconde se for explicitamente false.
+  const showDiretoria = loading ? true : (config?.menu?.diretoria ?? true);
 
   const [estatutos, setEstatutos] = useState<any[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
@@ -68,10 +77,7 @@ export function About() {
 
   const ENDERECO = "R. Washington Luís, 111 - Dom Pedro, Manaus - AM, 69040-210";
   const MAP_EMBED_URL = `https://maps.google.com/maps?q=${encodeURIComponent(ENDERECO)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-  const MAP_EXTERNAL_LINK = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ENDERECO)}`;
-
-  // 3. Lógica de Exibição: Se 'diretoria' for false no painel, esconde o componente
-  const showDiretoria = menuConfig['diretoria'] !== false;
+  const MAP_EXTERNAL_LINK = `https://maps.google.com/maps?q=${encodeURIComponent(ENDERECO)}`;
 
   return (
     <>
@@ -82,7 +88,13 @@ export function About() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
 
             {/* Texto História */}
-            <div className="space-y-6">
+            <motion.div 
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+                className="space-y-6"
+            >
               <div className="inline-flex items-center gap-2">
                 <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50 px-3 py-1 text-xs uppercase font-bold">
                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse mr-2" />Institucional
@@ -94,16 +106,24 @@ export function About() {
                 <p>Nossa missão vai além das quadras: buscamos proporcionar saúde e o reencontro de amigos através do esporte.</p>
               </div>
               <div className="pt-4 flex flex-col sm:flex-row gap-4">
-                 <Button onClick={() => navigate('/sobre')} className="bg-blue-700 hover:bg-blue-800 text-white shadow-lg h-12 px-8 text-md">Nossa História</Button>
+                 <Button onClick={() => navigate('/sobre')} className="bg-blue-700 hover:bg-blue-800 text-white shadow-lg h-12 px-8 text-md">
+                    <History className="mr-2 h-4 w-4"/> Nossa História
+                 </Button>
                  <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-white hover:text-blue-700 h-12 px-8 text-md relative" onClick={handleVerEstatuto} disabled={loadingDocs}>
-                   {loadingDocs ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Ver Estatuto'} 
-                   {!loadingDocs && <ArrowRight className="ml-2 h-4 w-4" />}
+                   {loadingDocs ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileText className="mr-2 h-4 w-4"/>} 
+                   Ver Estatuto
                  </Button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Mapa */}
-            <div className="relative group perspective-1000">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+                className="relative group perspective-1000"
+            >
               <Card className="relative p-2 bg-white border-slate-200 shadow-2xl rounded-2xl overflow-hidden">
                  <div className="relative w-full h-[450px] bg-slate-100 rounded-xl overflow-hidden">
                     <iframe src={MAP_EMBED_URL} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" className="w-full h-full grayscale group-hover:grayscale-0 transition-all duration-700"></iframe>
@@ -114,7 +134,7 @@ export function About() {
                     </div>
                  </div>
               </Card>
-            </div>
+            </motion.div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 mt-24">
@@ -129,7 +149,7 @@ export function About() {
         </div>
       </section>
 
-      {/* 4. RENDERIZAÇÃO CONDICIONAL BLINDADA */}
+      {/* Renderização Segura */}
       {showDiretoria && <DiretoriaPremium />}
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -147,4 +167,4 @@ export function About() {
     </>
   );
 }
-// linha 175 About.tsx
+// linha 130 client/src/components/About.tsx

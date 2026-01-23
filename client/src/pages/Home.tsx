@@ -1,16 +1,17 @@
 // Nome: Home.tsx
-// Caminho: client/src/pages/Home.tsx
-// Data: 2026-01-19
-// Hora: 16:00
-// Função: Home Page com Controle de Visibilidade via Contexto
-// Versão: v13.0 Smart Home
+// Nro de linhas+ Caminho: 220 client/src/pages/Home.tsx
+// Data: 2026-01-23
+// Hora: 11:50 (America/Sao_Paulo)
+// Função: Home Page (Safe Context Destructuring)
+// Versão: v15.0 Crash Fix
+// Alteração: Correção da leitura de menuConfig com fallback para objeto vazio.
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import { useSiteConfig } from '@/context/SiteConfigContext'; // Importação Crítica
+import { useSiteConfig } from '@/context/SiteConfigContext'; // Importação
 
 // COMPONENTES PRINCIPAIS
 import { HeroBanner } from '@/components/HeroBanner';
@@ -24,7 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
-  CalendarDays, Trophy, Newspaper, ArrowRight, Send, Loader2 
+  CalendarDays, Trophy, Newspaper, ArrowRight, Send 
 } from 'lucide-react';
 
 const API_JOGOS = 'https://www.ambamazonas.com.br/api/get_jogos_home.php'; 
@@ -73,14 +74,18 @@ function BlogCarousel() {
 export default function Home() {
   const { hash } = useLocation();
   const navigate = useNavigate();
-  const { menuConfig, isLoading: isConfigLoading } = useSiteConfig(); // Hook de Configuração
+
+  // SOLUÇÃO ROBUSTA: Extrai config e trata null/undefined
+  const { config, loading: isConfigLoading } = useSiteConfig();
+  const menuConfig = config?.menu || {}; 
 
   const [jogos, setJogos] = useState<Jogo[]>([]);
   const [loadingJogos, setLoadingJogos] = useState(true);
 
-  // Helper para verificar visibilidade (Default: true se undefined, exceto se explícito false)
   const isVisible = (key: string) => {
-      if (isConfigLoading) return true; // Evita piscar enquanto carrega
+      // Se estiver carregando, assume true para não piscar
+      if (isConfigLoading) return true;
+      // @ts-ignore - Verifica se existe a chave e se é explicitamente false
       return menuConfig[key] !== false;
   };
 
@@ -101,7 +106,7 @@ export default function Home() {
           setJogos(res.data.dados);
         }
       } catch (error) {
-        console.warn("API de Jogos indisponível.");
+        console.warn("Jogos API n/a");
       } finally {
         setLoadingJogos(false);
       }
@@ -121,10 +126,10 @@ export default function Home() {
 
       <main className="pt-20">
 
-        {/* --- 1. HERO BANNER --- */}
+        {/* 1. HERO */}
         <HeroBanner />
 
-        {/* --- 2. JOGOS (Controlado por 'campeonatos' ou 'eventos') --- */}
+        {/* 2. JOGOS */}
         {!loadingJogos && jogos.length > 0 && isVisible('campeonatos') && (
           <section className="py-16 bg-white border-b border-slate-100">
             <div className="max-w-7xl mx-auto px-4">
@@ -166,7 +171,7 @@ export default function Home() {
           </section>
         )}
 
-        {/* --- 3. PARCEIROS (Controlado) --- */}
+        {/* 3. PARCEIROS */}
         {isVisible('parceiros') && (
             <section className="bg-white pt-12 pb-6 border-b border-slate-100">
                 <div className="max-w-7xl mx-auto px-4">
@@ -181,10 +186,10 @@ export default function Home() {
             </section>
         )}
 
-        {/* --- 4. INSTITUCIONAL / SOBRE (Controlado por 'sobre') --- */}
+        {/* 4. SOBRE */}
         {isVisible('sobre') && <About />}
 
-        {/* --- 5. BLOG / NOTÍCIAS (Controlado) --- */}
+        {/* 5. NOTÍCIAS */}
         {isVisible('noticias') && (
             <section id="blog" className="py-20 bg-slate-50 border-t border-slate-200">
                 <div className="max-w-7xl mx-auto px-4">
@@ -200,9 +205,7 @@ export default function Home() {
             </section>
         )}
 
-        {/* --- 6. REDES SOCIAIS (REMOVIDA COMPLETAMENTE) --- */}
-
-        {/* --- 7. CONTATO (Controlado) --- */}
+        {/* 7. CONTATO */}
         {isVisible('contato') && (
             <section id="contato" className="py-24 bg-blue-700 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/basketball.png')]"></div>
@@ -236,4 +239,4 @@ export default function Home() {
     </div>
   );
 }
-// linha 215 Home.tsx
+// linha 220 client/src/pages/Home.tsx
