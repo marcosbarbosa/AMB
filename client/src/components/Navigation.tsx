@@ -1,10 +1,10 @@
 // Nome: Navigation.tsx
 // Nro de linhas+ Caminho: 260 client/src/components/Navigation.tsx
 // Data: 2026-01-22
-// Hora: 20:55 (America/Sao_Paulo)
+// Hora: 22:15 (America/Sao_Paulo)
 // Função: Navbar Master
-// Versão: v54.0 Null Safety
-// Alteração: Implementação de safeConfig para prevenir crash quando config ainda é null.
+// Versão: v55.0 Admin Menu Boost
+// Alteração: Inclusão de "Eleições" no dropdown do Admin para acesso rápido.
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -23,13 +23,11 @@ import ambLogo from '../assets/logo-amb.png';
 
 export function Navigation() {
   const { isAuthenticated, atleta, logout } = useAuth();
-  const { config } = useSiteConfig(); // Pode retornar null inicialmente
+  const { config } = useSiteConfig();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // --- SAFE CONFIG (CORREÇÃO DO CRASH) ---
-  // Se config for null (ainda carregando), usa valores padrão seguros
   const safeConfig = config || {
       eleicoes_ativas: false,
       social_instagram: '#',
@@ -61,12 +59,10 @@ export function Navigation() {
     { key: 'contato', label: 'Contato', href: '/contato', icon: Mail },
   ];
 
-  // Usa safeConfig em vez de config direto
   if (safeConfig.eleicoes_ativas) {
       navItems.push({ key: 'eleicoes', label: 'Eleições 2026', href: '/eleicoes', icon: Crown });
   }
 
-  // Lógica Robusta para Admin/SuperUser
   const isSuperUser = String(atleta?.is_superuser) === '1' || atleta?.is_superuser === true || atleta?.is_superuser === 1;
   const isAdmin = atleta?.role === 'admin' || isSuperUser;
 
@@ -131,7 +127,6 @@ export function Navigation() {
             {/* ACTIONS RIGHT */}
             <div className="flex items-center gap-3">
               <div className="hidden xl:flex items-center gap-2 mr-4 border-r border-slate-200 pr-4">
-                  {/* Usa safeConfig para evitar crash nos links sociais */}
                   <a href={safeConfig.social_instagram} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-pink-600 transition-colors"><Instagram className="w-4 h-4" /></a>
                   <a href={safeConfig.social_facebook} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600 transition-colors"><Facebook className="w-4 h-4" /></a>
               </div>
@@ -151,9 +146,27 @@ export function Navigation() {
                           <DropdownMenuSeparator />
                           {isAdmin && (
                               <>
-                                  <DropdownMenuItem asChild><Link to="/admin/painel"><ShieldCheck className="mr-2 h-4 w-4"/> Painel Admin</Link></DropdownMenuItem>
-                                  <DropdownMenuItem asChild><Link to="/admin/associados"><Users className="mr-2 h-4 w-4"/> Associados</Link></DropdownMenuItem>
-                                  <DropdownMenuItem asChild><Link to="/admin/configuracoes"><Settings className="mr-2 h-4 w-4"/> Configurações</Link></DropdownMenuItem>
+                                  <DropdownMenuItem asChild>
+                                      <Link to="/admin/painel" className="cursor-pointer font-bold text-indigo-600">
+                                          <ShieldCheck className="mr-2 h-4 w-4"/> Painel Admin
+                                      </Link>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem asChild>
+                                      <Link to="/admin/associados" className="cursor-pointer">
+                                          <Users className="mr-2 h-4 w-4"/> Associados
+                                      </Link>
+                                  </DropdownMenuItem>
+                                  {/* Item Adicionado: Eleições (Crítico) */}
+                                  <DropdownMenuItem asChild>
+                                      <Link to="/admin/eleicoes" className="cursor-pointer">
+                                          <Crown className="mr-2 h-4 w-4"/> Eleições
+                                      </Link>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem asChild>
+                                      <Link to="/admin/configuracoes" className="cursor-pointer">
+                                          <Settings className="mr-2 h-4 w-4"/> Configurações
+                                      </Link>
+                                  </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                               </>
                           )}
@@ -202,12 +215,12 @@ export function Navigation() {
                         </div>
                     </SheetContent>
                 </Sheet>
-              </div> {/* Fim LG Hidden (Mobile) */}
-            </div> {/* Fim Actions Right */}
-          </div> {/* Fim Flex Between */}
-        </div> {/* Fim Container */}
-      </div> {/* Fim Fixed Top */}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </TooltipProvider>
   );
 }
-// linha 260 client/src/components/Navigation.tsx
+// linha 265 client/src/components/Navigation.tsx

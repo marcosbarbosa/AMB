@@ -1,149 +1,141 @@
 // Nome: AdminPainelPage.tsx
-// Caminho: client/src/pages/admin/AdminPainelPage.tsx
-// Data: 2026-01-18
-// Hora: 08:35 (America/Sao_Paulo)
-// Função: Dashboard Admin com 9 Módulos Oficiais
-// Versão: v15.0 Prime Dashboard
-// Alteração: Reestruturação dos cards para refletir a nova arquitetura de gestão.
+// Nro de linhas+ Caminho: 180 client/src/pages/admin/AdminPainelPage.tsx
+// Data: 2026-01-22
+// Hora: 22:45 (America/Sao_Paulo)
+// Função: Dashboard Admin (Com Links para Módulos de Gestão Reais)
+// Versão: v2.1 Gestão Real
+// Alteração: Secretaria agora aponta para /admin/secretaria e inclusão de BI e Diretoria.
 
-import { useState, useEffect } from 'react'; 
-import { useNavigate, Link } from 'react-router-dom'; 
+import { useAuth } from '@/context/AuthContext';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import { useAuth } from '@/context/AuthContext'; 
-import { FerramentasModal } from '@/components/FerramentasModal'; 
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { 
-  Loader2, Users, Newspaper, CalendarDays, Settings, 
-  Layout, FileText, Handshake, BarChart3, Briefcase, Shirt
-} from 'lucide-react'; 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'; 
+    Users, Settings, FileText, TrendingUp, Shield, Crown, 
+    BarChart3, UserCheck, Briefcase
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function AdminPainelPage() {
-  const { isAuthenticated, atleta, isLoading: isAuthLoading } = useAuth(); 
-  const navigate = useNavigate(); 
-
-  // Estado para o Modal de Configurações
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
-
-  useEffect(() => {
-    if (isAuthLoading) return; 
-    if (!isAuthenticated || atleta?.role !== 'admin') { navigate('/'); }
-  }, [isAuthenticated, atleta, isAuthLoading, navigate]);
-
-  if (isAuthLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 h-10 w-10" /></div>;
+  const { atleta } = useAuth();
 
   const adminModules = [
     {
-      title: 'Gestão de Associados',
+      title: "Gestão de Associados",
       icon: Users,
-      description: 'Aprovar, rejeitar e ver novos cadastros.',
-      link: '/admin/associados',
+      desc: "Base de dados, status financeiro e perfil.",
+      link: "/admin/associados",
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+      status: "ativo"
     },
     {
-      title: 'Gestão de Parceiros',
-      icon: Handshake,
-      description: 'Gerir níveis (Ouro, Prata) e status de parcerias.',
-      link: '/admin/parceiros',
-    },
-    {
-      title: 'Banners da Home',
-      icon: Layout,
-      description: 'Gerenciar campanhas rotativas e avisos institucionais.',
-      link: '/admin/banners',
-    },
-    {
-      title: 'Secretaria Digital', // Antigo Prestação de Contas
+      title: "Secretaria Digital (Gestão)",
       icon: FileText,
-      description: 'Enviar balancetes, documentos oficiais e editais.',
-      link: '/admin/transparencia',
+      desc: "Upload de editais, atas e balancetes.",
+      link: "/admin/secretaria", // CORRIGIDO: Aponta para GestãoTransparencia.tsx
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      status: "ativo"
     },
     {
-      title: 'Gestão de Eventos',
-      icon: CalendarDays,
-      description: 'Criar campeonatos, agendar jogos e gerir times.',
-      link: '/admin/eventos',
-    },
-    {
-      title: 'Gestão da Diretoria',
+      title: "Gestão da Diretoria",
       icon: Briefcase,
-      description: 'Cadastrar membros, cargos e gerir mandatos.',
-      link: '/admin/diretoria',
+      desc: "Cadastrar membros, cargos e fotos.",
+      link: "/admin/diretoria", // NOVO
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+      status: "ativo"
     },
     {
-      title: 'Configurações do Portal',
+      title: "Business Intelligence",
+      icon: BarChart3,
+      desc: "Estatísticas, gráficos e KPIs.",
+      link: "/admin/bi", // NOVO
+      color: "text-indigo-600",
+      bg: "bg-indigo-50",
+      status: "novo"
+    },
+    {
+      title: "Gestão de Eleições",
+      icon: Crown,
+      desc: "Chapas e votação.",
+      link: "/admin/eleicoes",
+      color: "text-purple-600",
+      bg: "bg-purple-50",
+      status: "ativo"
+    },
+    {
+      title: "Configurações",
       icon: Settings,
-      description: 'Redes Sociais, WhatsApp, E-mail e Menus.',
-      action: () => setIsConfigOpen(true), 
-    },
-    {
-      title: 'Posts e Newsletters',
-      icon: Newspaper,
-      description: 'Lançar posts de jogos e newsletters semanais.',
-      link: '/admin/noticias',
-    },
-    {
-      title: 'Gestão de Times', // Redundante mas solicitado, aponta para Eventos
-      icon: Shirt,
-      description: 'Acesso rápido para cadastrar equipes.',
-      link: '/admin/eventos', 
+      desc: "Avisos e parâmetros globais.",
+      link: "/admin/configuracoes",
+      color: "text-slate-600",
+      bg: "bg-slate-50",
+      status: "ativo"
     }
   ];
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <Navigation />
-      <main className="pt-32 pb-16">
-        <section className="max-w-7xl mx-auto px-4">
-          <div className="mb-10 text-center md:text-left">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2 uppercase">Painel de Administração</h1>
-            <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">
-              Bem-vindo(a) Admin, <span className="text-blue-600">{atleta?.nome_completo}</span>!
-            </p>
-          </div>
+  const getStatusBadge = (status: string) => {
+      switch(status) {
+          case 'novo': return <Badge className="bg-purple-600 hover:bg-purple-700">NOVO</Badge>;
+          case 'ativo': return <Badge variant="outline" className="text-green-600 border-green-200">ATIVO</Badge>;
+          default: return null;
+      }
+  };
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {adminModules.map((mod) => (
-              mod.action ? (
-                <div key={mod.title} onClick={mod.action} className="cursor-pointer">
-                    <Card className="h-full hover:shadow-xl hover:-translate-y-1 hover:border-blue-600 transition-all duration-300 group rounded-[24px] border-slate-200 bg-white">
-                      <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-4">
-                        <div className="p-3 rounded-xl bg-slate-100 text-slate-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                          <mod.icon className="h-6 w-6" />
-                        </div>
-                        <CardTitle className="text-lg font-bold uppercase tracking-tight text-slate-800">{mod.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <CardDescription className="text-xs font-medium text-slate-500 leading-relaxed">{mod.description}</CardDescription>
-                      </CardContent>
-                    </Card>
-                </div>
-              ) : (
-                <Link to={mod.link!} key={mod.title}>
-                  <Card className="h-full hover:shadow-xl hover:-translate-y-1 hover:border-blue-600 transition-all duration-300 group rounded-[24px] border-slate-200 bg-white">
-                    <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-4">
-                      <div className="p-3 rounded-xl bg-slate-100 text-slate-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                        <mod.icon className="h-6 w-6" />
-                      </div>
-                      <CardTitle className="text-lg font-bold uppercase tracking-tight text-slate-800">{mod.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-xs font-medium text-slate-500 leading-relaxed">{mod.description}</CardDescription>
-                    </CardContent>
-                  </Card>
-                </Link>
-              )
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
+      <Navigation />
+
+      <main className="flex-grow pt-32 pb-16 px-4 max-w-7xl mx-auto w-full">
+        {/* Header */}
+        <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 className="text-3xl font-black text-slate-900 uppercase flex items-center gap-3">
+                    <Shield className="h-8 w-8 text-blue-700" />
+                    Painel Administrativo
+                </h1>
+                <p className="text-slate-500 mt-2 text-lg">
+                    Gestão Centralizada AMB Amazonas.
+                </p>
+            </div>
+            <div className="bg-white px-4 py-2 rounded-full border border-slate-200 text-sm font-bold text-slate-600 shadow-sm">
+                Admin: <span className="text-blue-600">{atleta?.nome_completo}</span>
+            </div>
+        </div>
+
+        {/* Grid de Módulos */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {adminModules.map((mod, i) => (
+                <Card key={i} className="hover:shadow-lg transition-all duration-300 border-slate-200 group cursor-pointer flex flex-col h-full">
+                    <Link to={mod.link} className="flex-grow flex flex-col">
+                        <CardHeader className="flex flex-row items-center gap-4 pb-2 justify-between">
+                            <div className={`p-3 rounded-xl ${mod.bg} ${mod.color} group-hover:scale-110 transition-transform`}>
+                                <mod.icon className="h-6 w-6" />
+                            </div>
+                            {getStatusBadge(mod.status)}
+                        </CardHeader>
+                        <CardContent className="flex-grow flex flex-col justify-between pt-2">
+                            <div>
+                                <CardTitle className="text-lg font-bold text-slate-800 leading-tight mb-2">
+                                    {mod.title}
+                                </CardTitle>
+                                <p className="text-slate-500 text-sm mb-4">{mod.desc}</p>
+                            </div>
+                            <Button variant="ghost" className="w-full justify-between text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-colors p-0 hover:bg-transparent">
+                                Acessar Módulo <span className="text-xl">→</span>
+                            </Button>
+                        </CardContent>
+                    </Link>
+                </Card>
             ))}
-          </div>
-        </section>
+        </div>
       </main>
       <Footer />
-
-      {/* Modal Integrado */}
-      <FerramentasModal 
-        isOpen={isConfigOpen} 
-        onClose={() => setIsConfigOpen(false)} 
-      />
     </div>
   );
 }
-// linha 125 AdminPainelPage.tsx
+// linha 180 client/src/pages/admin/AdminPainelPage.tsx
